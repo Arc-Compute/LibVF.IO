@@ -1,8 +1,8 @@
 # Package
 
-version       = "0.0.0"
-author        = "2666680 Ontario Inc.."
-description   = "PRE-RELEASE"
+version       = "1.0.0"
+author        = "2666680 Ontario Inc."
+description   = "Release 1"
 license       = "AGPL"
 srcDir        = "src"
 installExt    = @["nim"]
@@ -13,4 +13,6 @@ bin           = @["arcd"]
 
 requires "nim >= 1.4.8",
     "yaml",
-    "uuids"
+    "uuids",
+    "psutil",
+    "terminaltables"

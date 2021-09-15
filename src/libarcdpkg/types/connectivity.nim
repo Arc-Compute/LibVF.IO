@@ -1,5 +1,5 @@
 #
-# Copyright: 2666680 Ontario Inc..
+# Copyright: 2666680 Ontario Inc.
 # Reason: File for connectivity into the system.
 #
 type

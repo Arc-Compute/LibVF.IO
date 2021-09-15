@@ -1,5 +1,5 @@
 #
-# Copyright: 2666680 Ontario Inc..
+# Copyright: 2666680 Ontario Inc.
 # Reason: Configuration specific parameters/loaders
 #
 import parseopt
@@ -7,10 +7,9 @@ import options
 import os
 import streams
 import strutils
-import logging
 import yaml
 
-import connectivity, hardware, environment
+import connectivity, hardware, environment, process
 
 type
   CommandEnum* = enum                ## Different first layer commands.
@@ -37,6 +36,8 @@ type
     gpus*: seq[RequestedGpu]         ## Structure for requesting GPUs.
     nics*: seq[RequestedNet]         ## Structure for requestion network nics.
     root*: string                    ## Current root for the system.
+    sudo*: bool                      ## Do we run this vm as sudo?
+    commands*: seq[QemuArgs]         ## Additional commands to pass into qemu.
 
   CommandLineArguments* = object     ## Arguments passed into the system.
     config*: Option[string]          ## Path for the configuration file.
@@ -54,8 +55,10 @@ type
       additionalStates*: seq[string] ## Additional state variables to send in.
     of ceStop:
       uuid*: string                  ## UUID of the container we want to stop.
-    else:
-      nil                            ## No more arguments can be parsed.
+    of ceLs:
+      option*: Option[string]        ## Option for ls [all, kernels, states, apps]
+    of cePs:
+      search*: Option[string]        ## UUID for more detailed ps command 
 
 const
   DefaultConfig = Config(            ## Default configuration value if nothing
@@ -81,7 +84,9 @@ const
     ),
     gpus: @[],
     nics: @[],
-    root: "/opt/arc"
+    root: "/opt/arc",
+    sudo: false,
+    commands: @[]
   )
 
 proc getCommandLine*(): CommandLineArguments =
@@ -131,7 +136,12 @@ proc getCommandLine*(): CommandLineArguments =
         of ceStop:
           if i == 1:
             result.uuid = key
-        else: discard
+        of ceLs:
+          if i == 1:
+            result.option = some(key)
+        of cePs:
+          if i == 1:
+            result.search = some(key)
       i += 1
     of cmdLongOption:
       case key
@@ -181,6 +191,10 @@ proc getConfigFile*(args: CommandLineArguments): Config =
   if isSome(args.config):
     # If there is a configuration file passed in.
     result = replaceConfig(result, args.config)
+
+  # Overwrites the root.
+  if isSome(args.root):
+    result.root = get(args.root)
 
   # Update the configs using the command line arguments.
   case args.command

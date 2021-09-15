@@ -1,5 +1,5 @@
 #
-# Copyright: 2666680 Ontario Inc..
+# Copyright: 2666680 Ontario Inc.
 # Reason: Sets up logging on the system.
 #
 import logging

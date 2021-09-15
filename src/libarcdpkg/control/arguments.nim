@@ -1,5 +1,5 @@
 #
-# Copyright: 2666680 Ontario Inc..
+# Copyright: 2666680 Ontario Inc.
 # Reason: Creates commands to execute on the host system.
 #
 import strformat
@@ -55,7 +55,7 @@ func qemuLaunch*(cfg: Config, uuid: string,
   result.exec = "/bin/qemu-system-x86_64"
 
   # Need sudo to pass VFIOs
-  if not vfios == @[]:
+  if cfg.sudo:
     result.args &= result.exec
     result.exec = "/bin/sudo"
 
@@ -104,3 +104,11 @@ func qemuLaunch*(cfg: Config, uuid: string,
   if install and isSome(cfg.container.iso):
     result.args &= "-cdrom"
     result.args &= get(cfg.container.iso)
+
+  # Additional commands sent into the qemu command
+  # NOTE: This is dangerous, so we quote all of these.
+  for command in cfg.commands:
+    let values = join(command.values, ",")
+    result.args &= &"'{command.arg}'"
+    if values != "":
+      result.args &= &"'{values}'"

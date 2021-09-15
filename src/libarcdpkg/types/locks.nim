@@ -1,5 +1,5 @@
 #
-# Copyright: 2666680 Ontario Inc..
+# Copyright: 2666680 Ontario Inc.
 # Reason: Lock file for the VMs.
 #
 import json

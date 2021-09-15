@@ -1,10 +1,11 @@
 #
-# Copyright: 2666680 Ontario Inc..
+# Copyright: 2666680 Ontario Inc.
 # Reason: Hardware configurations for the system.
 #
 import options
 import strformat
 import strutils
+import os
 
 type
   VfioTypes* = enum          ## Enumeration to determine the types of VFIOs.
@@ -20,6 +21,7 @@ type
 
   Vfio* = object             ## VFIO structure for handling different VFIOs.
     deviceName*: string      ## PCI device address
+    base*: string            ## Driver override address
     case kind: VfioTypes     ## Private enumeration value stating which
                              ##  version to use.
     of vtNET:
@@ -47,13 +49,14 @@ func `$`*(x: Vfio): string = ## Overload for printing out a VFIO.
     of vtNET: x.mac
     else: $x.kind
 
-func getVfio*(k: int, l: seq[string]): Option[Vfio] =
+func getVfio*(k: int, l: seq[string], dir: string): Option[Vfio] =
   ## getVfio - Parsing function to get the correct VFIO, handles both gpus
   ##           and networking cards.
   ##
   ## Inputs
   ## @k - Device class to use for the VFIO
   ## @l - List of information.
+  ## @dir - Base directory for the VFIO.
   ##
   ## Returns
   ## @result - Either a VFIO device, or a none type.
@@ -85,6 +88,7 @@ func getVfio*(k: int, l: seq[string]): Option[Vfio] =
       vfio.deviceName = name
       vfio.gpuType = gpuType
       vfio.vRam = size
+      vfio.base = dir / &"virtfn{vfio.virtNum}" / "driver_override"
 
       result = some(vfio)
     else: result = none(Vfio)

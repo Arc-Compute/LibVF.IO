@@ -1,5 +1,5 @@
 #
-# Copyright: 2666680 Ontario Inc..
+# Copyright: 2666680 Ontario Inc.
 # Reason: Algorithms for IOMMU handling.
 #
 import algorithm
@@ -98,7 +98,7 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
         let
           lockBase = "/tmp" / "locks" / i.baseDir
           lockPath = lockBase / "lock"
-          driverOR = i.baseDir / &"virtfn{j.virtNum}" / "driver_override"
+          driverOR = j.base
 
         createDir(lockBase)
 
@@ -131,7 +131,6 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
   # Walk through all known IOMMU groups.
   for dir in walkDirs("/sys/kernel/iommu_groups/*/devices/*/"):
     let
-      device = lastPathPart(dir) # NOTE: Has the 0000 prefix here
       deviceClassFile = dir / "class"
       sriovNumFile = dir / "sriov_numvfs"
 
@@ -148,7 +147,7 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
       continue
 
     let
-      vfs = parseInt(strip(readFile(sriovNumFile)))
+      vfs = parseInt(strip(readFile(sriovNumFile))) # Number of VFs.
       cpulist = readFile(dir / "local_cpulist") # How we determine which
                                                 #  discrete device the gpu
                                                 #  is on.
@@ -172,7 +171,7 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
 
       let gimGpus = map(
         distribute(s, vfs),
-        (x: seq[string]) => get(getVfio(deviceClass, x))
+        (x: seq[string]) => get(getVfio(deviceClass, x, dir))
       )
 
       gpus[cpulist] = getOrDefault(gpus, cpulist, @[]) & @[
@@ -188,7 +187,6 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
 
   var
     requestedGpus = cfg.gpus
-    requestedNics = cfg.nics
 
   # We use this in order to ensure if an individual requests multiple GPUs
   #  they are able to optimize the compute speed by providing them CPUs which
@@ -199,7 +197,6 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
 
   # How we select the correct GPUs.
   for i in requestedGpus:
-    echo gpus
     for k, v in gpus:
       var newSorted = v
 
@@ -212,5 +209,3 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
       if isSome(selectedGpu):
         result &= get(selectedGpu)
         break
-
-  echo result

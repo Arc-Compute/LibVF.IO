@@ -1,5 +1,5 @@
 #
-# Copyright: 2666680 Ontario Inc..
+# Copyright: 2666680 Ontario Inc.
 # Reason: Reexports all the types for libarcd.
 #
 import types/[config, connectivity, hardware,

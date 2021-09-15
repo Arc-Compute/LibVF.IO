@@ -1,20 +1,22 @@
 #
-# Copyright: 2666680 Ontario Inc..
+# Copyright: 2666680 Ontario Inc.
 # Reason: Provide functions for ls
 #
 import os
 import strformat
+import strutils
+import options
 
 import ../types
 
-
 type
-  LsEnum* = enum                        ## Plausible ls commands
-    leKernels = "kernels",
-    leStates = "states",
-    leApps = "apps",
-    leAll = "all"
+  LsEnum = enum                         ## Sub commands for ls.
+    leKernels = "kernels",              ## List only the available kernels.
+    leStates = "states",                ## List only the available states.
+    leApps = "apps",                    ## List only the available apps.
+    leAll = "all"                       ## List everything
 
+converter toOption(s: string): LsEnum = parseEnum[LsEnum](s, leAll)
 
 const patterns: array[3, string] = [    ## Array to contain patterns
   "kernels/*.arc",                      ## kernels pattern
@@ -40,22 +42,28 @@ proc lsFiles(cfg: Config, lsEnum: LsEnum) =
   echo '\l'
 
 
-proc arcLs*(cfg: Config, lsEnum: LsEnum = leAll) =
+proc arcLs*(cfg: Config, cmd: CommandLineArguments) =
   ## arcLs - Prints a list of available containers
   ## 
   ## Inputs
   ## @cfg - Config object that contains arcRoot
-  ## @lsEnum - Chosen ls subcommand
+  ## @cmd - Get chosen subcommand
   ## 
   ## Side effects - reading files and printing to terminal
-  case lsEnum
-  of leAll:
-    lsFiles(cfg, leKernels)
-    lsFiles(cfg, leStates)
-    lsFiles(cfg, leApps)
-  of leKernels:
-    lsFiles(cfg, leKernels)
-  of leStates:
-    lsFiles(cfg, leStates)
-  of leApps:
-    lsFiles(cfg, leApps)
+  if isSome(cmd.option):
+    let option = toOption(get(cmd.option))
+    case option
+    of leAll:
+      lsFiles(cfg, leKernels)
+      lsFiles(cfg, leStates)
+      lsFiles(cfg, leApps)
+    of leKernels:
+      lsFiles(cfg, leKernels)
+    of leStates:
+      lsFiles(cfg, leStates)
+    of leApps:
+      lsFiles(cfg, leApps)
+  else:
+      lsFiles(cfg, leKernels)
+      lsFiles(cfg, leStates)
+      lsFiles(cfg, leApps)
