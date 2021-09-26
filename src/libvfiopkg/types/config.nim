@@ -17,7 +17,9 @@ type
     ceStart = "start",
     ceStop = "stop",
     ceLs = "ls",
-    cePs = "ps"
+    cePs = "ps",
+    ceDeploy = "deploy",
+    ceUndeploy = "undeploy"
 
   RequestedGpu* = object             ## Object to request a GPU.
     acceptableTypes*: seq[string]    ## Possible types of GPUs we accept
@@ -43,6 +45,10 @@ type
     config*: Option[string]          ## Path for the configuration file.
     root*: Option[string]            ## Base root of arcd installation.
     save*: bool                      ## Do we save the updated config?
+    nocopy*: bool                    ## Helper to avoid having to copy the file
+                                     ##  every single time (useful for prototyping)
+    noconfig*: bool                  ## No user config preload.
+    kernel*: Option[string]          ## Kernel image to use.
     case command*: CommandEnum       ## Different commands have different
                                      ##  variables, so we need to only allow
                                      ##  some variables to be used in the
@@ -51,14 +57,15 @@ type
       iso*: Option[string]           ## Installation image.
       size*: Option[int]             ## Size of the initial kernel.
     of ceStart:
-      kernel*: Option[string]        ## Kernel image to use.
       additionalStates*: seq[string] ## Additional state variables to send in.
     of ceStop:
       uuid*: string                  ## UUID of the container we want to stop.
     of ceLs:
       option*: Option[string]        ## Option for ls [all, kernels, states, apps]
     of cePs:
-      search*: Option[string]        ## UUID for more detailed ps command 
+      search*: Option[string]        ## UUID for more detailed ps command
+    else:
+      nil
 
 const
   DefaultConfig = Config(            ## Default configuration value if nothing
@@ -105,6 +112,14 @@ proc getCommandLine*(): CommandLineArguments =
       some(ceStart)
     of $ceStop:
       some(ceStop)
+    of $ceLs:
+      some(ceLs)
+    of $cePs:
+      some(cePs)
+    of $ceDeploy:
+      some(ceDeploy)
+    of $ceUndeploy:
+      some(ceUndeploy)
     else: none(CommandEnum)
 
   var
@@ -142,6 +157,7 @@ proc getCommandLine*(): CommandLineArguments =
         of cePs:
           if i == 1:
             result.search = some(key)
+        else: discard
       i += 1
     of cmdLongOption:
       case key
@@ -151,6 +167,13 @@ proc getCommandLine*(): CommandLineArguments =
         result.config = some(val)
       of "save":
         result.save = true
+      of "no-copy":
+        result.nocopy = true
+      of "no-user-preload":
+        result.noconfig = true
+      of "kernel":
+        if result.command == ceCreate:
+          result.kernel = some(val)
       else: discard
     else: discard
 
@@ -166,9 +189,13 @@ proc getConfigFile*(args: CommandLineArguments): Config =
   ##          Container.
   ##
   ## Side effects - Reads a configuration file from diskspace.
-  proc readConfig(s: string): Config =
+  proc readConfig(s: string, prevRoot: string): Config =
     try:
-      let fs = newFileStream(s)
+      let
+        root = if isSome(args.root): get(args.root)
+               else: prevRoot
+        fs = if fileExists(s): newFileStream(s)
+             else: newFileStream(root / "shells" / s)
       load(fs, result)
       close(fs)
     except:
@@ -177,15 +204,19 @@ proc getConfigFile*(args: CommandLineArguments): Config =
   proc replaceConfig(d: Config, config: Option[string]): Config =
     # TODO: Add ability to only pass in from shells in the root.
     if isSome(config):
-      result = readConfig(get(config))
+      result = readConfig(get(config), d.root)
     else:
       result = d
 
   result = DefaultConfig
 
   # If a user defined initial configuration is built.
-  if fileExists("/etc/arc.yaml"):
-    result = readConfig("/etc/arc.yaml")
+  if fileExists("/etc/arc.yaml") and not args.noconfig:
+    result = readConfig("/etc/arc.yaml", "/opt/arc")
+
+  let userConfig = getHomeDir() / ".config" / "arc" / "arc.yaml"
+  if fileExists(userConfig) and not args.noconfig:
+    result = readConfig(userConfig, "/opt/arc")
 
   # If no file was passed in.
   if isSome(args.config):
@@ -197,6 +228,9 @@ proc getConfigFile*(args: CommandLineArguments): Config =
     result.root = get(args.root)
 
   # Update the configs using the command line arguments.
+  if isSome(args.kernel):
+    result.container.kernel = get(args.kernel)
+
   case args.command
   of ceCreate:
     if isSome(args.iso):
@@ -204,9 +238,7 @@ proc getConfigFile*(args: CommandLineArguments): Config =
     if isSome(args.size):
       result.container.initialSize = get(args.size)
   of ceStart:
-    if isSome(args.kernel):
-      result.container.kernel = get(args.kernel)
-    if len(args.additionalStates) != 0:
+   if len(args.additionalStates) != 0:
       result.container.state &= args.additionalStates
   else: discard
 

@@ -1,1 +1,1 @@
-switch("path", "$projectDir/../src/libarcdpkg")
+switch("path", "$projectDir/../src/libvfiopkg")

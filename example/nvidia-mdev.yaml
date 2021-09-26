@@ -1,0 +1,36 @@
+%YAML 1.2
+%TAG !n! tag:nimyaml.org,2016:
+--- !n!custom:Config 
+connectivity: 
+  exposedPorts: 
+    - 
+      guest: 22
+      host: 2222
+    - 
+      guest: 5901
+      host: 5900
+    - 
+      guest: 8080
+      host: 8000
+container: 
+  kernel: "ubuntu-20.04.arc"
+  state: []
+  initialSize: 20
+  iso: !!null ~
+cpus: 
+  cores: 8
+  sockets: 1
+  threads: 2
+  ramAlloc: 8192
+gpus: []
+nics: []
+root: /opt/arc
+sudo: true
+commands: 
+  - 
+    arg: "-device"
+    values: 
+      - "vfio-pci"
+      - id=hostdev0
+      - "sysfsdev=/sys/bus/mdev/devices/3ab19d97-d8a0-4617-8ab5-b3b1753f257d"
+      - display=off

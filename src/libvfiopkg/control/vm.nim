@@ -1,4 +1,4 @@
-#
+
 # Copyright: 2666680 Ontario Inc.
 # Reason: Code to interact with VMs.
 #
@@ -9,6 +9,9 @@ import osproc
 import posix
 import options
 import strutils
+import strformat
+import sequtils
+import sugar
 import logging
 
 import arguments
@@ -16,6 +19,35 @@ import iommu
 
 import ../comms/qmp
 import ../types
+
+proc realCleanup(lockFile: string, uuid: string, socketDir: string,
+                 vfios: seq[Vfio]) =
+  ## realCleanup - Real cleanup function.
+  ##
+  ## Inputs
+  ## @lockFile - Lockfile to use.
+  ## @uuid - UUID for the VM.
+  ## @socketDir - Socket directory for the system.
+  ## @vfios - List of connected VFIOs.
+  ##
+  ## Side effects - Cleans up the VM.
+  info("Cleaning up VM")
+  removeFile(lockFile)
+  removeDir(socketDir)
+
+  # Unlock all locked vfios.
+  for vfio in vfios:
+    let
+      lockBase = "/tmp" / "locks" / parentDir(parentDir(vfio.base))
+      lockPath = lockBase / "lock"
+
+    createDir(lockBase)
+
+    while not bindVf(lockPath, uuid, vfio, false):
+      discard
+
+    info(&"Unlocked: {vfio.deviceName}")
+  info("Cleaned up VM")
 
 proc cleanupVm*(socket: AsyncSocket, pid: Process,
                 lockFile: string, socketDir: string,
@@ -67,26 +99,18 @@ proc cleanupVm*(socket: AsyncSocket, pid: Process,
         )
     else: discard
 
-  removeFile(lockFile)
-  removeDir(socketDir)
+  realCleanup(lockFile, uuid, socketDir, vfios)
 
-  # Unlock all locked vfios.
-  for vfio in vfios:
-    let
-      lockBase = "/tmp" / "locks" / parentDir(parentDir(vfio.base))
-      lockPath = lockBase / "lock"
-
-    createDir(lockBase)
-
-    discard lockVf(lockPath, vfio.base, uuid, false)
-
-proc startVm*(c: Config, uuid: string, newInstall: bool) =
+proc startVm*(c: Config, uuid: string, newInstall: bool,
+              noCopy: bool, save: bool) =
   ## startVm - Starts a VM.
   ##
   ## Inputs
   ## @c - Configuration file for starting a VM.
   ## @uuid - String representation of the uid.
   ## @newInstall - Do we need to install into a kernel?
+  ## @noCopy - Avoid unnecessary copying when we do not need it.
+  ## @save - Do we save the result?
   ##
   ## Side effects - Creates an Arc Container.
   var cfg = c
@@ -98,11 +122,15 @@ proc startVm*(c: Config, uuid: string, newInstall: bool) =
     qemuLogs = cfg.root / "logs" / "qemu"
     baseKernel = kernelPath / cfg.container.kernel
     lockFile = lockPath / (uuid & ".json")
-    liveKernel = livePath / uuid
+    liveKernel = if noCopy: baseKernel else: livePath / uuid
     socketDir = "/tmp" / "sockets" / uuid
     dirs = [
       kernelPath, livePath, lockPath, qemuLogs, socketDir
     ]
+    sockets = map(
+      @["main.sock", "master.sock"],
+      (s: string) => socketDir / s
+    )
 
   # If we are passing a vfio, we need to run the command as sudo
   let vfios = getVfios(cfg, uuid)
@@ -122,15 +150,18 @@ proc startVm*(c: Config, uuid: string, newInstall: bool) =
     )
 
   # Either moves the file or creates a new file
-  if fileExists(baseKernel) and not newInstall:
+  if fileExists(baseKernel) and not newInstall and not noCopy:
     copyFile(baseKernel, liveKernel)
   elif newInstall:
     let
       kernelArgs = createKernel(liveKernel, cfg.container.initialSize)
-      cmd = join(@[kernelArgs.exec] & kernelArgs.args, " ")
-    discard execShellCmd(cmd)
+    if not runCommand(kernelArgs):
+      error("Could not create image gracefully failing")
+      return
+  elif noCopy or save:
+    discard
   else:
-    error("Invalid VM commands")
+    error("Invalid command sequence")
     return
 
   # Spawn up qemu image
@@ -150,7 +181,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool) =
       kernel=liveKernel,
       install=newInstall,
       logDir=qemuLogs,
-      socketDir=socketDir
+      sockets=sockets
     )
 
   var
@@ -165,6 +196,18 @@ proc startVm*(c: Config, uuid: string, newInstall: bool) =
   writeLockFile(lockFile, lock)
 
   sleep(3000) # Sleeping to avoid trying to open the file too soon.
+
+  let
+    socketGroupArgs = changeSocketGroup(cfg.sudo, sockets)
+    permissionsArgs = changePermissions(cfg.sudo, sockets)
+
+  # If we fail to change socket stuff
+  if not runCommand(socketGroupArgs) or not runCommand(permissionsArgs):
+    error("Could not change socket information correctly cleaning up.")
+    realCleanup(lockFile, uuid, socketDir, vfios)
+    if not noCopy:
+      removeFile(liveKernel)
+
   let
     socketMaybe = createSocket(socketDir / "main.sock")
     socket = if isSome(socketMaybe): get(socketMaybe)
@@ -172,10 +215,10 @@ proc startVm*(c: Config, uuid: string, newInstall: bool) =
 
   cleanupVm(socket, qemuPid, lockFile, socketDir, uuid, vfios)
 
-  if newInstall:
+  if newInstall or save:
     info("Installing to base kernel")
     moveFile(liveKernel, baseKernel)
-  else:
+  elif not noCopy:
     removeFile(liveKernel)
 
 proc stopVm*(cfg: Config, cmd: CommandLineArguments) =
@@ -185,12 +228,8 @@ proc stopVm*(cfg: Config, cmd: CommandLineArguments) =
   ## @cmd - Command line arguments for stopping a VM.
   ##
   ## Side effects - Stops a VM.
-  ## NOTE: Requires sudo if the config required sudo.
   let
     socketPath = "/tmp" / "sockets" / cmd.uuid / "master.sock"
-
-  if cfg.sudo:
-    warn("Stopping this VM requires sudo.")
 
   # Sends kill command
   let socket = createSocket(socketPath)

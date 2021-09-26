@@ -25,7 +25,7 @@ type
       gpuType: string       ## Type of the physical GPU that was split.
     else: discard
 
-proc lockVf*(f: string, vfio: string, uuid: string, lock: bool = true): bool =
+proc lockVf(f: string, vfio: string, uuid: string, lock: bool = true): bool =
   ## lockVf - Locks a virtual function for the QEMU process.
   ##
   ## Inputs
@@ -56,10 +56,36 @@ proc lockVf*(f: string, vfio: string, uuid: string, lock: bool = true): bool =
 
   if fileExists(f) and strip(readFile(f)) == uuid and
      strip(readFile(vfio)) == state:
-    discard execShellCmd(&"sudo su -c \"echo \'{newState}\' > {vfio}\"")
-    result = true
+    result = execShellCmd(&"sudo su -c \"echo \'{newState}\' > {vfio}\"") == 0
 
   removeFile(f)
+
+proc bindVf*(f: string, uuid: string, dev: Vfio, state: bool): bool =
+  ## bindVf - Binds the VF to the correct driver for QEMU passing.
+  ##
+  ## Inputs
+  ## @f - Lock file to save the file to.
+  ## @vfio - Driver override parameter to save the file to.
+  ## @uuid - UUID for the application.
+  ## @dev - Device to bind.
+  ## @state - Do we bind or unbind the resource.
+  ##
+  ## Side effects - Binds the VFIO.
+  let
+    base = "/sys/bus/pci/drivers/vfio-pci"
+    b = if state: base / "bind"
+        else: base / "unbind"
+
+  if state:
+    result = lockVf(f, dev.base, uuid, state)
+    if result:
+      result =
+        execShellCmd(&"sudo su -c \"echo \'{dev.deviceName}\' > {b}\"") == 0
+  else:
+    result =
+      execShellCmd(&"sudo su -c \"echo \'{dev.deviceName}\' > {b}\"") == 0
+    if result:
+      result = lockVf(f, dev.base, uuid, state)
 
 proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
   ## getVfios - Gets the list of VFIOs that need to be passed to the VM.
@@ -98,11 +124,10 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
         let
           lockBase = "/tmp" / "locks" / i.baseDir
           lockPath = lockBase / "lock"
-          driverOR = j.base
 
         createDir(lockBase)
 
-        if lockVf(lockPath, driverOR, uuid, true):
+        if bindVf(lockPath, uuid, j, true):
           delete(vgpus, idx, idx)
           ret = some(j)
           break

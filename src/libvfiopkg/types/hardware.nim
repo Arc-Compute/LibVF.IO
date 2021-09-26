@@ -81,7 +81,7 @@ func getVfio*(k: int, l: seq[string], dir: string): Option[Vfio] =
         size = parseInt(split(split(l[5], ":")[1], " ")[0]) # Gets size of
                                                             #  GPU.
         nameList = split(l[2], ":") # Gets the Device Id.
-        name = join(nameList[2 .. 3], ":")
+        name = join(nameList[1 .. 3], ":")
 
       vfio = Vfio(kind: vtGPU)
       vfio.virtNum = parseInt(l[0][4 .. ^1])

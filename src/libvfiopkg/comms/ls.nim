@@ -19,7 +19,7 @@ type
 converter toOption(s: string): LsEnum = parseEnum[LsEnum](s, leAll)
 
 const patterns: array[3, string] = [    ## Array to contain patterns
-  "kernels/*.arc",                      ## kernels pattern
+  "kernel/*.arc",                       ## kernels pattern
   "states/*.?(arc|qcow2)",              ## states pattern
   "shells/*.yaml",                      ## apps pattern
 ]

@@ -31,7 +31,6 @@ type
     gpus: seq[Vfio]     ## GPU VFIOs
     nets: seq[Vfio]     ## NET VFIOs
     ports: seq[Port]    ## Port forwards
-    date: string        ## Lock creation date
     path: string        ## Lock path
 
 
@@ -57,7 +56,6 @@ func newData(wl: wLock): LockData =
   result.gpus = gpus
   result.nets = nets
   result.ports = wl.lock.config.connectivity.exposedPorts
-  result.date = fn[37 .. 55]
   result.path = wl.path
 
 func newTable(headers: seq[Cell]): TerminalTable =
@@ -103,7 +101,6 @@ func overviewPs(locks: seq[wLock]): string =
     result &= fmtPorts(d.ports)                         # 5: Ports
     result &= &"{$d.sockets}/{$d.cores}/{$d.threads}"   # 6: CPU
     result &= &"{d.ramAlloc} MiB"                       # 7: Memory allocation
-    result &= d.date                                    # 8: Creation date
 
   let
     headers = @[
@@ -115,7 +112,6 @@ func overviewPs(locks: seq[wLock]): string =
       newCell("Ports", pad=1),
       newCell("S/C/T", pad=1),
       newCell("RAM Alloc", pad=1),
-      newCell("Creation date", pad=1)
     ]
   
   var tt = newTable(headers)
@@ -228,7 +224,7 @@ proc detailedPs(d: LockData): string =
   result &= &"UUID: {d.uuid}\l"
   result &= &"PID: {d.pid}\l"
   result &= &"Kernel: {d.kernel}\l\l"
-  result &= "Sockets: {d.sockets} Cores: {d.cores} Threads: {d.threds}\l"
+  result &= &"Sockets: {d.sockets} Cores: {d.cores} Threads: {d.threads}\l"
   result &= &"Allocated RAM: {d.ramAlloc} MiB\l\l"
 
   if len(d.states) != 0:
