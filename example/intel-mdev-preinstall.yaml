@@ -1,9 +1,9 @@
 %YAML 1.2
 %TAG !n! tag:nimyaml.org,2016:
 --- !n!custom:Config 
-startintro: true
-nographics: true
-spice: true
+startintro: false
+nographics: false
+spice: false
 introspect: "looking-glass"
 shareddir: !!null ~
 connectivity: 
@@ -23,12 +23,12 @@ cpus:
   ramAlloc: 8192
 gpus: 
   - 
-    - 
+    -
       gpuType: "sysfsdev"
     - 
       parentPort: "0000:01:00.0"
     - 
-      mdevType: "nvidia-48"
+      mdevType: "i915-GVTg_V4_1"
     - 
       devId: hostdev0
 nics: []

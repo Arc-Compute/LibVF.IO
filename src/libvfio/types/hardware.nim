@@ -32,6 +32,10 @@ type
       vRam*: int             ## vRAM available to the GPU.
     else: nil
 
+  Mdev* = object
+    uuid*: string            ## UUID to access the mdev device
+    devId*: string           ## Device name
+
 const
   PassableVfios* = @[        ## List of PCI classes we can pass into the Arc
                              ##  containers.

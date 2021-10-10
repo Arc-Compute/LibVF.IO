@@ -1,0 +1,264 @@
+diff -ur ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c
+--- ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c	2021-06-28 11:17:00.000000000 -0400
++++ ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c	2021-10-07 15:10:03.070028263 -0400
+@@ -24,7 +24,6 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/err.h>
+-#include <linux/eventfd.h>
+ #include "nvstatus.h"
+ #include "nv-misc.h"
+ #include "nv-linux.h"
+@@ -2667,18 +2666,19 @@
+ 
+ static int vgpu_save_fd(vgpu_dev_t *vgpu_dev, int fd, NvU32 index)
+ {
+-    struct eventfd_ctx *evt;
++    struct fd irqfd;
+ 
+-    evt = eventfd_ctx_fdget(fd);
+-    if (IS_ERR(evt))
+-        return PTR_ERR(evt);
++    irqfd = fdget(fd);
++    if (!irqfd.file)
++        return -EBADF;
+ 
+     if (index == VFIO_PCI_INTX_IRQ_INDEX)
+-        vgpu_dev->intr_info.intx_evtfd = evt;
+-	else if (index == VFIO_PCI_MSI_IRQ_INDEX)
+-        vgpu_dev->intr_info.msi_evtfd = evt;
++        vgpu_dev->intr_info.intx_file = irqfd.file;
++    else if (index == VFIO_PCI_MSI_IRQ_INDEX)
++        vgpu_dev->intr_info.msi_file = irqfd.file;
+ 
+     vgpu_dev->intr_info.index = index;
++    fdput(irqfd);
+ 
+     return 0;
+ }
+@@ -2687,8 +2687,11 @@
+ static irqreturn_t vgpu_msix_handler(int irq, void *arg)
+ {
+     vgpu_dev_t *vgpu_dev = (vgpu_dev_t *)arg;
+-    struct eventfd_ctx *evt = NULL;
++    struct file *pfile = NULL;
++    mm_segment_t old_fs;
++    NvU64 val = 1;
+     int ret = 0;
++    loff_t offset = 0;
+     int i;
+     unsigned long eflags;
+ 
+@@ -2696,16 +2699,21 @@
+     {
+         if (vgpu_dev->intr_info.allocated_irq[i] == irq)
+         {
+-            evt = vgpu_dev->intr_info.msix_evtfd[i];
++            pfile = vgpu_dev->intr_info.msix_fd[i].file;
+             break;
+         }
+     }
+ 
+-    if (evt)
++    if (pfile && pfile->f_op && pfile->f_op->write)
+     {
++        old_fs = get_fs();
++        set_fs(KERNEL_DS);
++
+         NV_SAVE_FLAGS(eflags);
+-        ret = eventfd_signal(evt, 1);
++        ret = pfile->f_op->write(pfile, (char *)&val, sizeof(val), &offset);
+         NV_RESTORE_FLAGS(eflags);
++
++        set_fs(old_fs);
+     }
+ 
+     return IRQ_HANDLED;
+@@ -2716,24 +2724,23 @@
+ {
+     struct pci_dev *pdev;
+     int irq = INVALID_IRQ, ret;
+-    struct eventfd_ctx *evt;
++    struct fd irqfd;
+ 
+     pdev = to_pci_dev(NV_GET_MDEV_PARENT(vgpu_dev->mdev));
+ 
+-    if (vgpu_dev->intr_info.msix_evtfd[vector])
++    if (vgpu_dev->intr_info.msix_fd[vector].file)
+     {
+         free_irq(vgpu_dev->intr_info.allocated_irq[vector], vgpu_dev);
+-        eventfd_ctx_put(vgpu_dev->intr_info.msix_evtfd[vector]);
+-		vgpu_dev->intr_info.msix_evtfd[vector] = NULL;
++        vgpu_dev->intr_info.msix_fd[vector].file = NULL;
+         vgpu_dev->intr_info.allocated_irq[vector] = INVALID_IRQ;
+     }
+ 
+     if (fd < 0)
+         return 0;
+ 
+-    evt = eventfd_ctx_fdget(fd);
+-    if (IS_ERR(evt))
+-        return PTR_ERR(evt);
++    irqfd = fdget(fd);
++    if (!irqfd.file)
++        return -EBADF;
+ 
+     if (vector < 0 || vector >= vgpu_dev->intr_info.num_ctx)
+         return -EINVAL;
+@@ -2749,7 +2756,7 @@
+ 
+     vgpu_dev->intr_info.allocated_irq[vector] = irq;
+ 
+-    vgpu_dev->intr_info.msix_evtfd[vector]= evt;
++    vgpu_dev->intr_info.msix_fd[vector]= irqfd;
+ 
+     return 0;
+ }
+@@ -2766,12 +2773,7 @@
+             if (vgpu_dev->intr_info.allocated_irq[i] != INVALID_IRQ)
+             {
+                 free_irq(vgpu_dev->intr_info.allocated_irq[i], vgpu_dev);
+-
+-				if (vgpu_dev->intr_info.msix_evtfd[i]) {
+-					eventfd_ctx_put(vgpu_dev->intr_info.msix_evtfd[i]);
+-					vgpu_dev->intr_info.msix_evtfd[i] = NULL;
+-				}
+-
++                vgpu_dev->intr_info.msix_fd[i].file = NULL;
+                 vgpu_dev->intr_info.allocated_irq[i] = INVALID_IRQ;
+             }
+         }
+@@ -2860,10 +2862,7 @@
+                 {
+                     if (flags & VFIO_IRQ_SET_DATA_NONE)
+                     {
+-						if (vgpu_dev->intr_info.intx_evtfd) {
+-							eventfd_ctx_put(vgpu_dev->intr_info.intx_evtfd);
+-							vgpu_dev->intr_info.intx_evtfd = NULL;
+-						}
++                        vgpu_dev->intr_info.intx_file = NULL;
+                         break;
+                     }
+ 
+@@ -2888,10 +2887,7 @@
+                 {
+                     if (flags & VFIO_IRQ_SET_DATA_NONE)
+                     {
+-						if (vgpu_dev->intr_info.msi_evtfd) {
+-							eventfd_ctx_put(vgpu_dev->intr_info.msi_evtfd);
+-							vgpu_dev->intr_info.msi_evtfd = NULL;
+-						}
++                        vgpu_dev->intr_info.msi_file = NULL;
+                         vgpu_dev->intr_info.index = VFIO_PCI_INTX_IRQ_INDEX;
+                         break;
+                     }
+@@ -2899,9 +2895,10 @@
+                     if (flags & VFIO_IRQ_SET_DATA_EVENTFD)
+                     {
+                         int fd = *(int *)data;
+-                        if (fd > 0 && !vgpu_dev->intr_info.msi_evtfd)
++                        if (fd > 0)
+                         {
+-							ret = vgpu_save_fd(vgpu_dev, fd, index);
++                            if (vgpu_dev->intr_info.msi_file == NULL)
++                                ret = vgpu_save_fd(vgpu_dev, fd, index);
+                         }
+                     }
+                     break;
+@@ -2956,9 +2953,12 @@
+ 
+ NV_STATUS nv_vgpu_inject_interrupt(void *vgpuRef)
+ {
++    mm_segment_t old_fs;
++    NvU64 val = 1;
+     int ret = 0;
++    loff_t offset = 0;
+     NV_STATUS status = NV_OK;
+-    struct eventfd_ctx *evt = NULL;
++    struct file *pfile = NULL;
+     vgpu_dev_t *vgpu_dev = vgpuRef;
+     unsigned long eflags;
+ 
+@@ -2967,12 +2967,12 @@
+ 
+     NV_SPIN_LOCK_IRQSAVE(&vgpu_dev->intr_info_lock, eflags);
+ 
+-    if ((vgpu_dev->intr_info.index == VFIO_PCI_MSI_IRQ_INDEX) && (!vgpu_dev->intr_info.msi_evtfd))
++    if ((vgpu_dev->intr_info.index == VFIO_PCI_MSI_IRQ_INDEX) && (vgpu_dev->intr_info.msi_file == NULL))
+     {
+         NV_SPIN_UNLOCK_IRQRESTORE(&vgpu_dev->intr_info_lock, eflags);
+         return NV_ERR_INVALID_REQUEST;
+     }
+-    else if ((vgpu_dev->intr_info.index == VFIO_PCI_INTX_IRQ_INDEX) && (!vgpu_dev->intr_info.intx_evtfd))
++    else if ((vgpu_dev->intr_info.index == VFIO_PCI_INTX_IRQ_INDEX) && (vgpu_dev->intr_info.intx_file == NULL))
+     {
+         NV_SPIN_UNLOCK_IRQRESTORE(&vgpu_dev->intr_info_lock, eflags);
+         return NV_ERR_INVALID_REQUEST;
+@@ -2984,9 +2984,9 @@
+     }
+ 
+     if (vgpu_dev->intr_info.index == VFIO_PCI_MSI_IRQ_INDEX)
+-        evt = vgpu_dev->intr_info.msi_evtfd;
++        pfile = vgpu_dev->intr_info.msi_file;
+     else
+-        evt = vgpu_dev->intr_info.intx_evtfd;
++        pfile = vgpu_dev->intr_info.intx_file;
+ 
+     // QEMU has exited. So, safe to ignore interrupts.
+     if (vgpu_dev->intr_info.ignore_interrupts == NV_TRUE)
+@@ -2996,14 +2996,19 @@
+     }
+     NV_SPIN_UNLOCK_IRQRESTORE(&vgpu_dev->intr_info_lock, eflags);
+ 
+-	if (evt)
+-		ret = eventfd_signal(evt, 1);
+-	else
+-		status = NV_ERR_INVALID_REQUEST;
++    old_fs = get_fs();
++    set_fs(KERNEL_DS);
++
++    if (pfile->f_op && pfile->f_op->write)
++       ret = pfile->f_op->write(pfile, (char *)&val, sizeof(val), &offset);
++    else
++        status = NV_ERR_INVALID_REQUEST;
+ 
+     if (ret < 0)
+         status = NV_ERR_INVALID_STATE;
+ 
++    set_fs(old_fs);
++
+     return status;
+ }
+ 
+Only in ../nv-patch/kernel/nvidia-vgpu-vfio: nvidia-vgpu-vfio.c.orig
+diff -ur ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h
+--- ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h	2021-06-28 11:16:11.000000000 -0400
++++ ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h	2021-10-07 15:10:04.210028588 -0400
+@@ -37,7 +37,6 @@
+ #include <linux/list.h>
+ #include <linux/pci.h>
+ #include <linux/sched.h>
+-#include <linux/eventfd.h>
+ 
+ struct vgpu_dev_s;
+ struct mapping_node_s;
+@@ -294,15 +293,15 @@
+ 
+ typedef struct
+ {
+-    struct eventfd_ctx *intx_evtfd;
+-    struct eventfd_ctx *msi_evtfd;
++    struct file *intx_file;
++    struct file *msi_file;
+     int index;
+     NvBool ignore_interrupts;
+ 
+     NvU32 allocated_irq[MAX_NUM_VECTORS];
+     NvU32 num_ctx;
+ #if defined(NV_VGPU_KVM_BUILD)
+-    struct eventfd_ctx *msix_evtfd[MAX_NUM_VECTORS];
++    struct fd msix_fd[MAX_NUM_VECTORS];
+ #endif
+ 
+ } intr_info_t;
+Only in ../nv-patch/kernel/nvidia-vgpu-vfio: nvidia-vgpu-vfio.h.orig

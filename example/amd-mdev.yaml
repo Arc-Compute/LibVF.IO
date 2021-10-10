@@ -1,19 +1,18 @@
 %YAML 1.2
 %TAG !n! tag:nimyaml.org,2016:
 --- !n!custom:Config 
+startintro: true
+nographics: true
+spice: true
+introspect: "looking-glass"
+shareddir: !!null ~
 connectivity: 
   exposedPorts: 
     - 
       guest: 22
       host: 2222
-    - 
-      guest: 5901
-      host: 5900
-    - 
-      guest: 8080
-      host: 8000
 container: 
-  kernel: "ubuntu-20.04.arc"
+  kernel: windows.arc
   state: []
   initialSize: 20
   iso: !!null ~
@@ -24,9 +23,14 @@ cpus:
   ramAlloc: 8192
 gpus: 
   - 
-    acceptableTypes: [S7150]
-    maxVRam: 8000
-    minVRam: 0
+    -
+      gpuType: "sriovdev"
+    - 
+      acceptableTypes: [S7150]
+    - 
+      maxVRam: 8192
+    - 
+      minVRam: 0
 nics: []
 root: /opt/arc
 sudo: false

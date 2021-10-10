@@ -1,12 +1,10 @@
-# LibVFIO
+# LibVF.IO
 
-This is a project designed to serve as a replacement to
-libvirt, with a focus on GPU/Compute device multitenancy.
+LibVF.IO is a vendor neutral GPU multiplexing tool driven by YAML & VFIO.
 
 # Documentation
 
-Here are some key components to the documentation that we
-currently have:
+The following pages provide a basic introduction to LibVF.IO:
 
 1. [Deploy](docs/deployment.md)
 2. [Using](docs/using.md)
@@ -15,23 +13,25 @@ currently have:
 
 # Release Features
 
-1. AMDGPU mediated device support
-2. Nvidia mediated device support
-3. YAML Configuration files
-4. Create VM
-5. Start VM
-6. Stop VM
-7. List available kernels
-8. List available states
-9. List running kernels
-10. Deploy script
-11. Undeploy script
+1. Automated installation
+2. Intel mediated device support
+3. Nvidia mediated device support
+4. AMDGPU mediated device support
+5. YAML Configuration files
+6. Create VM
+7. Start VM
+8. Stop VM
+9. List available kernels
+10. List available states
+11. List running kernels
+12. Deploy script
+13. Undeploy script
 
 # Future Features
 
-1. Intel GVT-g support
-2. Snapshot features + Block diff copy
-3. Hotplugging functionality
+1. Wider OS support for automated installation
+2. Snapshot + Block diff copy
+3. Runtime hot-plugging/hot-unplugging
 
 # License
 

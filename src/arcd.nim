@@ -5,7 +5,7 @@
 import options
 import os
 
-import libvfiopkg/[control, logger, types, comms]
+import libvfio/[control, logger, types, comms]
 
 when isMainModule:
   let
@@ -26,6 +26,8 @@ when isMainModule:
     startVm(cfg, uid, false, cmd.nocopy, cmd.save)
   of ceStop:
     stopVm(cfg, cmd)
+  of ceIntrospect:
+    introspectVm(cfg, cmd.uuid)
   of ceLs:
     arcLs(cfg, cmd)
   of cePs:
@@ -33,10 +35,13 @@ when isMainModule:
   of ceDeploy:
     removeFile(homeConfigDir / "arc.yaml")
     writeConfigFile(homeConfigDir / "arc.yaml", cfg)
-    createDir(cfg.root)
+    createDir(cfg.root / "states")
+    copyFile(
+      homeConfigDir / "introspection-installations.rom",
+      cfg.root / "introspection-installations.rom"
+    )
   of ceUndeploy:
     removeFile(homeConfigDir / "arc.yaml")
-    removeDir(homeConfigDir)
     removeDir(cfg.root)
 
   if cmd.save and isSome(cmd.config):

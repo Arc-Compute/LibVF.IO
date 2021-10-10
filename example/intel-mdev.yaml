@@ -23,12 +23,12 @@ cpus:
   ramAlloc: 8192
 gpus: 
   - 
-    - 
+    -
       gpuType: "sysfsdev"
     - 
       parentPort: "0000:01:00.0"
     - 
-      mdevType: "nvidia-48"
+      mdevType: "i915-GVTg_V4_1"
     - 
       devId: hostdev0
 nics: []

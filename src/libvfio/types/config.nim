@@ -7,30 +7,52 @@ import options
 import os
 import streams
 import strutils
+import logging
 import yaml
 
 import connectivity, hardware, environment, process
 
 type
   CommandEnum* = enum                ## Different first layer commands.
-    ceCreate = "create",
-    ceStart = "start",
-    ceStop = "stop",
     ceLs = "ls",
+    ceStart = "start",
+    ceCreate = "create",
+    ceIntrospect = "introspect"
+    ceStop = "stop",
     cePs = "ps",
     ceDeploy = "deploy",
     ceUndeploy = "undeploy"
 
+  IntrospectEnum* = enum             ## Available introspection tools
+    isNone = "none",
+    isLookingGlass = "looking-glass"
+
+  RequestedGpuType* = enum           ## Types of GPUs we support.
+    rgSRIOVGpu = "sriovdev",
+    rgMdevGpu = "sysfsdev"
+
   RequestedGpu* = object             ## Object to request a GPU.
-    acceptableTypes*: seq[string]    ## Possible types of GPUs we accept
-    maxVRam*: int                    ## Maximum acceptable vRAM.
-    minVRam*: int                    ## Minimal acceptable vRAM.
+    case gpuType*: RequestedGpuType
+    of rgSRIOVGpu:
+      acceptableTypes*: seq[string]  ## Possible types of GPUs we accept
+      maxVRam*: int                  ## Maximum acceptable vRAM.
+      minVRam*: int                  ## Minimal acceptable vRAM.
+    of rgMdevGpu:
+      parentPort*: string            ## Requested parent port.
+      mdevType*: string              ## Type of mediated device.
+      devId*: string                 ## Name of the device for additional commands
+                                     ##  in the command argument.
 
   RequestedNet* = object             ## Object to request a network NIC.
     mac*: string                     ## MAC address for the requested NIC.
 
   Config* = object                   ## Configuration object for spawning a
                                      ##  VM.
+    startintro*: bool                ## If we start the introspection by default.
+    nographics*: bool                ## If we have the no graphics flag set.
+    spice*: bool                     ## If we want to use a spice server.
+    introspect*: IntrospectEnum      ## What type of introspection we use.
+    shareddir*: Option[string]       ## Shared directory between os and host.
     connectivity*: Connectivity      ## Code to connect to the machine.
     container*: ArcContainer         ## The specifics for how to spawn the
                                      ##  container.
@@ -49,6 +71,7 @@ type
                                      ##  every single time (useful for prototyping)
     noconfig*: bool                  ## No user config preload.
     kernel*: Option[string]          ## Kernel image to use.
+    shareddir*: Option[string]       ## Shared directory.
     case command*: CommandEnum       ## Different commands have different
                                      ##  variables, so we need to only allow
                                      ##  some variables to be used in the
@@ -58,7 +81,7 @@ type
       size*: Option[int]             ## Size of the initial kernel.
     of ceStart:
       additionalStates*: seq[string] ## Additional state variables to send in.
-    of ceStop:
+    of ceStop, ceIntrospect:
       uuid*: string                  ## UUID of the container we want to stop.
     of ceLs:
       option*: Option[string]        ## Option for ls [all, kernels, states, apps]
@@ -70,15 +93,18 @@ type
 const
   DefaultConfig = Config(            ## Default configuration value if nothing
                                      ##  is already found.
+    startintro: false,
+    nographics: false,
+    spice: false,
+    introspect: isLookingGlass,
+    shareddir: none(string),
     connectivity: Connectivity(
       exposedPorts: @[
         Port(guest: 22, host: 2222),
-        Port(guest: 5901, host: 5900),
-        Port(guest: 8080, host: 8000)
       ]
     ),
     container: ArcContainer(
-      kernel: "ubuntu-20.04.arc",
+      kernel: "windows.arc",
       state: @[],
       initialSize: 20,
       iso: none(string)
@@ -91,7 +117,7 @@ const
     ),
     gpus: @[],
     nics: @[],
-    root: "/opt/arc",
+    root: "/data/arc",
     sudo: false,
     commands: @[]
   )
@@ -106,6 +132,8 @@ proc getCommandLine*(): CommandLineArguments =
   ## Side effects - Reads the command line arguments.
   func getCommand(key: string): Option[CommandEnum] =
     case toLowerAscii(key)
+    of $ceIntrospect:
+      some(ceIntrospect)
     of $ceCreate:
       some(ceCreate)
     of $ceStart:
@@ -139,16 +167,24 @@ proc getCommandLine*(): CommandLineArguments =
       else:
         case result.command
         of ceCreate:
-          if i == 1:
-            result.iso = some(key)
-          elif i == 2:
-            result.size = some(parseInt(key))
-        of ceStart:
-          if i == 1:
-            result.kernel = some(key)
+          if ".yaml" in key:
+            result.config = some(key)
+            i -= 1
           else:
-            result.additionalStates &= key
-        of ceStop:
+            if i == 1:
+              result.iso = some(key)
+            elif i == 2:
+              result.size = some(parseInt(key))
+        of ceStart:
+          if ".yaml" in key:
+            result.config = some(key)
+            i -= 1
+          else:
+            if i == 1:
+              result.kernel = some(key)
+            else:
+              result.additionalStates &= key
+        of ceStop, ceIntrospect:
           if i == 1:
             result.uuid = key
         of ceLs:
@@ -174,8 +210,13 @@ proc getCommandLine*(): CommandLineArguments =
       of "kernel":
         if result.command == ceCreate:
           result.kernel = some(val)
+      of "shared":
+        result.shareddir = some(val)
       else: discard
     else: discard
+  if result.command in @[ceStart, ceCreate] and isNone(result.config):
+    echo("Config must be passed into arcd for these commands")
+    quit(1)
 
 proc getConfigFile*(args: CommandLineArguments): Config =
   ## getConfigFile - Loads a configuration file from disk into memory.
@@ -230,6 +271,9 @@ proc getConfigFile*(args: CommandLineArguments): Config =
   # Update the configs using the command line arguments.
   if isSome(args.kernel):
     result.container.kernel = get(args.kernel)
+
+  if isSome(args.shareddir):
+    result.shareddir = args.shareddir
 
   case args.command
   of ceCreate:

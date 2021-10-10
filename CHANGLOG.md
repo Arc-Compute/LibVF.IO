@@ -1,6 +1,14 @@
+# 1.0.2
+
+- Intel GVT-g support
+- Looking Glass support
+- Inter-VM Shared Memory (IVMSHMEM) resource management
+- Automated mediated device provisioning
+- Installer script (Supports Ubuntu 20.04)
+
 # 1.0.1
 
-- NVidia Support (nvidia-mdev only currently)
+- Nvidia Support (nvidia-mdev only currently)
 - Additional Documentations
 - Deployment script
 - Undeployment script

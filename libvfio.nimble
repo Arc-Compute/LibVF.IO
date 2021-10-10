@@ -1,6 +1,6 @@
 # Package
 
-version       = "1.0.1"
+version       = "1.0.2"
 author        = "2666680 Ontario Inc."
 description   = "Release 1"
 license       = "AGPL"

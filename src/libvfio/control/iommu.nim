@@ -12,6 +12,8 @@ import options
 import os
 import tables
 
+import arguments
+
 import ../types
 
 type
@@ -222,15 +224,56 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
 
   # How we select the correct GPUs.
   for i in requestedGpus:
-    for k, v in gpus:
-      var newSorted = v
+    case i.gpuType
+      of rgSRIOVGpu:
+        for k, v in gpus:
+          var newSorted = v
 
-      sort(newSorted, gpuSort)
+          sort(newSorted, gpuSort)
 
+          let
+            (selectedGpu, newV) = selectGpu(i, newSorted)
+
+          gpus[k] = newV
+          if isSome(selectedGpu):
+            result &= get(selectedGpu)
+            break
+      else: discard
+
+proc getMdevs*(cfg: Config): seq[Mdev] =
+  ## getMdevs - Gets the list of MDEVs that need to be passed to the VM.
+  ##
+  ## Inputs
+  ## @cfg - Configuration file to use.
+  ##
+  ## Returns
+  ## result - List of selected MDEVs for the device in question.
+  ##
+  ## Side effects - Generates MDevs.
+  for i in cfg.gpus:
+    case i.gpuType
+    of rgMdevGpu:
       let
-        (selectedGpu, newV) = selectGpu(i, newSorted)
+        gpuUUID = getUUID()
+        startArgs = startMdev(gpuUUID, i.parentPort, i.mdevType)
 
-      gpus[k] = newV
-      if isSome(selectedGpu):
-        result &= get(selectedGpu)
-        break
+      if runCommand(startArgs):
+        result &= Mdev(
+          uuid: gpuUUID,
+          devId: i.devId
+        )
+    else: discard
+
+proc getIommuGroups*(cfg: Config, uuid: string): (seq[Vfio], seq[Mdev]) =
+  ## getIommuGroups - Gets a list of vfios, and a seperate list of mdevs.
+  ##
+  ## Inputs
+  ## @cfg - Configuration file to use.
+  ## @uuid - Process's UUID.
+  ##
+  ## Returns
+  ## result - A list of vfios and a list of mdevs
+  let
+    vfios = getVfios(cfg, uuid)
+    mdevs = getMdevs(cfg)
+  result = (vfios, mdevs)

@@ -11,6 +11,7 @@ type
   Lock* = object      ## Lock object.
     config*: Config   ## Hardware configuration.
     vfios*: seq[Vfio] ## List of VFIOs.
+    mdevs*: seq[Mdev] ## List of MDEV devices
     pidNum*: int      ## PID number controlling the lock file.
 
 proc writeLockFile*(lockFile: string, lock: Lock) =
