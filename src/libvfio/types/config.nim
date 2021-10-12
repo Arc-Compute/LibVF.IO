@@ -280,14 +280,20 @@ proc getConfigFile*(args: CommandLineArguments): Config =
 
   case args.command
   of ceCreate:
+    result.startintro = false
+    result.nographics = false
+    result.spice = false
     if isSome(args.iso):
       result.container.iso = args.iso
     if isSome(args.size):
       result.container.initialSize = get(args.size)
   of ceStart:
-   if args.preinstall:
+    if args.preinstall:
+      result.startintro = false
+      result.nographics = false
+      result.spice = false
       result.container.iso = some(result.root / "introspection-installations.rom")
-   if len(args.additionalStates) != 0:
+    if len(args.additionalStates) != 0:
       result.container.state &= args.additionalStates
   else: discard
 
