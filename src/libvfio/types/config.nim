@@ -28,8 +28,8 @@ type
     isLookingGlass = "looking-glass"
 
   RequestedGpuType* = enum           ## Types of GPUs we support.
-    rgSRIOVGpu = "sriovdev",
-    rgMdevGpu = "sysfsdev"
+    rgSRIOVGpu = "sriov-gpu",
+    rgMdevGpu = "mdev-gpu"
 
   RequestedGpu* = object             ## Object to request a GPU.
     case gpuType*: RequestedGpuType
@@ -72,6 +72,7 @@ type
     noconfig*: bool                  ## No user config preload.
     kernel*: Option[string]          ## Kernel image to use.
     shareddir*: Option[string]       ## Shared directory.
+    preinstall*: bool                ## If the user is in a preinstall state.
     case command*: CommandEnum       ## Different commands have different
                                      ##  variables, so we need to only allow
                                      ##  some variables to be used in the
@@ -117,7 +118,7 @@ const
     ),
     gpus: @[],
     nics: @[],
-    root: "/data/arc",
+    root: "/opt/arc",
     sudo: false,
     commands: @[]
   )
@@ -212,6 +213,8 @@ proc getCommandLine*(): CommandLineArguments =
           result.kernel = some(val)
       of "shared":
         result.shareddir = some(val)
+      of "preinstall":
+        result.preinstall = true
       else: discard
     else: discard
   if result.command in @[ceStart, ceCreate] and isNone(result.config):
@@ -282,6 +285,8 @@ proc getConfigFile*(args: CommandLineArguments): Config =
     if isSome(args.size):
       result.container.initialSize = get(args.size)
   of ceStart:
+   if args.preinstall:
+      result.container.iso = some(result.root / "introspection-installations.rom")
    if len(args.additionalStates) != 0:
       result.container.state &= args.additionalStates
   else: discard
