@@ -28,8 +28,8 @@ type
     isLookingGlass = "looking-glass"
 
   RequestedGpuType* = enum           ## Types of GPUs we support.
-    rgSRIOVGpu = "sriov-gpu",
-    rgMdevGpu = "mdev-gpu"
+    rgSRIOVGpu = "sriovdev",
+    rgMdevGpu = "sysfsdev"
 
   RequestedGpu* = object             ## Object to request a GPU.
     case gpuType*: RequestedGpuType

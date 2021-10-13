@@ -34,4 +34,9 @@ gpus:
 nics: []
 root: /data/arc
 sudo: false
-commands: []
+commands: 
+    - 
+    arg: "-set"
+    values:
+      - "device.hostdev0.x-pci-device-id=6960"
+
