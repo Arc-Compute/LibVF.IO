@@ -6,6 +6,7 @@ import algorithm
 import math
 import sequtils
 import strutils
+import parseutils
 import strformat
 import sugar
 import options
@@ -58,7 +59,7 @@ proc lockVf(f: string, vfio: string, uuid: string, lock: bool = true): bool =
 
   if fileExists(f) and strip(readFile(f)) == uuid and
      strip(readFile(vfio)) == state:
-    result = execShellCmd(&"sudo su -c \"echo \'{newState}\' > {vfio}\"") == 0
+    result = runCommand(sudoWriteFile(newState, vfio))
 
   removeFile(f)
 
@@ -81,11 +82,9 @@ proc bindVf*(f: string, uuid: string, dev: Vfio, state: bool): bool =
   if state:
     result = lockVf(f, dev.base, uuid, state)
     if result:
-      result =
-        execShellCmd(&"sudo su -c \"echo \'{dev.deviceName}\' > {b}\"") == 0
+      result = runCommand(sudoWriteFile(dev.deviceName, b))
   else:
-    result =
-      execShellCmd(&"sudo su -c \"echo \'{dev.deviceName}\' > {b}\"") == 0
+    result = runCommand(sudoWriteFile(dev.deviceName, b))
     if result:
       result = lockVf(f, dev.base, uuid, state)
 
@@ -253,15 +252,45 @@ proc getMdevs*(cfg: Config): seq[Mdev] =
   for i in cfg.gpus:
     case i.gpuType
     of rgMdevGpu:
-      let
-        gpuUUID = getUUID()
-        startArgs = startMdev(gpuUUID, i.parentPort, i.mdevType)
+      let mdev = if isNone(i.parentPort):
+                   "/sys/class/mdev_bus/*/mdev_supported_types/*"
+                 else:
+                   &"/sys/class/mdev_bus/{get(i.parentPort)}/mdev_supported_types/*"
+      for dir in walkDirs(mdev):
+        let
+          createFile = dir / "create"
+          description = dir / "description"
+          desc = readFile(description)
+          isGVTg = "GVTg" in dir
+          framebufferStart = find(
+            desc,
+            if isGVTg: "high_gm_size"
+            else: "framebuffer"
+          )
+          framebufferStr = captureBetween(
+            desc,
+            if isGVTg: ' '
+            else: '=',
+            'M',
+            start=framebufferStart
+          )
+          framebuffer = parseInt(framebufferStr)
+          gpuUUID = getUUID()
+          startArgs = sudoWriteFile(gpuUUID, createFile)
 
-      if runCommand(startArgs):
-        result &= Mdev(
-          uuid: gpuUUID,
-          devId: i.devId
-        )
+        if not (i.mdevType in lastPathPart(dir)):
+          continue
+
+        if i.minVRam > framebuffer or i.maxVRam < framebuffer:
+          continue
+
+        if runCommand(startArgs):
+          result &= Mdev(
+            uuid: gpuUUID,
+            devId: i.devId,
+            stop: "/sys/bus/mdev/devices" / gpuUUID / "remove"
+          )
+        break
     else: discard
 
 proc getIommuGroups*(cfg: Config, uuid: string): (seq[Vfio], seq[Mdev]) =

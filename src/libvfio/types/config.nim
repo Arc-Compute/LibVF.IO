@@ -32,14 +32,14 @@ type
     rgMdevGpu = "sysfsdev"
 
   RequestedGpu* = object             ## Object to request a GPU.
+    maxVRam*: int                    ## Maximum acceptable vRAM.
+    minVRam*: int                    ## Minimal acceptable vRAM.
     case gpuType*: RequestedGpuType
     of rgSRIOVGpu:
       acceptableTypes*: seq[string]  ## Possible types of GPUs we accept
-      maxVRam*: int                  ## Maximum acceptable vRAM.
-      minVRam*: int                  ## Minimal acceptable vRAM.
     of rgMdevGpu:
-      parentPort*: string            ## Requested parent port.
-      mdevType*: string              ## Type of mediated device.
+      mdevType*: string              ## Wildcard that needs to appear in the type.
+      parentPort*: Option[string]    ## Optional parent port override.
       devId*: string                 ## Name of the device for additional commands
                                      ##  in the command argument.
 

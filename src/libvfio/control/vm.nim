@@ -54,7 +54,7 @@ proc realCleanup(lockFile: string, uuid: string, socketDir: string,
 
   # Unlock all locked MDevs
   for mdev in mdevs:
-    discard runCommand(stopMdev(mdev.uuid))
+    discard runCommand(sudoWriteFile("1", mdev.stop))
     info(&"Deleted MDEV: {mdev.devId}")
 
   if sudo:

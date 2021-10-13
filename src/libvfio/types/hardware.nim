@@ -35,6 +35,8 @@ type
   Mdev* = object
     uuid*: string            ## UUID to access the mdev device
     devId*: string           ## Device name
+    ram*: int                ## RAM for the MDev device
+    stop*: string            ## Path for removal.
 
 const
   PassableVfios* = @[        ## List of PCI classes we can pass into the Arc

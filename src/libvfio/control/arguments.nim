@@ -76,47 +76,21 @@ func removeFiles*(files: seq[string]): Args =
   result.args &= "-rf"
   result.args &= files
 
-func startMdev*(uuid: string, parent: string, mdevType: string): Args =
+func sudoWriteFile*(data: string, path: string): Args =
   ## startMdev - Starts an mdevctl device.
   ##
   ## Inputs
-  ## @uuid - The UUID of the device.
-  ## @parent - The parent of the device.
-  ## @mdevType - Type of mediated device to make.
+  ## @data - Message data for file.
+  ## @path - File to send message into.
   ##
   ## Returns
-  ## result - Argument to run to start a mediated device.
+  ## result - Writes a file using sudo (super user)
   ##
   ## NOTE: Can only be run as sudo.
-  ##
-  ## TODO: Replace with our own system.
   result.exec = "/usr/bin/sudo"
-  result.args &= "/usr/sbin/mdevctl"
-  result.args &= "start"
-  result.args &= "-u"
-  result.args &= uuid
-  result.args &= "-p"
-  result.args &= parent
-  result.args &= "-t"
-  result.args &= mdevType
-
-func stopMdev*(uuid: string): Args =
-  ## stopMdev - Stops an mdevctl device.
-  ##
-  ## Inputs
-  ## @uuid - The UUID of the device.
-  ##
-  ## Returns
-  ## result - Argument to run to stop a mediated device.
-  ##
-  ## NOTE: Can only be run as sudo.
-  ##
-  ## TODO: Replace with our own system.
-  result.exec = "/usr/bin/sudo"
-  result.args &= "/usr/sbin/mdevctl"
-  result.args &= "stop"
-  result.args &= "-u"
-  result.args &= uuid
+  result.args &= "/usr/bin/su"
+  result.args &= "-c"
+  result.args &= &"\"echo '{data}' > {path}\""
 
 func createKernel*(name: string, size: int): Args =
   ## createKernel - Creates a kernel image for the Arc Container.
