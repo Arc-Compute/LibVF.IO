@@ -51,6 +51,10 @@ cd $currentPath
 nimble install -y
 rm ./arcd
 
+# Deploying arcd
+mkdir -p ~/.local/libvf.io/
+arcd deploy --root=$HOME/.local/libvf.io/
+
 # Download Looking Glass beta 4 sources
 mkdir -p $compileSandbox
 cd $compileSandbox

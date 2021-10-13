@@ -26,7 +26,7 @@ gpus:
     -
       gpuType: "sysfsdev"
     - 
-      parentPort: "0000:01:00.0"
+      parentPort: "0000:00:00.0"
     - 
       mdevType: "i915-GVTg_V4_1"
     - 
