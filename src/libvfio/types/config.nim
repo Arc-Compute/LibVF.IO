@@ -118,7 +118,7 @@ const
     ),
     gpus: @[],
     nics: @[],
-    root: "/opt/arc",
+    root: getHomeDir() / ".local" / "libvf.io",
     sudo: false,
     commands: @[]
   )
@@ -256,11 +256,11 @@ proc getConfigFile*(args: CommandLineArguments): Config =
 
   # If a user defined initial configuration is built.
   if fileExists("/etc/arc.yaml") and not args.noconfig:
-    result = readConfig("/etc/arc.yaml", "/opt/arc")
+    result = readConfig("/etc/arc.yaml", getHomeDir() / ".local" / "libvf.io")
 
   let userConfig = getHomeDir() / ".config" / "arc" / "arc.yaml"
   if fileExists(userConfig) and not args.noconfig:
-    result = readConfig(userConfig, "/opt/arc")
+    result = readConfig(userConfig, getHomeDir() / ".local" / "libvf.io")
 
   # If no file was passed in.
   if isSome(args.config):
