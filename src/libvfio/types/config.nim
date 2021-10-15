@@ -300,6 +300,8 @@ proc getConfigFile*(args: CommandLineArguments): Config =
   else: discard
 
   result.root = expandTilde(result.root)
+  if isSome(result.container.iso):
+    result.container.iso = some(expandTilde(get(result.container.iso)))
 
 proc writeConfigFile*(s: string, cfg: Config) =
   ## writeConfigFile - Saves the configuration file.
