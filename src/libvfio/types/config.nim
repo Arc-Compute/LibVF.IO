@@ -299,6 +299,8 @@ proc getConfigFile*(args: CommandLineArguments): Config =
       result.container.state &= args.additionalStates
   else: discard
 
+  result.root = expandTilde(result.root)
+
 proc writeConfigFile*(s: string, cfg: Config) =
   ## writeConfigFile - Saves the configuration file.
   ##
