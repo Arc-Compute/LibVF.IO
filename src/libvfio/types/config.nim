@@ -42,6 +42,7 @@ type
       parentPort*: Option[string]    ## Optional parent port override.
       devId*: string                 ## Name of the device for additional commands
                                      ##  in the command argument.
+      suffix*: string                ## Suffix for end of the name.
 
   RequestedNet* = object             ## Object to request a network NIC.
     mac*: string                     ## MAC address for the requested NIC.
@@ -233,7 +234,7 @@ proc getConfigFile*(args: CommandLineArguments): Config =
   ##          Container.
   ##
   ## Side effects - Reads a configuration file from diskspace.
-  proc readConfig(s: string, prevRoot: string): Config =
+  proc readConfig(s: string, prevRoot: string, prev: Config): Config =
     try:
       let
         root = if isSome(args.root): get(args.root)
@@ -243,12 +244,13 @@ proc getConfigFile*(args: CommandLineArguments): Config =
       load(fs, result)
       close(fs)
     except:
-      result = DefaultConfig
+      echo("Error reading config ", s, " or ", prevRoot, ": ", getCurrentExceptionMsg())
+      result = prev
 
   proc replaceConfig(d: Config, config: Option[string]): Config =
     # TODO: Add ability to only pass in from shells in the root.
     if isSome(config):
-      result = readConfig(get(config), d.root)
+      result = readConfig(get(config), d.root, d)
     else:
       result = d
 
@@ -256,11 +258,11 @@ proc getConfigFile*(args: CommandLineArguments): Config =
 
   # If a user defined initial configuration is built.
   if fileExists("/etc/arc.yaml") and not args.noconfig:
-    result = readConfig("/etc/arc.yaml", getHomeDir() / ".local" / "libvf.io")
+    result = readConfig("/etc/arc.yaml", getHomeDir() / ".local" / "libvf.io", result)
 
   let userConfig = getHomeDir() / ".config" / "arc" / "arc.yaml"
   if fileExists(userConfig) and not args.noconfig:
-    result = readConfig(userConfig, getHomeDir() / ".local" / "libvf.io")
+    result = readConfig(userConfig, getHomeDir() / ".local" / "libvf.io", result)
 
   # If no file was passed in.
   if isSome(args.config):
