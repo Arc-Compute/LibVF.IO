@@ -32,6 +32,6 @@ gpus:
     - 
       minVRam: 0
 nics: []
-root: /opt/arc
+root: ~/.local/libvf.io
 sudo: false
 commands: []

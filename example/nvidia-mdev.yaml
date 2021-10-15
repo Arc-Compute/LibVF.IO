@@ -38,7 +38,7 @@ gpus:
     -
       suffix: "Q"
 nics: []
-root: /home/arc/.local/libvf.io
+root: ~/.local/libvf.io
 sudo: false
 commands: 
     -
