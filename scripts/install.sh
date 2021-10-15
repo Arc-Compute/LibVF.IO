@@ -94,6 +94,8 @@ fi
 
 cd $currentPath/optional
 
+chmod 755 *.run
+
 kernel_release=$(uname -r)
 major=`awk '{split($0, a, "."); print a[1]}' <<< $kernel_release`
 minor=`awk '{split($0, a, "."); print a[2]}' <<< $kernel_release`
