@@ -12,6 +12,7 @@ import sugar
 import options
 import os
 import tables
+import logging
 
 import arguments
 
@@ -260,6 +261,7 @@ proc getMdevs*(cfg: Config): seq[Mdev] =
         let
           createFile = dir / "create"
           description = dir / "description"
+          name = dir / "name"
           desc = readFile(description)
           isGVTg = "GVTg" in dir
           framebufferStart = find(
@@ -282,6 +284,9 @@ proc getMdevs*(cfg: Config): seq[Mdev] =
           continue
 
         if i.minVRam > framebuffer or i.maxVRam < framebuffer:
+          continue
+
+        if fileExists(name) and not endsWith(strip(readFile(name)), i.suffix):
           continue
 
         if runCommand(startArgs):

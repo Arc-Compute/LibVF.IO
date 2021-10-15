@@ -24,13 +24,19 @@ cpus:
 gpus: 
   - 
     -
+      maxVRam: 9000
+    -
+      minVRam: 8000
+    -
       gpuType: "sysfsdev"
     - 
-      parentPort: "0000:00:00.0"
+      parentPort: !!null ~
     - 
       mdevType: "i915-GVTg_V4_1"
     - 
-      devId: hostdev0
+      devId: "hostdev0"
+    -
+      suffix: "Q"
 nics: []
 root: /data/arc
 sudo: false

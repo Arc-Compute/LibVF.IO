@@ -17,26 +17,31 @@ container:
   initialSize: 20
   iso: !!null ~
 cpus: 
-  cores: 8
+  cores: 4
   sockets: 1
-  threads: 2
+  threads: 1
   ramAlloc: 8192
-gpus: 
+gpus:
   - 
-    - 
+    -
+      maxVRam: 9000
+    -
+      minVRam: 8000
+    -
       gpuType: "sysfsdev"
     - 
-      parentPort: "0000:00:00.0"
+      parentPort: !!null ~
     - 
-      mdevType: "nvidia-48"
+      mdevType: ""
     - 
-      devId: hostdev0
+      devId: "hostdev0"
+    -
+      suffix: "Q"
 nics: []
-root: /data/arc
+root: /home/arc/.local/libvf.io
 sudo: false
 commands: 
-    - 
-    arg: "-set"
-    values:
-      - "device.hostdev0.x-pci-device-id=6960"
-
+    -
+      arg: "-set"
+      values:
+        - "device.hostdev0.x-pci-device-id=6960"
