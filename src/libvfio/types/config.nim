@@ -239,7 +239,7 @@ proc getConfigFile*(args: CommandLineArguments): Config =
       let
         root = if isSome(args.root): get(args.root)
                else: prevRoot
-        fs = if fileExists(s): newFileStream(s)
+        fs = if fileExists(expandTilde(s)): newFileStream(s)
              else: newFileStream(root / "shells" / s)
       load(fs, result)
       close(fs)
