@@ -78,12 +78,13 @@ make
 cd platform/Windows
 makensis installer.nsi
 
-rm -rf $HOME/.config/arc/introspection-installations
-mkdir -p $HOME/.config/arc/introspection-installations
+rm -rf $HOME/.local/libvf.io/introspection-installations
+mkdir -p $HOME/.local/libvf.io/introspection-installations
 wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
-cp -r * $HOME/.config/arc/introspection-installations
-cd $HOME/.config/arc/
+cp -r * $HOME/.local/libvf.io/introspection-installations
+cd $HOME/.local/libvf.io/
 mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-limited-size -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
+cp introspection-installations.rom ~/.config/arc/
 
 fi
 
