@@ -2,7 +2,15 @@
 
 LibVF.IO is a vendor neutral GPU multiplexing tool driven by YAML & VFIO.
 
+# Community
+
+Join the LibVF.IO community here, we'd love to hear your suggestions or help you troubleshoot if you need help!
+https://discord.gg/gWAD8j4u
+
 # Documentation
+
+Read the setup guide here:
+https://arccompute.com/blog/libvfio-commodity-gpu-multiplexing/
 
 The following pages provide a basic introduction to LibVF.IO:
 
