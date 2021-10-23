@@ -6,6 +6,10 @@
 
 # Place optional driver packages in the optional directory before running this installation script
 
+# CPU Model
+cpuModel=$(cat /proc/cpuinfo | grep vendor | uniq)
+# OS
+osName=$(cat /etc/os-release | grep NAME=)
 currentPath=$(pwd)
 # Compile sandbox path
 compileSandbox=$(echo ~)"/.cache/libvf.io/compile/"
@@ -17,7 +21,13 @@ sudo usermod -a -G kvm $USER
 # Configure kernel boot parameters
 echo "Updating kernel boot parameters."
 # Intel users
+if [[ $cpuModel == *"GenuineIntel"* ]]; then
 sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"/GRUB_CMDLINE_LINUX_DEFAULT=\"intel_iommu=on iommu=pt vfio_pci\"/g' /etc/default/grub
+fi
+# AMD users
+if [[ $cpuModel == *"AuthenticAMD"* ]]; then
+sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"/GRUB_CMDLINE_LINUX_DEFAULT=\"amd_iommu=on iommu=pt vfio_pci\"/g' /etc/default/grub
+fi
 sudo update-grub
 
 
