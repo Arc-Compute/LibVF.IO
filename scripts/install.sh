@@ -7,9 +7,9 @@
 # Place optional driver packages in the optional directory before running this installation script
 
 # CPU Model
-cpuModel=$(cat /proc/cpuinfo | grep vendor | uniq)
+cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
 # OS
-osName=$(cat /etc/os-release | grep NAME=)
+osName=$(cat /etc/os-release | grep NAME= | head -n1)
 currentPath=$(pwd)
 # Compile sandbox path
 compileSandbox=$(echo ~)"/.cache/libvf.io/compile/"
@@ -124,14 +124,18 @@ fi
 lsmod | grep "nouveau"
 
 if [ $? -ne 0 ]; then
-	openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
-	echo "The following password will need to be used in enroll MOK on your next startup."
-	sudo mokutil --import ~/.ssh/module-public.key
-	sudo ./*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q
-	rm $HOME/preinstall
+  # Disabling Ubuntu error reporting (this spams the user in the presence of some mdev drivers)
+  sudo systemctl mask apport.service
+  sudo apt remove -y apport apport-symptoms
+  # Generate a driver signing key
+  openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
+  echo "The following password will need to be used in enroll MOK on your next startup."
+  sudo mokutil --import ~/.ssh/module-public.key
+  sudo ./*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q
+  rm $HOME/preinstall
 else
-	touch $HOME/preinstall
-	echo "Nouveau was found, please reboot and run ./install.sh again, it will start from this point."
+  touch $HOME/preinstall
+  echo "Nouveau was found, please reboot and run ./install.sh again, it will start from this point."
 fi
 
 sudo systemctl daemon-reload
