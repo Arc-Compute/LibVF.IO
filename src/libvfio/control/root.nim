@@ -44,7 +44,7 @@ proc sendCommand*(monad: CommandMonad, cmd: Args, log: bool = false) =
   ## Side Effects - Sends arbitrary command to the command monad.
   let
     realCommand = join(cmd.exec & cmd.args, " ")
-  if log: info("Executing: ", realCommand)
+  if log: echo("Executing: ", realCommand)
   write(monad.inputStream, realCommand & "\n")
   flush(monad.inputStream)
 
@@ -59,9 +59,14 @@ proc createCommandMonad*(super: bool): CommandMonad =
   ##          shell.
   ##
   ## Side Effects - VERY DANGEROUS minimize how often you use this.
-  let command = if super: "/usr/bin/su"
+  let command = if super: "/usr/bin/sudo"
                 else: "/usr/bin/sh"
-  result.commandPipe = startProcess(command, args=["-"], options={})
+  result.commandPipe = startProcess(
+    command,
+    args=if super: @["-i"]
+         else: @[],
+    options={}
+  )
   result.pid = processId(result.commandPipe)
   result.outputStream = peekableOutputStream(result.commandPipe)
   result.errorStream = peekableErrorStream(result.commandPipe)
@@ -69,8 +74,10 @@ proc createCommandMonad*(super: bool): CommandMonad =
 
   # If we need a superuser monad.
   if super:
-    let pass = Args(exec: readPasswordFromStdin("Super user's password: "))
+    let pass = Args(exec: readPasswordFromStdin("Sudo password: "))
+    let cd = Args(exec: "cd", args: @[getCurrentDir()])
     sendCommand(result, pass)
+    sendCommand(result, cd, true)
 
 proc commandMonadOpen*(monad: CommandMonad): bool =
   ## commandMonadOpen - Is the command monad currently open?
