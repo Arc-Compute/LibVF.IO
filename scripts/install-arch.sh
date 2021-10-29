@@ -6,6 +6,8 @@
 
 # Place optional driver packages in the optional directory before running this installation script
 
+# CurrentUser
+currentUser=$USER
 # CPU Model
 cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
 # OS
@@ -39,7 +41,7 @@ if [ ! -f "$HOME/preinstall" ]; then
   echo "Updating AppArmor policies."
   sudo su root -c "mkdir -p /etc/apparmor.d/local/abstractions/ && echo '/dev/shm/kvmfr-* rw,' >> /etc/apparmor.d/local/abstractions/libvirt-qemu"
   echo "Configuring shared memory device file permissions."
-  sudo su root -c "echo 'f /dev/shm/kvmfr-* 0660 user kvm -' >> /etc/tmpfiles.d/10-looking-glass.conf"
+  sudo su root -c "echo \"f /dev/shm/kvmfr-* 0660 $currentUser kvm -\" >> /etc/tmpfiles.d/10-looking-glass.conf"
   echo "Blacklisting non-mediated device drivers."
   sudo su root -c "echo '# Libvf.io GPU driver blacklist' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist nouveau' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist amdgpu' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist amdkfd' >> /etc/modprobe.d/blacklist.conf"
   # Restarting apparmor service
