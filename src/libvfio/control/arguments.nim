@@ -23,7 +23,7 @@ const
     ","
   )
   CpuConfig = join(
-    @["IvyBridge-IBRS",
+    @["host",
       "ss=on",
       "vmx=on",
       "pcid=on",
@@ -46,37 +46,25 @@ const
       "hv-vapic",
       "hv-spinlocks=0x1fff",
       "hv-vendor-id=1234567890ab",
-      "kvm=off"
+      "kvm=off",
+      "topoext=on"
     ],
     ","
   )
 
-proc runCommand*(command: Args): bool =
-  ## runCommand - Helper to run a command.
-  ##
-  ## Inputs
-  ## @command - Command to run.
-  ##
-  ## Returns
-  ## result - If the command was successful or not.
-  ##
-  ## Side Effects - Arbitrarily executes the command and checks return status.
-  execShellCmd(join(@[command.exec] & command.args, " ")) == 0
-
 func removeFiles*(files: seq[string]): Args =
-  ## removeFiles - Mass removes a set of files using sudo.
+  ## removeFiles - Mass removes a set of files.
   ##
   ## Inputs
   ## @files - List of files to remove
   ##
   ## Returns
-  ## result - Argument to run to remove a set of files using sudo.
-  result.exec = "/usr/bin/sudo"
-  result.args &= "/bin/rm"
+  ## result - Argument to run to remove a set of files.
+  result.exec = "/bin/rm"
   result.args &= "-rf"
   result.args &= files
 
-func sudoWriteFile*(data: string, path: string): Args =
+func commandWriteFile*(data: string, path: string): Args =
   ## startMdev - Starts an mdevctl device.
   ##
   ## Inputs
@@ -87,10 +75,10 @@ func sudoWriteFile*(data: string, path: string): Args =
   ## result - Writes a file using sudo (super user)
   ##
   ## NOTE: Can only be run as sudo.
-  result.exec = "/usr/bin/sudo"
-  result.args &= "/usr/bin/su"
-  result.args &= "-c"
-  result.args &= &"\"echo '{data}' > {path}\""
+  result.exec &= "echo"
+  result.args &= &"'{data}'"
+  result.args &= ">"
+  result.args &= path
 
 func createKernel*(name: string, size: int): Args =
   ## createKernel - Creates a kernel image for the Arc Container.
@@ -108,7 +96,7 @@ func createKernel*(name: string, size: int): Args =
   result.args &= name
   result.args &= &"{size}G"
 
-func changeGroup*(sudo: bool, files: seq[string]): Args =
+func changeGroup*(files: seq[string]): Args =
   ## changeGroup - Changes the files group to allow not to use sudo.
   ##
   ## Inputs
@@ -119,32 +107,21 @@ func changeGroup*(sudo: bool, files: seq[string]): Args =
   ## result - Arguments to change the file group.
   result.exec = "/usr/bin/chgrp"
 
-  # If we need sudo
-  if sudo:
-    result.args &= result.exec
-    result.exec = "/bin/sudo"
-
   # Set the group to KVM
   result.args &= "kvm"
 
   # Add all files
   result.args &= files
 
-func changePermissions*(sudo: bool, files: seq[string]): Args =
+func changePermissions*(files: seq[string]): Args =
   ## changePermissions - Changes the permission on the file.
   ##
   ## Inputs
-  ## @sudo - Do we use sudo?
   ## @files - Files to change.
   ##
   ## Returns
   ## result - Arguments to change the permissions for the files.
   result.exec = "/usr/bin/chmod"
-
-  # If we need sudo
-  if sudo:
-    result.args &= result.exec
-    result.exec = "/bin/sudo"
 
   # Set the group to KVM
   result.args &= "g+rwx"
@@ -188,11 +165,6 @@ func qemuLaunch*(cfg: Config, uuid: string,
 
   # executing target
   result.exec = "/bin/qemu-system-x86_64"
-
-  # If we need sudo
-  if cfg.sudo:
-    result.args &= result.exec
-    result.exec = "/bin/sudo"
 
   # Log file
   result.args &= "-D"
@@ -299,8 +271,12 @@ func qemuLaunch*(cfg: Config, uuid: string,
   result.args &= $cfg.cpus
 
   # Kernel path
-  result.args &= "-hda"
-  result.args &= kernel
+  if not cfg.sudo:
+    result.args &= "-drive"
+    result.args &= &"file={kernel}"
+  else:
+    result.args &= "-hda"
+    result.args &= kernel
 
   # Enable KVM
   result.args &= "--enable-kvm"
@@ -313,9 +289,11 @@ func qemuLaunch*(cfg: Config, uuid: string,
   for mdev in mdevs:
     result.args &= mdevArgs(mdev)
 
+  # BUG: Fix sound for sudo.
   # Enable sound
-  result.args &= "--soundhw"
-  result.args &= "all"
+  if not cfg.sudo:
+    result.args &= "--soundhw"
+    result.args &= "all"
 
   # Port forward for all exposed ports
   if len(cfg.connectivity.exposedPorts) > 0:
@@ -326,9 +304,10 @@ func qemuLaunch*(cfg: Config, uuid: string,
     result.args &= "-netdev"
     result.args &= join(@["user", "id=net0"] & hostfwds, ",")
 
-  if isSome(cfg.shareddir) and not install:
-    result.args &= "-hdb"
-    result.args &= &"fat:rw:{get(cfg.shareddir)}"
+  # Removing for now until we make this better.
+  # if isSome(cfg.shareddir) and not install:
+  #   result.args &= "-hdb"
+  #   result.args &= &"fat:rw:{get(cfg.shareddir)}"
 
   # Enable QMP socket for all sockets.
   for socket in sockets:
@@ -338,8 +317,8 @@ func qemuLaunch*(cfg: Config, uuid: string,
   # States
   for i, state in cfg.container.state:
     let s = cfg.root / "states" / state
-    result.args &= "-hdd"
-    result.args &= s
+    result.args &= "-drive"
+    result.args &= &"file={s}"
 
   # If it is being installed
   if isSome(cfg.container.iso):
@@ -347,9 +326,11 @@ func qemuLaunch*(cfg: Config, uuid: string,
     result.args &= get(cfg.container.iso)
 
   # Additional commands sent into the qemu command
-  # NOTE: Start Process quotes these commands.
   for command in cfg.commands:
     let values = join(command.values, ",")
-    result.args &= command.arg
+    result.args &= &"'{command.arg}'"
     if values != "":
       result.args &= values
+
+  # Allows for additional commands to be run
+  result.args &= "&"
