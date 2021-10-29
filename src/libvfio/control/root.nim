@@ -44,7 +44,7 @@ proc sendCommand*(monad: CommandMonad, cmd: Args, log: bool = false) =
   ## Side Effects - Sends arbitrary command to the command monad.
   let
     realCommand = join(cmd.exec & cmd.args, " ")
-  if log: echo("Executing: ", realCommand)
+  if log: info("Executing: ", realCommand)
   write(monad.inputStream, realCommand & "\n")
   flush(monad.inputStream)
 
