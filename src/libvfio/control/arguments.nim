@@ -23,7 +23,7 @@ const
     ","
   )
   CpuConfig = join(
-    @["IvyBridge-IBRS",
+    @["host",
       "ss=on",
       "vmx=on",
       "pcid=on",
@@ -46,7 +46,8 @@ const
       "hv-vapic",
       "hv-spinlocks=0x1fff",
       "hv-vendor-id=1234567890ab",
-      "kvm=off"
+      "kvm=off",
+      "topoext=on"
     ],
     ","
   )
