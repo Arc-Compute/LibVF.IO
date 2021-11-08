@@ -1,9 +1,3 @@
-# 1.0.4
-
-- Sudo daemon to fix sudo bug issues.
-- Limited disk attachments.
-- AMD CPU support.
-
 # 1.0.2
 
 - Intel GVT-g support

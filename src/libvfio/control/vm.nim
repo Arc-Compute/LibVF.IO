@@ -16,14 +16,13 @@ import logging
 import arguments
 import introspection
 import iommu
-import root
 
 import ../comms/qmp
 import ../types
 
 proc realCleanup(lockFile: string, uuid: string, socketDir: string,
                  vfios: seq[Vfio], mdevs: seq[Mdev],
-                 introspections: seq[string], monad: CommandMonad) =
+                 introspections: seq[string], sudo: bool) =
   ## realCleanup - Real cleanup function.
   ##
   ## Inputs
@@ -33,7 +32,7 @@ proc realCleanup(lockFile: string, uuid: string, socketDir: string,
   ## @vfios - List of connected VFIOs.
   ## @mdevs - List of connected MDevs.
   ## @introspections - Introspected devices.
-  ## @monad - Monad to run extra commands on.
+  ## @sudo - Sudo status required or not.
   ##
   ## Side effects - Cleans up the VM.
   info("Cleaning up VM")
@@ -48,36 +47,41 @@ proc realCleanup(lockFile: string, uuid: string, socketDir: string,
 
     createDir(lockBase)
 
-    while not bindVf(lockPath, uuid, vfio, false, monad):
+    while not bindVf(lockPath, uuid, vfio, false):
       discard
 
     info(&"Unlocked: {vfio.deviceName}")
 
   # Unlock all locked MDevs
   for mdev in mdevs:
-    sendCommand(monad, commandWriteFile("1", mdev.stop))
+    discard runCommand(sudoWriteFile("1", mdev.stop))
     info(&"Deleted MDEV: {mdev.devId}")
 
-  sendCommand(monad, removeFiles(introspections))
+  if sudo:
+    discard runCommand(removeFiles(introspections))
+  else:
+    for i in introspections:
+      removeFile(i)
 
   info("Cleaned up VM")
 
-proc cleanupVm*(socket: AsyncSocket,
+proc cleanupVm*(socket: AsyncSocket, pid: Process,
                 lockFile: string, socketDir: string,
                 uuid: string, vfios: seq[Vfio], mdevs: seq[Mdev],
-                introspections: seq[string], monad: CommandMonad) =
+                introspections: seq[string], sudo: bool) =
   ## cleanupVm - Cleans up the entire VM active stack once it is finished
   ##              executing.
   ##
   ## Inputs
   ## @socket - Socket for internal communications.
+  ## @pid - Owned process.
   ## @lockFile - Location of where the lock file is stored.
   ## @socketDir - Directory for where the sockets are stored.
   ## @uuid - UUID for the program.
   ## @vfios - List of locked VFIOs.
   ## @mdevs - List of connected MDevs.
   ## @introspections - Introspected devices.
-  ## @monad - Monad to run extra commands on.
+  ## @sudo - Sudo status required or not.
   ##
   ## Side effects - Deletes files, and sockets, also will kill the VM if
   ##                 necessary.
@@ -86,18 +90,13 @@ proc cleanupVm*(socket: AsyncSocket,
     poweringDown = false
     res = getResponse(socket)
 
-  while commandMonadOpen(monad):
-    let line = readCommand(monad)
-    if line != "":
-      warn(line)
+  while running(pid):
     if not(finished(res)):
       if timeouts < 1000 and poweringDown: # Keeps going for up to 30 seconds
                                            #  before killing the process.
         timeouts += 1
       elif poweringDown:                   # KILL THE PROCESS
-        killCommandMonad(monad)            # Prevents self garbage collection
-                                           # need garbage collection daemon
-                                           # to run after this.
+        terminate(pid)                     # TODO: Test with sudo
       waitFor(sleepAsync(300))
       continue
 
@@ -120,7 +119,7 @@ proc cleanupVm*(socket: AsyncSocket,
         )
     else: discard
 
-  realCleanup(lockFile, uuid, socketDir, vfios, mdevs, introspections, monad)
+  realCleanup(lockFile, uuid, socketDir, vfios, mdevs, introspections, sudo)
 
 proc startVm*(c: Config, uuid: string, newInstall: bool,
               noCopy: bool, save: bool) =
@@ -154,19 +153,10 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     )
     introspections = getIntrospections(cfg, uuid, newInstall)
 
-  if len(cfg.gpus) > 0 or len(cfg.nics) > 0:
-    cfg.sudo = true
-
-  # Command monad
-  info("NOTE: If we ask for a password it is your sudo password,")
-  info("      we currently assume you use sudo and not doas or somthing")
-  info("      else.")
-  let
-    rootMonad = createCommandMonad(cfg.sudo)
-    userMonad = createCommandMonad(false)
-
   # If we are passing a vfio, we need to run the command as sudo
-  let (vfios, mdevs) = getIommuGroups(cfg, uuid, rootMonad)
+  let (vfios, mdevs) = getIommuGroups(cfg, uuid)
+  if len(vfios) > 0 or len(mdevs) > 0:
+    cfg.sudo = true
 
   # If we do not have the necessary directories, create them
   for dir in dirs:
@@ -187,7 +177,9 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   elif newInstall:
     let
       kernelArgs = createKernel(liveKernel, cfg.container.initialSize)
-    sendCommand(userMonad, kernelArgs)
+    if not runCommand(kernelArgs):
+      error("Could not create image gracefully failing")
+      return
   elif noCopy or save:
     discard
   else:
@@ -215,34 +207,32 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
       sockets=sockets
     )
 
-  sendCommand(rootMonad, qemuArgs, true)
-  lock.pidNum = rootMonad.pid
+  var
+    qemuPid = startProcess(
+      qemuArgs.exec,
+      args=qemuArgs.args,
+      options={poEchoCmd, poParentStreams}
+    )
+
+  lock.pidNum = processID(qemuPid)
 
   writeLockFile(lockFile, lock)
 
-  var
-    missCount = 0
-
-  info(readCommand(rootMonad))
-
-  while missCount < 1000:
-    sleep(300)
-    let line = readCommand(rootMonad)
-    info(line)
-    if line != "":
-      missCount = 0
-    else:
-      missCount = missCount + 1
+  sleep(3000) # Sleeping to avoid trying to open the file too soon.
 
   let
     ownedFiles = sockets & introspections
-    groupArgs = changeGroup(ownedFiles)
-    permissionsArgs = changePermissions(ownedFiles)
+    socketGroupArgs = changeGroup(cfg.sudo, ownedFiles)
+    permissionsArgs = changePermissions(cfg.sudo, ownedFiles)
 
-  # If sudo we need to switch the permissions.
-  if cfg.sudo:
-    sendCommand(rootMonad, groupArgs)
-    sendCommand(rootMonad, permissionsArgs)
+  # If we fail to change socket stuff
+  if cfg.sudo and
+    (not runCommand(socketGroupArgs) or not runCommand(permissionsArgs)):
+    error("Could not change socket information correctly cleaning up.")
+    realCleanup(lockFile, uuid, socketDir, vfios, mdevs, introspections, cfg.sudo)
+    if not noCopy:
+      removeFile(liveKernel)
+    return
 
   if cfg.startintro and not newInstall:
     realIntrospect(cfg.introspect, introspections, uuid)
@@ -252,17 +242,14 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     socket = if isSome(socketMaybe): get(socketMaybe)
              else: newAsyncSocket()
 
-  cleanupVm(socket, lockFile, socketDir, uuid, vfios, mdevs,
-            introspections, rootMonad)
+  cleanupVm(socket, qemuPid, lockFile, socketDir, uuid, vfios, mdevs,
+            introspections, cfg.sudo)
 
   if newInstall or save:
     info("Installing to base kernel")
     moveFile(liveKernel, baseKernel)
   elif not noCopy:
     removeFile(liveKernel)
-
-  killCommandMonad(rootMonad)
-  killCommandMonad(userMonad)
 
 proc stopVm*(cfg: Config, cmd: CommandLineArguments) =
   ## stopVm - Stops a VM.

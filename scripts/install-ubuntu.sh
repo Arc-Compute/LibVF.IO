@@ -14,7 +14,7 @@ cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
 osName=$(cat /etc/os-release | grep NAME= | head -n1)
 currentPath=$(pwd)
 # Compile sandbox path
-compileSandbox="$(echo ~)/.cache/libvf.io/compile/"
+compileSandbox=$(echo ~)"/.cache/libvf.io/compile/"
 
 if [ ! -f "$HOME/preinstall" ]; then
 
@@ -59,7 +59,7 @@ if [ ! -f "$HOME/preinstall" ]; then
 
 
   # Compile and install libvf.io
-  cd "$currentPath"
+  cd $currentPath
   nimble install -y
   rm ./arcd
 
@@ -68,8 +68,8 @@ if [ ! -f "$HOME/preinstall" ]; then
   arcd deploy --root=$HOME/.local/libvf.io/
 
   # Download Looking Glass beta 4 sources
-  mkdir -p "$compileSandbox"
-  cd "$compileSandbox"
+  mkdir -p $compileSandbox
+  cd $compileSandbox
   rm -rf LookingGlass
   git clone --recursive https://github.com/gnif/LookingGlass/
   cd LookingGlass
@@ -100,12 +100,12 @@ if [ ! -f "$HOME/preinstall" ]; then
 
 fi
 
-if [ ! -f "$currentPath/optional/*.run" ]; then
+if [ ! -f $currentPath/optional/*.run ]; then
 	echo "Optional drivers not found."
 	exit 0
 fi
 
-cd "$currentPath/optional"
+cd $currentPath/optional
 
 chmod 755 *.run
 
@@ -120,7 +120,7 @@ custom=""
 if [[ ($major -eq 5) && ($minor -ge 12) ]];then
 	echo "Modifying the driver to have the version 5.12 patches."
 	custom="-custom"
-	./*.run --apply-patch "$currentPath/patches/twelve.patch"
+	./*.run --apply-patch $currentPath/patches/twelve.patch
 fi
 
 lsmod | grep "nouveau"
