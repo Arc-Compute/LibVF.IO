@@ -6,7 +6,7 @@ LibVF.IO is a vendor neutral GPU multiplexing tool driven by YAML & VFIO.
 
 Join the LibVF.IO community here, we'd love to hear your suggestions or help you troubleshoot if you need help!
 
-Discord: https://discord.gg/MNEwGGnh
+Discord: https://discord.gg/Rb9K9DYxKK
 
 Matrix: #libvf.io:arcrealityinc.com
 
