@@ -2,10 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Types and serialization for different QMP commands.
 #
-import sequtils
-import strutils
-import sugar
-import json
+import std/[sequtils, strutils, sugar, json]
 
 type
   QmpCommandEnum* = enum                      ## Enumeration for QMP Commands.

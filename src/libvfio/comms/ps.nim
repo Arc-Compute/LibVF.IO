@@ -34,11 +34,11 @@ type
     path: string        ## Lock path
 
 
-func newData(wl: wLock): LockData =
+func newData(wl: WLock): LockData =
   ## newData - Creates an object based on the lock
   ## 
   ## Inputs
-  ## @wl - wLock wrapped form of lock
+  ## @wl - WLock wrapped form of lock
   ## 
   ## Returns
   ## result - LockData object
@@ -73,11 +73,11 @@ func newTable(headers: seq[Cell]): TerminalTable =
   result.style = asciiStyle
   result.separateRows = false
 
-func overviewPs(locks: seq[wLock]): string =
+func overviewPs(locks: seq[WLock]): string =
   ## createPsTable - Creates a table for arc ps
   ## 
   ## Inputs
-  ## @locks - sequence of wLock
+  ## @locks - sequence of WLock
   ## 
   ## Returns
   ## result - string which contains the table
@@ -133,9 +133,9 @@ proc createTableStates(d: LockData): string =
   ## Returns
   ## result - string containg table
   let headers = @[
-    newCell("State", pad=1),
-    newCell("Location", pad=1),
-    newCell("Size (MiB)", pad=1)
+    newCell("State", pad = 1),
+    newCell("Location", pad = 1),
+    newCell("Size (MiB)", pad = 1)
   ]
   var tt = newTable(headers)
 
@@ -156,10 +156,10 @@ func createTableGpus(d: LockData): string =
   ## Returns
   ## result - string containing table
   let headers = @[
-    newCell("Device Name", pad=1),
-    newCell("VRAM", pad=1),
-    newCell("Type", pad=1),
-    newCell("Virtual Map", pad=1)
+    newCell("Device Name", pad = 1),
+    newCell("VRAM", pad = 1),
+    newCell("Type", pad = 1),
+    newCell("Virtual Map", pad = 1)
   ]
   var tt = newTable(headers)
 
@@ -177,8 +177,8 @@ func createTableNets(d: LockData): string =
   ## Returns
   ## result - string containing table
   let headers = @[
-    newCell("Device Name", pad=1),
-    newCell("MAC", pad=1)
+    newCell("Device Name", pad = 1),
+    newCell("MAC", pad = 1)
   ]
   var tt = newTable(headers)
 
@@ -198,8 +198,8 @@ func createTablePorts(d: LockData): string =
   func generateHeaders(n: int): seq[Cell] =
     for i in 1 .. n:
       result &= @[
-        newCell("Guest", pad=1),
-        newCell("Host", pad=1)
+        newCell("Guest", pad = 1),
+        newCell("Host", pad = 1)
       ]
 
   let headers = generateHeaders(1)
@@ -256,7 +256,7 @@ proc arcPs*(cfg: Config, cmd: CommandLineArguments) =
       echo textNoActiveSessions
     else:
       echo overviewPs(locks)
-  proc psA(cfg: Config, locks: seq[wLock]) =
+  proc psA(cfg: Config, locks: seq[WLock]) =
     if len(locks) == 0:
       echo textNoActiveSessions
     elif len(locks) == 1:

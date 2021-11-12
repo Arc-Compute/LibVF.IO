@@ -2,12 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Creates commands to execute on the host system.
 #
-import strformat
-import strutils
-import sequtils
-import sugar
-import options
-import os
+import std/[strformat, strutils, sequtils, sugar, options, os]
 
 import ../types
 
@@ -186,6 +181,8 @@ func qemuLaunch*(cfg: Config, uuid: string,
 
   let
     qemuLogFile = logDir / (uuid & "-session.txt")
+  
+  result.args = newSeqOfCap[string](128) # With all seqs this has to be a tinge nice to the ol' allocator
 
   # executing target
   result.exec = "/bin/qemu-system-x86_64"

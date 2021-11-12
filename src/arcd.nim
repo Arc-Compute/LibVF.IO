@@ -2,8 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Main file for running the arcd process
 #
-import options
-import os
+import std/[options, os]
 
 import libvfio/[control, logger, types, comms]
 

@@ -2,17 +2,23 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Provide function to get locks
 #
-import os
+import std/os
 
 import ../types
 
 
 type
-  wLock* = object  ## Wrapper for lock so it can contain path
+  WLock* = object  ## Wrapper for lock so it can contain path
     lock*: Lock
     path*: string
 
-proc getLocks*(cfg: Config): seq[wLock] =
+proc initWlock(lock: Lock, path: string): WLock =
+  WLock(
+    lock: lock,
+    path: path
+  )
+
+proc getLocks*(cfg: Config): seq[WLock] =
   ## getLocks - Gets locks
   ## 
   ## Inputs
@@ -25,12 +31,9 @@ proc getLocks*(cfg: Config): seq[wLock] =
   let pattern = cfg.root / "lock" / "*.json"
 
   for filePath in walkPattern(pattern):
-    result &= wLock(
-      lock: getLockFile(filePath),
-      path: filePath
-    )
+    result &= initWlock(getLockFile(filePath), filePath)
 
-proc findLocksByUuid*(cfg: Config, uuid: string): seq[wLock] =
+proc findLocksByUuid*(cfg: Config, uuid: string): seq[WLock] =
   ## findLocksByUuid - Finds locks by matching UUID
   ## 
   ## Inputs
@@ -44,12 +47,9 @@ proc findLocksByUuid*(cfg: Config, uuid: string): seq[wLock] =
   let pattern = cfg.root / "lock" / "*" & uuid & "*.json"
 
   for filePath in walkPattern(pattern):
-    result &= wLock(
-      lock: getLockFile(filePath),
-      path: filePath
-    )
+    result &= initWlock(getLockFile(filePath), filePath)
 
-proc findLocksByPid*(cfg: Config, pid: int): seq[wLock] =
+proc findLocksByPid*(cfg: Config, pid: int): seq[WLock] =
   ## findLocksByPid - Finds locks by matching PID
   ## 
   ## Inputs
@@ -65,7 +65,4 @@ proc findLocksByPid*(cfg: Config, pid: int): seq[wLock] =
   for filePath in walkPattern(pattern):
     let lock = getLockFile(filePath)
     if lock.pidNum == pid:
-      result &= wLock(
-        lock: getLockFile(filePath),
-        path: filePath
-      )
+      result &= initWlock(getLockFile(filePath), filePath)

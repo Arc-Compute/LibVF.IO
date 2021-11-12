@@ -2,17 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Algorithms for IOMMU handling.
 #
-import algorithm
-import math
-import sequtils
-import strutils
-import parseutils
-import strformat
-import sugar
-import options
-import os
-import tables
-import logging
+import std/[algorithm, math, sequtils, strutils, parseutils, strformat, sugar, options, os, tables, logging]
 
 import arguments
 
@@ -170,7 +160,7 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
       deviceClass = fromHex[int](readFile(deviceClassFile)[0 .. 3])
 
     # If we do not support this device type, we do not pass it through.
-    if not deviceClass in PassableVfios:
+    if deviceClass notin PassableVfios:
       continue
 
     let

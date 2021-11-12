@@ -2,7 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Sets up logging on the system.
 #
-import logging
+import std/logging
 
 # Allows us to export the logging to prevent a secondary logging import
 export logging

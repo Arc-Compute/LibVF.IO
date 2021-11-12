@@ -2,14 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Code to interact with QMP for different commands.
 #
-import asyncnet
-import asyncdispatch
-import os
-import options
-import nativesockets
-import json
-import logging
-import strutils
+import std/[asyncnet, asyncdispatch, os, options, nativesockets, json, logging, strutils]
 
 import ../types
 

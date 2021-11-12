@@ -2,10 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Hardware configurations for the system.
 #
-import options
-import strformat
-import strutils
-import os
+import std/[options, strformat, strutils, os]
 
 type
   VfioTypes* = enum          ## Enumeration to determine the types of VFIOs.

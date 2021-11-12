@@ -13,13 +13,9 @@ func separateVfios*(lock: Lock): (seq[Vfio], seq[Vfio]) =
   ## Returns
   ## result - tuple containing two sequences
   ##  ([gpuVfios], [netVfios])
-  var
-    gpus: seq[Vfio]
-    nets: seq[Vfio]
 
   for vfio in lock.vfios:
     if isGpu(vfio):
-      gpus &= vfio
+      result[0] &= vfio
     elif isNet(vfio):
-      nets &= vfio
-  result = (gpus, nets)
+      result[1] &= vfio

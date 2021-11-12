@@ -2,10 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Provide functions for ls
 #
-import os
-import strformat
-import strutils
-import options
+import std/[os, strformat, strutils, options]
 
 import ../types
 

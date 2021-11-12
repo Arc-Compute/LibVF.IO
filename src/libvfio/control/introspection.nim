@@ -2,11 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Introspection specific code.
 #
-import os
-import osproc
-import posix
-import strformat
-import logging
+import std/[os, osproc, posix, strformat, logging]
 
 import ../types
 

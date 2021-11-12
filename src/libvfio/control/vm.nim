@@ -2,16 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Code to interact with VMs.
 #
-import asyncnet
-import asyncdispatch
-import os
-import osproc
-import posix
-import options
-import strformat
-import sequtils
-import sugar
-import logging
+import std/[asyncnet, asyncdispatch, os, osproc, posix, options, strformat, sequtils, sugar, logging]
 
 import arguments
 import introspection
@@ -197,21 +188,21 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   # At this point we are in the child process
   let
     qemuArgs = qemuLaunch(
-      cfg=cfg,
-      uuid=uuid,
-      vfios=lock.vfios,
-      mdevs=lock.mdevs,
-      kernel=liveKernel,
-      install=newInstall,
-      logDir=qemuLogs,
-      sockets=sockets
+      cfg = cfg,
+      uuid = uuid,
+      vfios = lock.vfios,
+      mdevs = lock.mdevs,
+      kernel = liveKernel,
+      install = newInstall,
+      logDir = qemuLogs,
+      sockets = sockets
     )
 
   var
     qemuPid = startProcess(
       qemuArgs.exec,
-      args=qemuArgs.args,
-      options={poEchoCmd, poParentStreams}
+      args = qemuArgs.args,
+      options = {poEchoCmd, poParentStreams}
     )
 
   lock.pidNum = processID(qemuPid)
