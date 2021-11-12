@@ -12,7 +12,7 @@ bin           = @["arcd"]
 # Dependencies
 
 requires "nim >= 1.4.8",
-    "yaml",
-    "uuids",
-    "psutil",
-    "terminaltables"
+    "yaml >= 0.16.0",
+    "uuids >= 0.1.11",
+    "psutil >= 0.6.0",
+    "terminaltables >= 0.1.1"
