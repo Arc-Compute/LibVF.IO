@@ -39,10 +39,9 @@ proc lookingGlassIntrospect(introspections: seq[string], uuid: string) =
     lookingGlassArgs = Args(
       exec: "/usr/local/bin/looking-glass-client",
       args: @[
-        "-f", introspections[0], "win:autoResize",
-        "yes", "input:mouseRedraw", "yes", "win:keepAspect",
-        "yes", "egl:vsync", "yes", "egl:scale", "1", "win:title",
-        uuid
+        "-f", introspections[0], "-a", "yes", "egl:scale", "1",
+        "input:rawMouse", "yes", "input:captureOnly", "yes", "spice:captureOnStart", "yes",
+        "win:title=" & "Looking Glass + LibVF.IO (Scroll Lock toggles mouse/keyboard) UUID: " & uuid
       ]
     )
 
