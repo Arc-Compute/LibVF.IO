@@ -2,12 +2,7 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Configuration specific parameters/loaders
 #
-import parseopt
-import options
-import os
-import streams
-import strutils
-import logging
+import std/[parseopt, options, os, streams, strutils, logging]
 import yaml
 
 import connectivity, hardware, environment, process
@@ -133,24 +128,10 @@ proc getCommandLine*(): CommandLineArguments =
   ##
   ## Side effects - Reads the command line arguments.
   func getCommand(key: string): Option[CommandEnum] =
-    case toLowerAscii(key)
-    of $ceIntrospect:
-      some(ceIntrospect)
-    of $ceCreate:
-      some(ceCreate)
-    of $ceStart:
-      some(ceStart)
-    of $ceStop:
-      some(ceStop)
-    of $ceLs:
-      some(ceLs)
-    of $cePs:
-      some(cePs)
-    of $ceDeploy:
-      some(ceDeploy)
-    of $ceUndeploy:
-      some(ceUndeploy)
-    else: none(CommandEnum)
+    try:
+      some(parseEnum[CommandEnum](key)) # May want to use toLowerAscii, though parseEnum should equal it
+    except:
+      none(CommandEnum)
 
   var
     p = initOptParser()
@@ -161,10 +142,11 @@ proc getCommandLine*(): CommandLineArguments =
     of cmdArgument:
       if i == 0:
         let command = getCommand(key)
-        var exp: ref Exception
-        new(exp)
-        exp.msg = "Invalid command format."
-        if isNone(command): raise exp
+        if isNone(command):
+          var exp: ref Exception
+          new(exp)
+          exp.msg = "Invalid command format."
+          raise exp
         result = CommandLineArguments(command: get(command))
       else:
         case result.command
