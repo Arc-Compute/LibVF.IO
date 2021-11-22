@@ -49,14 +49,13 @@ if [ ! -f "$HOME/preinstall" ]; then
 
 
   # Install base utilities and build dependencies
-  sudo apt update && sudo apt install -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git
+  sudo apt update && sudo apt install -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev
 
   # Install choosenim
   curl https://nim-lang.org/choosenim/init.sh -sSf | sh
   echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.bashrc
   export PATH=$HOME/.nimble/bin:$PATH
   choosenim update stable
-
 
   # Compile and install libvf.io
   cd $currentPath
@@ -90,9 +89,23 @@ if [ ! -f "$HOME/preinstall" ]; then
   cd platform/Windows
   makensis installer.nsi
 
+  # Download Scream sources
+  cd $compileSandbox
+  git clone https://github.com/duncanthrax/scream/releases
+  cd scream/Receivers/unix
+
+  # Compile & install scream sources
+  mkdir build && cd build
+  cmake ..
+  make
+  sudo make install
+
+  # Create guest utils disk
   rm -rf $HOME/.local/libvf.io/introspection-installations
   mkdir -p $HOME/.local/libvf.io/introspection-installations
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
+  wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
+  echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
   cp -r * $HOME/.local/libvf.io/introspection-installations
   cd $HOME/.local/libvf.io/
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-limited-size -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
