@@ -91,7 +91,7 @@ if [ ! -f "$HOME/preinstall" ]; then
 
   # Download Scream sources
   cd $compileSandbox
-  git clone https://github.com/duncanthrax/scream/releases
+  git clone https://github.com/duncanthrax/scream/
   cd scream/Receivers/unix
 
   # Compile & install scream sources
@@ -105,6 +105,7 @@ if [ ! -f "$HOME/preinstall" ]; then
   mkdir -p $HOME/.local/libvf.io/introspection-installations
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
   wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
+  cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
   cp -r * $HOME/.local/libvf.io/introspection-installations
   cd $HOME/.local/libvf.io/
