@@ -44,3 +44,9 @@ commands:
   - 
     arg: "-set"
     values: ["device.hostdev0.x-pci-device-id=6960"]
+  - 
+    arg: "-device"
+    values: ["ivshmem-plain,memdev=ivshmem_scream"]
+  - 
+    arg: "-object"
+    values: ["memory-backend-file,id=ivshmem_scream,share=on,mem-path=/dev/shm/scream-ivshmem,size=2M"]
