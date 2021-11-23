@@ -15,7 +15,7 @@ container:
   kernel: windows.arc
   state: []
   initialSize: 20
-  iso: "/home/arc/.local/libvf.io/introspection-installations.rom"
+  iso: !!null ~
 cpus: 
   cores: 4
   sockets: 1
@@ -38,7 +38,7 @@ gpus:
     - 
       suffix: Q
 nics: []
-root: /home/arc/.local/libvf.io
+root: ~/.local/libvf.io
 sudo: false
 commands: 
   - 
