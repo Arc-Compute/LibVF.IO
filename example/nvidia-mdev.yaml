@@ -15,33 +15,38 @@ container:
   kernel: windows.arc
   state: []
   initialSize: 20
-  iso: !!null ~
+  iso: "/home/arc/.local/libvf.io/introspection-installations.rom"
 cpus: 
   cores: 4
   sockets: 1
   threads: 1
   ramAlloc: 8192
-gpus:
+gpus: 
   - 
-    -
-      maxVRam: 4000
-    -
-      minVRam: 3000
-    -
-      gpuType: "sysfsdev"
     - 
-      parentPort: !!null ~
+      maxVRam: 4000
+    - 
+      minVRam: 3000
+    - 
+      gpuType: sysfsdev
     - 
       mdevType: ""
     - 
-      devId: "hostdev0"
-    -
-      suffix: "Q"
+      parentPort: !!null ~
+    - 
+      devId: hostdev0
+    - 
+      suffix: Q
 nics: []
-root: ~/.local/libvf.io
+root: /home/arc/.local/libvf.io
 sudo: false
 commands: 
-    -
-      arg: "-set"
-      values:
-        - "device.hostdev0.x-pci-device-id=6960"
+  - 
+    arg: "-set"
+    values: ["device.hostdev0.x-pci-device-id=6960"]
+  - 
+    arg: "-device"
+    values: ["ivshmem-plain,memdev=ivshmem_scream"]
+  - 
+    arg: "-object"
+    values: ["memory-backend-file,id=ivshmem_scream,share=on,mem-path=/dev/shm/scream-ivshmem,size=2M"]
