@@ -24,7 +24,7 @@ func getIntrospections*(cfg: Config, uuid: string,
   if not install:
     case cfg.introspect
     of isLookingGlass:
-      result = @["/dev/shm/kvmfr-" & uuid]
+      result = @["/dev/shm/kvmfr-" & uuid, "/dev/shm/kvmsr-" & uuid]
     else: discard
 
 proc lookingGlassIntrospect(introspections: seq[string], uuid: string) =
@@ -44,6 +44,13 @@ proc lookingGlassIntrospect(introspections: seq[string], uuid: string) =
         "win:title=" & "Looking Glass + LibVF.IO (Scroll Lock toggles mouse/keyboard) UUID: " & uuid
       ]
     )
+    screamArgs = Args(
+      exec: "/usr/local/bin/scream",
+      args: @[
+        "-m", introspections[1]
+      ]
+    )
+
 
   # Fork to spawn up the introspection client.
   let forkRet = fork()
@@ -60,9 +67,15 @@ proc lookingGlassIntrospect(introspections: seq[string], uuid: string) =
       args=lookingGlassArgs.args,
       options={poEchoCmd, poParentStreams}
     )
+    screamPid = startProcess(
+      screamArgs.exec,
+      args=screamArgs.args,
+      options={poEchoCmd, poParentStreams}
+    )
 
   # This allows us to potentially expend this introspection.
   discard waitForExit(lookingGlassPid)
+  terminate(screamPid)
   quit(0)
 
 proc realIntrospect*(intro: IntrospectEnum, introspections: seq[string],
