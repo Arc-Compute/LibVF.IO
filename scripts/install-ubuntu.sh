@@ -100,7 +100,7 @@ if [ ! -f "$HOME/preinstall" ]; then
   make
   sudo make install
 
-  # Create guest utils disk
+  # Generate guest introspection files
   rm -rf $HOME/.local/libvf.io/introspection-installations
   mkdir -p $HOME/.local/libvf.io/introspection-installations
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
