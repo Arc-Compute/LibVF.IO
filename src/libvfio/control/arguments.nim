@@ -323,10 +323,6 @@ func qemuLaunch*(cfg: Config, uuid: string,
   for mdev in mdevs:
     result.args &= mdevArgs(mdev)
 
-  # Enable sound
-  result.args &= "--soundhw"
-  result.args &= "all"
-
   # Port forward for all exposed ports
   if len(cfg.connectivity.exposedPorts) > 0:
     let hostfwds = map(cfg.connectivity.exposedPorts,
