@@ -165,7 +165,7 @@ proc getCommandLine*(): CommandLineArguments =
         new(exp)
         exp.msg = "Invalid command format."
         if isNone(command): raise exp
-        result = CommandLineArguments(command: get(command))
+        result = CommandLineArguments(command: get(command), nocopy: true)
       else:
         case result.command
         of ceCreate:
@@ -207,6 +207,8 @@ proc getCommandLine*(): CommandLineArguments =
         result.save = true
       of "no-copy":
         result.nocopy = true
+      of "copy":
+        result.nocopy = false
       of "no-user-preload":
         result.noconfig = true
       of "kernel":
