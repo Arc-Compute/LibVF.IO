@@ -2,6 +2,9 @@
 
 logFile=./logs/debug.log
 
+# Make the log directory if it doesn't exist.
+mkdir -p ./logs/
+
 # Dumping uname to log
 uname -a >> $logFile
 
