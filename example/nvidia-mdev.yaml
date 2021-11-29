@@ -24,9 +24,9 @@ cpus:
 gpus: 
   - 
     - 
-      maxVRam: 4000
+      maxVRam: 2000
     - 
-      minVRam: 3000
+      minVRam: 1000
     - 
       gpuType: sysfsdev
     - 
