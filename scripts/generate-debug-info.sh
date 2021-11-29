@@ -23,3 +23,6 @@ for d in /sys/kernel/iommu_groups/*/devices/*; do
   printf 'IOMMU Group %s ' "$n"
   lspci -nns "${d##*/}"
 done >> $logFile
+
+# Dump lsmod
+lsmod >> $logFile
