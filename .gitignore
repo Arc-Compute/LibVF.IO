@@ -19,4 +19,5 @@ $RECYCLE.BIN/
 # Ignoring binary files produced by debugger.
 nimcache/
 
+logs/
 optional/
