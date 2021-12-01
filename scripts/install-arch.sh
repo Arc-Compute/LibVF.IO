@@ -22,7 +22,7 @@ if [ ! -f "$HOME/preinstall" ]; then
   sudo usermod -a -G kvm $USER
 
   # Install base utilities and build dependencies
-  yay -Syu && yay -S nsis mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse
+  yay -Syu && yay -S "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse
 
   # Configure kernel boot parameters
   echo "Updating kernel boot parameters."
