@@ -47,7 +47,7 @@ if [ ! -f "$HOME/preinstall" ]; then
   # Restarting apparmor service
   sudo systemctl restart apparmor
   # Updating initramfs
-  sudo mkinitcpio -p linux-lts
+  sudo mkinitcpio -P
   # rmmod nouveau
   sudo rmmod nouveau
 
