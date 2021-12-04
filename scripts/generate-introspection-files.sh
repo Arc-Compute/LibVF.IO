@@ -5,7 +5,6 @@
 
 # Generate introspection files
 compileSandbox=$(echo ~)"/.cache/libvf.io/compile/"
-currentPath=$(pwd)
 
 # Download Looking Glass beta 4 sources
 rm -rf $compileSandbox && mkdir $compileSandbox && cd $compileSandbox
@@ -18,7 +17,7 @@ mkdir client/build && mkdir host/build
 cd client/build
 cmake ../
 make
-sudo make install
+#sudo make install
 
 # Cause we cannot use looking glass host binary
 cd ../../host/build
@@ -36,7 +35,7 @@ cd scream/Receivers/unix
 mkdir build && cd build
 cmake ..
 make
-sudo make install
+#sudo make install
 
 # Generate guest introspection files
 mkdir -p $compileSandbox/client && cd $compileSandbox/client
