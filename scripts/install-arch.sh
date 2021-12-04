@@ -66,51 +66,8 @@ if [ ! -f "$HOME/preinstall" ]; then
   mkdir -p ~/.local/libvf.io/
   arcd deploy --root=$HOME/.local/libvf.io/
 
-  # Download Looking Glass beta 4 sources
-  mkdir -p $compileSandbox
-  cd $compileSandbox
-  rm -rf LookingGlass
-  git clone --recursive https://github.com/gnif/LookingGlass/
-  cd LookingGlass
-  git checkout Release/B4
-
-  # Compile & install Looking Glass sources
-  mkdir client/build
-  mkdir host/build
-  cd client/build
-  cmake ../
-  make
-  sudo make install
-
-  # Cause we cannot use looking glass host binary
-  cd ../../host/build
-  cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw64.cmake ..
-  make
-  cd platform/Windows
-  makensis installer.nsi
-  
-  # Download Scream sources
-  cd $compileSandbox
-  git clone https://github.com/duncanthrax/scream/
-  cd scream/Receivers/unix
-
-  # Compile & install scream sources
-  mkdir build && cd build
-  cmake ..
-  make
-  sudo make install
-
-  # Generate guest introspection files
-  rm -rf $HOME/.local/libvf.io/introspection-installations
-  mkdir -p $HOME/.local/libvf.io/introspection-installations
-  wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
-  wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
-  cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
-  echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
-  cp -r * $HOME/.local/libvf.io/introspection-installations
-  cd $HOME/.local/libvf.io/
-  mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
-  cp introspection-installations.rom ~/.config/arc/
+  # Generate introspection Rom for guest VM
+  ./scripts/generate-introspection-files.sh
 fi
 
 if [ ! -f $currentPath/optional/*.run ]; then
