@@ -10,7 +10,7 @@ export PATH=$HOME/.nimble/bin:$PATH
 choosenim update stable
 
 # Compile and install libvf.io
-cd $1
+cd $0
 nimble install -y
 rm ./arcd
 
