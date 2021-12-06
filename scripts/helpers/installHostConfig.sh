@@ -8,11 +8,11 @@
 # Configure kernel boot parameters
 echo "Updating kernel boot parameters."
 # Intel users
-if [[ $1 == *"GenuineIntel"* ]]; then
+if [[ $0 == *"GenuineIntel"* ]]; then
   sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=\"/GRUB_CMDLINE_LINUX_DEFAULT=\"intel_iommu=on iommu=pt vfio_pci /g' /etc/default/grub
 fi
 # AMD users
-if [[ $1 == *"AuthenticAMD"* ]]; then
+if [[ $0 == *"AuthenticAMD"* ]]; then
   sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=\"/GRUB_CMDLINE_LINUX_DEFAULT=\"amd_iommu=on iommu=pt vfio_pci /g' /etc/default/grub
 fi
 
