@@ -16,3 +16,11 @@ requires "nim >= 1.4.8",
     "uuids",
     "psutil",
     "terminaltables"
+
+after build:
+  echo "Finished building the process, we are now"
+  echo "fixing the permissions to allow libvf.io to"
+  echo "become root without asking for passwords."
+  for i in bin:
+    echo "Providing root permissions to: ", i
+    exec("sudo setcap cap_setuid+ep ./" & i)

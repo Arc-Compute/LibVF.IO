@@ -63,8 +63,7 @@ proc lockVf(f: string, vfio: string, uuid: string, lock: bool = true,
 
   if fileExists(f) and strip(readFile(f)) == uuid and
      strip(readFile(vfio)) == state:
-    result = true
-    sendCommand(monad, commandWriteFile(newState, vfio))
+    result = sendCommand(monad, commandWriteFile(newState, vfio))
 
   removeFile(f)
 
@@ -88,10 +87,10 @@ proc bindVf*(f: string, uuid: string, dev: Vfio, state: bool,
 
   if state:
     result = lockVf(f, dev.base, uuid, state, monad)
-    sendCommand(monad, commandWriteFile(dev.deviceName, b))
+    result = result and sendCommand(monad, commandWriteFile(dev.deviceName, b))
   else:
-    sendCommand(monad, commandWriteFile(dev.deviceName, b))
-    result = lockVf(f, dev.base, uuid, state, monad)
+    result = sendCommand(monad, commandWriteFile(dev.deviceName, b))
+    result = result and lockVf(f, dev.base, uuid, state, monad)
 
 proc getVfios*(cfg: Config, uuid: string, monad: CommandMonad): seq[Vfio] =
   ## getVfios - Gets the list of VFIOs that need to be passed to the VM.
@@ -296,7 +295,7 @@ proc getMdevs*(cfg: Config, monad: CommandMonad): seq[Mdev] =
           continue
 
         # BUG: Merged driver does not support multiple vGPU types on a card.
-        sendCommand(monad, startArgs)
+        discard sendCommand(monad, startArgs)
         result &= Mdev(
           uuid: gpuUUID,
           devId: i.devId,

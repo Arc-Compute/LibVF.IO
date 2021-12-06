@@ -2,39 +2,18 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Code to interact with terminal.
 #
-import os
-import osproc
-import streams
-import strutils
-import terminal
+import std/os
+import std/osproc
+import std/posix
+import std/streams
+import std/strutils
+import std/terminal
 
-import logging
+import std/logging
 
 import ../types
 
-type
-  ## MONAD: Creates a monad for commands
-  CommandMonad* = object
-    pid*: int
-    commandPipe: owned(Process)
-    outputStream: Stream
-    errorStream: Stream
-    inputStream: Stream
-
-proc readCommand*(monad: CommandMonad): string =
-  ## readCommand - Reads the command output.
-  ##
-  ## Inputs
-  ## @monad - Monad to read from.
-  ##
-  ## Returns
-  ## result - One line of the command output or error
-  ##          stream.
-  ## Side Effects - Reads the data from the commands.
-  if not readLine(monad.outputStream, result):
-    discard readLine(monad.errorStream, result)
-
-proc sendCommand*(monad: CommandMonad, cmd: Args, log: bool = false) =
+proc sendCommand*(monad: CommandMonad, cmd: Args): bool =
   ## sendCommand - Sends a command into the command monad.
   ##
   ## Inputs
@@ -44,56 +23,41 @@ proc sendCommand*(monad: CommandMonad, cmd: Args, log: bool = false) =
   ## Side Effects - Sends arbitrary command to the command monad.
   let
     realCommand = join(cmd.exec & cmd.args, " ")
-  if log: info("Executing: ", realCommand)
-  write(monad.inputStream, realCommand & "\n")
-  flush(monad.inputStream)
+  info("Executing: ", $cmd)
+  if monad.sudo:
+    discard seteuid(monad.rootUid)
+  result = execCmd(realCommand) == 0
+  if monad.sudo:
+    discard seteuid(monad.oldUid)
 
-proc createCommandMonad*(super: bool): CommandMonad =
+proc startCommand*(monad: CommandMonad, cmd: Args): owned(Process) =
+  ## startCommand - Starts a command from a command monad.
+  ##
+  ## Inputs
+  ## @monad - Monad to use.
+  ## @cmd - Command to start.
+  ##
+  ## Side Effects - Sends arbitrary command to the command monad.
+  info("Executing: ", $cmd)
+  if monad.sudo:
+    discard seteuid(monad.rootUid)
+  result = startProcess(
+    command=cmd.exec,
+    args=cmd.args
+  )
+  if monad.sudo:
+    discard seteuid(monad.oldUid)
+
+proc createCommandMonad*(sudo: bool): CommandMonad =
   ## createCommandMonad - Creates a monad for piping commands through.
   ##
   ## Inputs
-  ## @super - Is super user required or not?
+  ## @sudo - If this is the root monad or not
   ##
   ## Returns
-  ## result - A monad which you can use for sending commands to the
-  ##          shell.
+  ## result - A monad which you can use for sending commands to system.
   ##
   ## Side Effects - VERY DANGEROUS minimize how often you use this.
-  let command = if super: "/usr/bin/sudo"
-                else: "/usr/bin/sh"
-  result.commandPipe = startProcess(
-    command,
-    args=if super: @["-i"]
-         else: @[],
-    options={}
-  )
-  result.pid = processId(result.commandPipe)
-  result.outputStream = peekableOutputStream(result.commandPipe)
-  result.errorStream = peekableErrorStream(result.commandPipe)
-  result.inputStream = inputStream(result.commandPipe)
-
-  # If we need a superuser monad.
-  if super:
-    let pass = Args(exec: readPasswordFromStdin("Sudo password: "))
-    let cd = Args(exec: "cd", args: @[getCurrentDir()])
-    sendCommand(result, pass)
-    sendCommand(result, cd, true)
-
-proc commandMonadOpen*(monad: CommandMonad): bool =
-  ## commandMonadOpen - Is the command monad currently open?
-  ##
-  ## Inputs
-  ## @monad - Monad file to check.
-  ##
-  ## Returns
-  ## result - Is the monad currently running
-  running(monad.commandPipe)
-
-proc killCommandMonad*(monad: CommandMonad) =
-  ## killCommandMonad - Kills the command monad.
-  ##
-  ## Inputs
-  ## @monad - Monad to kill.
-  ##
-  ## Side Effects - Removes a monad.
-  terminate(monad.commandPipe)
+  result.oldUid = getuid()
+  result.rootUid = 0
+  result.sudo = sudo
