@@ -271,3 +271,4 @@ proc stopVm*(cfg: Config, cmd: CommandLineArguments) =
       let x = waitFor(getResponse(sock))
       if x.event == qrSuccess:
         break
+    info("Sent stop command to VM powering down now")
