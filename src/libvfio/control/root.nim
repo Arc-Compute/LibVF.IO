@@ -50,7 +50,8 @@ proc startCommand*(monad: CommandMonad, cmd: Args): owned(Process) =
       error("Could not set root correctly: ", strerror(errno))
   result = startProcess(
     command=cmd.exec,
-    args=cmd.args
+    args=cmd.args,
+    options={poParentStreams}
   )
   if monad.sudo:
     if setresuid(monad.oldUid, monad.oldUid, monad.rootUid) != 0:
