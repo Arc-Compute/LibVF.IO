@@ -42,6 +42,7 @@ proc getResponse*(sock: AsyncSocket):
   let r = await recvLine(sock)
   debug("Received from socket: ", r)
   result = parseResponse(parseJson(r))
+  debug("Response: ", $result)
 
 proc createSocket*(sockPath: string): Option[AsyncSocket] =
   ## createSocket - Creates a socket for communicating with a QMP system.
