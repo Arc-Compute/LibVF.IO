@@ -134,8 +134,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     introspections = getIntrospections(cfg, uuid, newInstall)
 
   # If we are passing a vfio, we need to run the command as sudo
-  let (vfios, mdevs) = getIommuGroups(cfg, uuid)
-  if len(vfios) > 0 or len(mdevs) > 0:
+  if len(cfg.gpus) > 0 or len(cfg.nics) > 0:
     cfg.sudo = true
 
   # Command monad
