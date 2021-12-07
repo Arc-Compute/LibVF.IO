@@ -236,14 +236,23 @@ func qemuLaunch*(cfg: Config, uuid: string,
   if not install:
     case cfg.introspect
     of isLookingGlass:
-      # Create device for looking glass
+      # Create device for Looking Glass
       result.args &= "-device"
-      result.args &= "ivshmem-plain,id=shmem0,memdev=ivshmem"
+      result.args &= "ivshmem-plain,id=shmem0,memdev=ivshmem_kvmfr"
 
       # Create looking glass object
       result.args &= "-object"
       result.args &=
-       &"memory-backend-file,id=ivshmem,mem-path=/dev/shm/kvmfr-{uuid},size=128M,share=yes"
+       &"memory-backend-file,id=ivshmem_kvmfr,mem-path=/dev/shm/kvmfr-{uuid},size=128M,share=yes"
+
+      # Create device for Scream
+      result.args &= "-device"
+      result.args &= "ivshmem-plain,id=shmem1,memdev=ivshmem_kvmsr"
+
+      # Create Scream IVSHMEM object
+      result.args &= "-object"
+      result.args &=
+        &"memory-backend-file,id=ivshmem_kvmsr,mem-path=/dev/shm/kvmsr-{uuid},size=2M,share=yes"
     else: discard
 
   # UUID - Necessary for NVidia MDEV support

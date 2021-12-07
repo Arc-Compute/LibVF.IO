@@ -28,6 +28,12 @@ after build:
     echo "Providing root permissions to: ", i
     set_capabilities("./" & i)
 
+before install:
+  echo "Removing existing file."
+  for i in bin:
+    echo "Removing file: ", i
+    exec("rm ~/.nimble/bin/" & i)
+
 after install:
   echo "Moving files to avoid symbolic linking."
   for i in bin:
