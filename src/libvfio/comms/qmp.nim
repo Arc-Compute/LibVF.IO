@@ -24,6 +24,7 @@ proc sendMessage*(socket: AsyncSocket, msg: QmpCommand) {.async.} =
   ## result - A boolean saying if the command was executed correctly or not.
   ##
   ## Side effects - Sends a message to the socket.
+  debug("Sending to socket: ", $(%*msg))
   await send(socket, $(%*msg))
 
 proc getResponse*(sock: AsyncSocket):
@@ -39,6 +40,7 @@ proc getResponse*(sock: AsyncSocket):
   ##
   ## Side effects - Reads a response from the socket.
   let r = await recvLine(sock)
+  debug("Received from socket: ", r)
   result = parseResponse(parseJson(r))
 
 proc createSocket*(sockPath: string): Option[AsyncSocket] =
