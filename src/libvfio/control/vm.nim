@@ -137,9 +137,6 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     cfg.sudo = true
 
   # Command monad
-  info("NOTE: If we ask for a password it is your sudo password,")
-  info("      we currently assume you use sudo and not doas or somthing")
-  info("      else.")
   let
     rootMonad = createCommandMonad(cfg.sudo)
     userMonad = createCommandMonad(false)
