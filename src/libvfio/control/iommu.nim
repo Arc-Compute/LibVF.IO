@@ -15,6 +15,7 @@ import tables
 import logging
 
 import arguments
+import root
 
 import ../types
 
@@ -29,7 +30,8 @@ type
       gpuType: string       ## Type of the physical GPU that was split.
     else: discard
 
-proc lockVf(f: string, vfio: string, uuid: string, lock: bool = true): bool =
+proc lockVf(f: string, vfio: string, uuid: string, lock: bool = true,
+            monad: CommandMonad): bool =
   ## lockVf - Locks a virtual function for the QEMU process.
   ##
   ## Inputs
@@ -37,6 +39,7 @@ proc lockVf(f: string, vfio: string, uuid: string, lock: bool = true): bool =
   ## @vfio - Driver override parameter to save the file to.
   ## @uuid - UUID for the application.
   ## @lock - Are we locking to vfio-pci or to (null)?
+  ## @monad - Monad to wrap command in.
   ##
   ## Returns
   ## result - Boolean on if we were able to lock the file or not.
@@ -60,11 +63,12 @@ proc lockVf(f: string, vfio: string, uuid: string, lock: bool = true): bool =
 
   if fileExists(f) and strip(readFile(f)) == uuid and
      strip(readFile(vfio)) == state:
-    result = runCommand(sudoWriteFile(newState, vfio))
+    result = sendCommand(monad, commandWriteFile(newState, vfio))
 
   removeFile(f)
 
-proc bindVf*(f: string, uuid: string, dev: Vfio, state: bool): bool =
+proc bindVf*(f: string, uuid: string, dev: Vfio, state: bool,
+             monad: CommandMonad): bool =
   ## bindVf - Binds the VF to the correct driver for QEMU passing.
   ##
   ## Inputs
@@ -73,6 +77,7 @@ proc bindVf*(f: string, uuid: string, dev: Vfio, state: bool): bool =
   ## @uuid - UUID for the application.
   ## @dev - Device to bind.
   ## @state - Do we bind or unbind the resource.
+  ## @monad - Monad to wrap command in.
   ##
   ## Side effects - Binds the VFIO.
   let
@@ -81,20 +86,19 @@ proc bindVf*(f: string, uuid: string, dev: Vfio, state: bool): bool =
         else: base / "unbind"
 
   if state:
-    result = lockVf(f, dev.base, uuid, state)
-    if result:
-      result = runCommand(sudoWriteFile(dev.deviceName, b))
+    result = lockVf(f, dev.base, uuid, state, monad)
+    result = result and sendCommand(monad, commandWriteFile(dev.deviceName, b))
   else:
-    result = runCommand(sudoWriteFile(dev.deviceName, b))
-    if result:
-      result = lockVf(f, dev.base, uuid, state)
+    result = sendCommand(monad, commandWriteFile(dev.deviceName, b))
+    result = result and lockVf(f, dev.base, uuid, state, monad)
 
-proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
+proc getVfios*(cfg: Config, uuid: string, monad: CommandMonad): seq[Vfio] =
   ## getVfios - Gets the list of VFIOs that need to be passed to the VM.
   ##
   ## Inputs
   ## @cfg - Configuration file to use.
   ## @uuid - UUID for the process that is currently running.
+  ## @monad - Monad to wrap command in.
   ##
   ## Returns
   ## result - List of selected VFIOs for the device in question.
@@ -129,7 +133,7 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
 
         createDir(lockBase)
 
-        if bindVf(lockPath, uuid, j, true):
+        if bindVf(lockPath, uuid, j, true, monad):
           delete(vgpus, idx, idx)
           ret = some(j)
           break
@@ -240,11 +244,12 @@ proc getVfios*(cfg: Config, uuid: string): seq[Vfio] =
             break
       else: discard
 
-proc getMdevs*(cfg: Config): seq[Mdev] =
+proc getMdevs*(cfg: Config, monad: CommandMonad): seq[Mdev] =
   ## getMdevs - Gets the list of MDEVs that need to be passed to the VM.
   ##
   ## Inputs
   ## @cfg - Configuration file to use.
+  ## @monad - Monad to wrap the command in.
   ##
   ## Returns
   ## result - List of selected MDEVs for the device in question.
@@ -278,7 +283,7 @@ proc getMdevs*(cfg: Config): seq[Mdev] =
           )
           framebuffer = parseInt(framebufferStr)
           gpuUUID = getUUID()
-          startArgs = sudoWriteFile(gpuUUID, createFile)
+          startArgs = commandWriteFile(gpuUUID, createFile)
 
         if not (i.mdevType in lastPathPart(dir)):
           continue
@@ -289,25 +294,28 @@ proc getMdevs*(cfg: Config): seq[Mdev] =
         if fileExists(name) and not endsWith(strip(readFile(name)), i.suffix):
           continue
 
-        if runCommand(startArgs):
-          result &= Mdev(
-            uuid: gpuUUID,
-            devId: i.devId,
-            stop: "/sys/bus/mdev/devices" / gpuUUID / "remove"
-          )
+        # BUG: Merged driver does not support multiple vGPU types on a card.
+        discard sendCommand(monad, startArgs)
+        result &= Mdev(
+          uuid: gpuUUID,
+          devId: i.devId,
+          stop: "/sys/bus/mdev/devices" / gpuUUID / "remove"
+        )
         break
     else: discard
 
-proc getIommuGroups*(cfg: Config, uuid: string): (seq[Vfio], seq[Mdev]) =
+proc getIommuGroups*(cfg: Config, uuid: string,
+                     monad: CommandMonad): (seq[Vfio], seq[Mdev]) =
   ## getIommuGroups - Gets a list of vfios, and a seperate list of mdevs.
   ##
   ## Inputs
   ## @cfg - Configuration file to use.
   ## @uuid - Process's UUID.
+  ## @monad - Monad to wrap commands.
   ##
   ## Returns
   ## result - A list of vfios and a list of mdevs
   let
-    vfios = getVfios(cfg, uuid)
-    mdevs = getMdevs(cfg)
+    vfios = getVfios(cfg, uuid, monad)
+    mdevs = getMdevs(cfg, monad)
   result = (vfios, mdevs)

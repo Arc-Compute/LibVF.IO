@@ -2,12 +2,28 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Main file for running the arcd process
 #
-import options
-import os
+import std/options
+import std/os
+import std/posix
 
 import libvfio/[control, logger, types, comms]
 
+proc continueVM(vm: VM) =
+  ## continueVM - Code for continuing a VM's sequence after it is started.
+  ##
+  ## Input
+  ## @vm - VM to continue the lifecycle for.
+  ##
+  ## Side Effects - VM side effects.
+  if vm.child:
+    # Continues VM.
+    cleanVM(vm)
+
 when isMainModule:
+  if getuid() == 0:
+    echo("DO NOT RUN THIS AS ROOT")
+    quit 0
+
   let
     cmd = getCommandLine()
     cfg = getConfigFile(cmd)
@@ -21,9 +37,9 @@ when isMainModule:
 
   case cmd.command
   of ceCreate:
-    startVm(cfg, uid, true, false, false)
+    continueVM(startVm(cfg, uid, true, false, false))
   of ceStart:
-    startVm(cfg, uid, false, cmd.nocopy, cmd.save)
+    continueVM(startVm(cfg, uid, false, cmd.nocopy, cmd.save))
   of ceStop:
     stopVm(cfg, cmd)
   of ceIntrospect:
