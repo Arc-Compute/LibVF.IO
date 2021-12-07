@@ -328,9 +328,6 @@ func qemuLaunch*(cfg: Config, uuid: string,
   # Additional commands sent into the qemu command
   for command in cfg.commands:
     let values = join(command.values, ",")
-    result.args &= &"'{command.arg}'"
+    result.args &= &"{command.arg}"
     if values != "":
       result.args &= values
-
-  # Allows for additional commands to be run
-  result.args &= "&"

@@ -13,6 +13,8 @@ import std/logging
 
 import ../types
 
+proc setresuid(a1, a2, a3: Uid): cint {.importc, header: "<unistd.h>".}
+
 proc sendCommand*(monad: CommandMonad, cmd: Args): bool =
   ## sendCommand - Sends a command into the command monad.
   ##
@@ -25,10 +27,14 @@ proc sendCommand*(monad: CommandMonad, cmd: Args): bool =
     realCommand = join(cmd.exec & cmd.args, " ")
   info("Executing: ", $cmd)
   if monad.sudo:
-    discard seteuid(monad.rootUid)
+    if setresuid(monad.rootUid, monad.rootUid, monad.oldUid) != 0:
+      error("Could not set root correctly: ", strerror(errno))
+      return false
   result = execCmd(realCommand) == 0
   if monad.sudo:
-    discard seteuid(monad.oldUid)
+    if setresuid(monad.oldUid, monad.oldUid, monad.rootUid) != 0:
+      error("Could not set user correctly: ", strerror(errno))
+      return false
 
 proc startCommand*(monad: CommandMonad, cmd: Args): owned(Process) =
   ## startCommand - Starts a command from a command monad.
@@ -40,13 +46,15 @@ proc startCommand*(monad: CommandMonad, cmd: Args): owned(Process) =
   ## Side Effects - Sends arbitrary command to the command monad.
   info("Executing: ", $cmd)
   if monad.sudo:
-    discard seteuid(monad.rootUid)
+    if setresuid(monad.rootUid, monad.rootUid, monad.oldUid) != 0:
+      error("Could not set root correctly: ", strerror(errno))
   result = startProcess(
     command=cmd.exec,
     args=cmd.args
   )
   if monad.sudo:
-    discard seteuid(monad.oldUid)
+    if setresuid(monad.oldUid, monad.oldUid, monad.rootUid) != 0:
+      error("Could not set user correctly: ", strerror(errno))
 
 proc createCommandMonad*(sudo: bool): CommandMonad =
   ## createCommandMonad - Creates a monad for piping commands through.

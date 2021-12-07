@@ -26,6 +26,7 @@ type
 
   VM* = object                    ## Running VM object.
     socket*: AsyncSocket          ## Connected QMP socket.
+    child*: bool                  ## Are we in the parent or child process.
     lockFile*: string             ## Lock file path.
     socketDir*: string            ## Socket directory path.
     uuid*: string                 ## UUID for the VM.

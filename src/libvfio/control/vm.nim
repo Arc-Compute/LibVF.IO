@@ -186,6 +186,27 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
       sockets=sockets
     )
 
+  result.lockFile = lockFile
+  result.socketDir = socketDir
+  result.uuid = uuid
+  result.vfios = vfios
+  result.mdevs = mdevs
+  result.introspections = introspections
+  result.monad = rootMonad
+  result.liveKernel = liveKernel
+  result.baseKernel = baseKernel
+
+  # Spawn up qemu image
+  let forkRet = fork()
+
+  result.child = forkRet == 0
+
+  if forkRet > 0:
+    return
+  elif forkRet < 0:
+    error("Could not fork")
+    return
+
   var qemuPid = startCommand(rootMonad, qemuArgs)
 
   lock.pidNum = processID(qemuPid)
@@ -213,16 +234,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
              else: newAsyncSocket()
 
   result.socket = socket
-  result.lockFile = lockFile
-  result.socketDir = socketDir
-  result.uuid = uuid
-  result.vfios = vfios
-  result.mdevs = mdevs
-  result.introspections = introspections
-  result.monad = rootMonad
   result.qemuPid = qemuPid
-  result.liveKernel = liveKernel
-  result.baseKernel = baseKernel
 
 proc cleanVM*(vm: VM) =
   ## cleanVM - Cleans the VM/waits for VM to finish.
