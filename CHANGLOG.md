@@ -1,3 +1,9 @@
+# 1.0.5
+
+- Sudo bug fix
+- SCREAM Support
+- NO RUNNING AS SUDO
+
 # 1.0.2
 
 - Intel GVT-g support

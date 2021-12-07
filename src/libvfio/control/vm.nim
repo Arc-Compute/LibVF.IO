@@ -193,6 +193,9 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   result.monad = rootMonad
   result.liveKernel = liveKernel
   result.baseKernel = baseKernel
+  result.newInstall = newInstall
+  result.save = save
+  result.noCopy = noCopy
 
   # Spawn up qemu image
   let forkRet = fork()
