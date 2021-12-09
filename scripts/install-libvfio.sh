@@ -15,11 +15,15 @@ check_dir
 # Checks which distribution user is using
 check_distro
 
+echo
+echo "Running libvfio install script for $distro distribution"
+echo
+
 # Checks if first stage of install script is complete
 pt2_check
 
 # Set compile sandbox path
-set_sandbox
+set_sandbox_dir
 # Adds user to KVM Group
 add_kvm_group
 # Updates packages
@@ -59,16 +63,13 @@ arcd_deploy
 
 # Patch NV driver according to kernel version
 patch_nv
-# Install Nvidia Optional Driver
-install_nv
-
 
 # Rmmod Nouveau
-rm_nouvea
+rm_nouveau
 
 # Check if nouveau is unloaded (pc rebooted)
 # IF no, prime system to continue where install script left off after reboot
-# IF yes, install nvidia if nouveau is not loaded
+# IF yes, install NV Optional Driver if nouveau is not loaded
 pt1_end
 
 

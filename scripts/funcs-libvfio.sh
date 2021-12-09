@@ -16,7 +16,7 @@ function root_kick() {
 
 function check_dir() {
   if [ ! -f ./src/arcd.nim ];then
-    echo "Run the script from the main libvfio directory, using ./scripts/uninstall-libvfio.sh"
+    echo "Run the script from the main libvf.io directory, using ./scripts/uninstall-libvfio.sh"
     exit
   else
     current_path=$(pwd)
@@ -43,7 +43,6 @@ function check_distro() {
       exit
     fi
   fi
-  echo Running uninstall script for $distro distribution.
 }
 
 function set_sandbox_dir {
@@ -116,7 +115,7 @@ function mem_permissions() {
   sudo su root -c "echo \"f /dev/shm/kvmfr-* 0660 $USER kvm -\" >> /etc/tmpfiles.d/10-looking-glass.conf"
 }
 
-functishell_path=$SHELLon blacklist_drivers() {
+function blacklist_drivers() {
   echo "Blacklisting non-mediated device drivers."
   sudo su root -c "echo '# Libvf.io GPU driver blacklist' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist nouveau' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist amdgpu' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist amdkfd' >> /etc/modprobe.d/blacklist.conf"
 
@@ -255,6 +254,7 @@ function check_k_version() {
 function patch_nv() {
   # Patch NV driver according to kernel version 
   check_k_version
+  check_optional_driver
   custom=""  
   if [[ ($major -eq 5) && ($minor -ge 13) ]];then
     echo "Modifying the driver to have the version 5.14/15 patches."
@@ -268,6 +268,7 @@ function patch_nv() {
 }
 
 function install_nv() {
+  check_optional_driver
   # To ensure these are loaded beforehand
   sudo modprobe vfio
   sudo modprobe mdev
@@ -276,7 +277,7 @@ function install_nv() {
   openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
   echo "The following password will need to be used in enroll MOK on your next startup."
   sudo mokutil --import ~/.ssh/module-public.key
-  sudo ./*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q
+  sudo ./*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
 }
 
 # Check if nouveau is unloaded (pc rebooted)
@@ -284,7 +285,8 @@ function install_nv() {
 function pt1_end() {
   if ! lsmod | grep "nouveau";then
     install_nv
-    echo "Install of Libvfio has been finalized! Reboot may be necessary."
+    echo "Install of Libvfio has been finalized!"
+    echo "Reboot now to enrol MOK."
     rm $HOME/preinstall
   else
     touch $HOME/preinstall
@@ -313,19 +315,20 @@ function pt2_check() {
 
 
 function rm_kvm_group() {
-  check_distro
+binary operator expected  check_distro
   case $distro in
     "fedora")	sudo gpasswd -d $USER kvm;;
     "ubuntu")	deluser $USER kvm;;
-    "arch")	
+    "arch")
+  esac	
 }
 
 function rm_depen() {
   check_distro
   ls_depen 
   case $distro in
-    "fedora")	sudo dnf install -y nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
-    "ubuntu")	sudo apt remove -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
+    "fedora")	sudo dnf remove nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
+    "ubuntu")	sudo apt remove mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
     "arch")	yay -R "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse;;
     *)		echo "distro isnt fedora, ubuntu, or arch. unsure how to proceed.";;
   esac

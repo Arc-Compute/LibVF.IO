@@ -12,11 +12,12 @@ cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
 currentPath=$(pwd)
 
 
-#################### MAIN
-
 root_kick
 check_dir
 check_distro
+
+echo Running uninstall script for $distro distribution.
+echo
 
 #KVM Group
 read -p "Remove $USER from kvm group? (y or n): " a_kvm
