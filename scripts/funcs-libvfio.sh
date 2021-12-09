@@ -161,14 +161,14 @@ function install_choosenim() {
     curl https://nim-lang.org/choosenim/init.sh -sSf | sh
     echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.${shell_current}rc
     export PATH=$HOME/.nimble/bin:$PATH
-    choosenim update stable
+    choosenim update stable --verbose
   fi
 }
 
 function install_libvfio() {
   # Compile and install libvf.io
   cd $current_path
-  nimble install -y
+  nimble install -y --verbose
   rm ./arcd
 }
 
@@ -181,10 +181,13 @@ function dl_lookingglass() {
   git clone --recursive https://github.com/gnif/LookingGlass/
   cd LookingGlass
   git checkout Release/B4
+  cd $current_path
 }
 
 function install_lookingglass() {
  # Compile & install Looking Glass sources
+  set_sandbox_dir
+  cd $compile_sandbox/LookingGlass
   mkdir client/build
   mkdir host/build
   cd client/build
@@ -197,6 +200,7 @@ function install_lookingglass() {
   make
   cd platform/Windows
   makensis installer.nsi
+  cd $current_path
 }
 
 function get_scream() {
@@ -210,9 +214,11 @@ function get_scream() {
   cmake ..
   make
   sudo make install
+  cd $current_path
 }
 
 function get_introspection() {
+  set_sandbox_dir
   mkdir -p $HOME/.local/libvf.io/
   rm -rf $HOME/.local/libvf.io/introspection-installations
   mkdir -p $HOME/.local/libvf.io/introspection-installations
@@ -224,6 +230,7 @@ function get_introspection() {
   cd $HOME/.local/libvf.io/
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
   cp introspection-installations.rom ~/.config/arc/
+  cd $compile_sandbox
 }
 
 function arcd_deploy() {
