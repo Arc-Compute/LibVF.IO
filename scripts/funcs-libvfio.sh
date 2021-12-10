@@ -24,25 +24,58 @@ function check_dir() {
 }
 
 function check_distro() {
-  distro=$(uname -n)
-  if [ $distro != "fedora" ] &&  [ $distro != "ubuntu" ] && [ $distro != "arch" ];then
-    echo What linux distribution are you running? 
-    echo -e "Type 1 or 'Fedora'\nType 2 or 'Ubuntu'\nType 3 or 'Arch'"
-    read -p "Response: " a1_distro
 
-    a_distro=$(echo $a1_distro | tr '[:lower:]' '[:upper:]')
-
-    if [ $a_distro == "1" ] || [ $a_distro == "FEDORA" ];then
-      distro="fedora"
-    elif [ $a_distro == "2" ] || [ $a_distro == "UBUNTU" ];then
-      distro="ubuntu"
-    elif [ $a_distro == "3" ] || [ $a_distro == "ARCH" ];then
-      distro="arch"
-    else
-      echo "Make a valid choice"
-      exit
-    fi
+  if [ -z ${other_distro+x} ];then
+    other_distro="init"
   fi
+  
+  if [[ $other_distro == "init" ]];then 
+    #distro=$(uname -n)
+    distro='test'
+    
+    # if detected distro is not recognized 
+    if [ $distro != "fedora" ] &&  [ $distro != "ubuntu" ] && [ $distro != "arch" ];then
+      
+      echo What linux distribution are you running? 
+      echo -e "Type '1' or 'Fedora'\nType '2' or 'Ubuntu'\nType '3' or 'Arch'\nType '4' or 'OTHER' "
+      read -p "Response: " a1_distro
+      
+      a_distro=$(echo $a1_distro | tr '[:lower:]' '[:upper:]')
+      # user Input checks
+      if [ $a_distro == "1" ] || [ $a_distro == "FEDORA" ];then
+        distro="fedora"
+        other_distro="n/a"
+      elif [ $a_distro == "2" ] || [ $a_distro == "UBUNTU" ];then
+        distro="ubuntu"
+        other_distro="n/a"
+      elif [ $a_distro == "3" ] || [ $a_distro == "ARCH" ];then
+        distro="arch"
+        other_distro="n/a"
+      elif [ $a_distro == "4" ] || [ $a_distro == "OTHER" ];then
+        echo
+        echo "Note: your distribution likely isnt supported yet." 
+        echo "Some feautures may not work properly."
+        read -p "Your Distribution: " other_distro
+        distro=$other_distro
+      else
+        echo "Make a valid choice"
+        exit
+      fi
+    fi
+#  else #previous user inputted distro detected, will not warn distro unsupported
+#    distro=$other_distro
+  fi
+  echo checkdistro ran. distro is $distro
+  echo checkdistro ran. distro is $distro
+  echo checkdistro ran. distro is $distro
+  echo checkdistro ran. distro is $distro
+  echo checkdistro ran. distro is $distro
+  echo checkdistro ran. distro is $distro
+  echo checkdistro ran. distro is $distro
+  echo checkdistro ran. distro is $distro
+  echo checkdistro ran. distro is $distro
+  # message displayed in case when distro unsupported
+  case_dist_msg="Your distro, $distro, is not one that is supported (Fedora, Ubuntu, Arch). Unsure how to proceed."
 }
 
 function set_sandbox_dir {
@@ -60,7 +93,7 @@ function distro_update() {
     "fedora")	sudo dnf upgrade -y;;
     "ubuntu")	sudo apt update -y; sudo apt upgrade -y;;
     "arch")	sudo yay -Syu;;
-    *)		echo "distro isnt fedora, ubuntu, or arch. unsure how to proceed.";;
+    *)		echo $case_dist_msg;;
   esac
 }
 
@@ -78,7 +111,7 @@ function add_depen() {
     "fedora") 	sudo dnf install -y nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
     "ubuntu")	sudo apt install -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
     "arch")	yay -S "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse;;
-     *)		echo "distro isnt fedora, ubuntu, or arch. unsure how to proceed.";;
+     *)		echo $case_dist_msg;;
   esac
 }
 
@@ -97,7 +130,7 @@ function add_boot_param() {
     "fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
     "ubuntu")	sudo update-grub;;
     "arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
-     *)		echo "distro isnt fedora, ubuntu, or arch. unsure how to proceed.";;
+     *)		echo $case_dist_msg;;
   esac
 }
 
@@ -134,7 +167,7 @@ function update_initramfs() {
     "fedora")	sudo dracut -fv --regenerate-all;;
     "ubuntu")	sudo update-initramfs -u -k all;;
     "arch")	sudo mkinitcpio -P;;
-    *)		echo "distro isnt fedora, ubuntu, or arch. unsure how to proceed.";;
+    *)		echo $case_dist_msg;;
   esac
 }
 
@@ -337,7 +370,7 @@ function rm_depen() {
     "fedora")	sudo dnf remove nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
     "ubuntu")	sudo apt remove mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
     "arch")	yay -R "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse;;
-    *)		echo "distro isnt fedora, ubuntu, or arch. unsure how to proceed.";;
+    *)		echo $case_dist_msg;;
   esac
 }
 
@@ -382,7 +415,7 @@ function def_driver() {
     "fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
     "ubuntu")	sudo update-grub;;
     "arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
-    *)          echo "distro isnt fedora, ubuntu, or arch. unsure how to proceed.";;
+    *)          echo $case_dist_msg;;
   esac
   #blacklist
   sudo sed -i 's/# Libvf.io GPU driver blacklist//g' /etc/modprobe.d/blacklist.conf
