@@ -6,14 +6,12 @@
 
 source ./scripts/funcs-libvfio.sh
 
-# CPU Model
-cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
-# Current shell path
-currentPath=$(pwd)
 
-
+# Prevents user from running script with root
 root_kick
+# Ensures script is ran from proper directory
 check_dir
+# Checks which distribution user is using
 check_distro
 
 echo Running uninstall script for $distro distribution.

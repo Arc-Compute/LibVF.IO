@@ -30,8 +30,7 @@ function check_distro() {
   fi
   
   if [[ $other_distro == "init" ]];then 
-    #distro=$(uname -n)
-    distro='test'
+    distro=$(uname -n)
     
     # if detected distro is not recognized 
     if [ $distro != "fedora" ] &&  [ $distro != "ubuntu" ] && [ $distro != "arch" ];then
@@ -65,15 +64,7 @@ function check_distro() {
 #  else #previous user inputted distro detected, will not warn distro unsupported
 #    distro=$other_distro
   fi
-  echo checkdistro ran. distro is $distro
-  echo checkdistro ran. distro is $distro
-  echo checkdistro ran. distro is $distro
-  echo checkdistro ran. distro is $distro
-  echo checkdistro ran. distro is $distro
-  echo checkdistro ran. distro is $distro
-  echo checkdistro ran. distro is $distro
-  echo checkdistro ran. distro is $distro
-  echo checkdistro ran. distro is $distro
+#  echo check_distro called. distro is $distro
   # message displayed in case when distro unsupported
   case_dist_msg="Your distro, $distro, is not one that is supported (Fedora, Ubuntu, Arch). Unsure how to proceed."
 }
@@ -117,6 +108,7 @@ function add_depen() {
 
 function add_boot_param() {
   check_distro
+  cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
   echo "Updating kernel boot parameters."
   # Intel users
   if [[ $cpuModel == *"GenuineIntel"* ]]; then
@@ -175,24 +167,51 @@ function rm_nouveau() {
   sudo rmmod nouveau
 }
 
-function check_shell() {
+function check_shell_fns() {
   shell_path=$SHELL
   case $shell_path in
-    *zsh*)	shell_current="zsh";echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.zshrc;;
-    *bash*)	shell_current="bash";echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.bashrc;;
-    *fish*)	shell_current="fish";echo "What do FISH pray to?"; echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.config/fish/config.fish;;
-    *csh*)	shell_current="zsh";echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.cshrc;;
-    *tcsh*)	shell_current="zsh";echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.tcshrc;;
+    *zsh*)	shell_current="zsh"
+			if [ shell_fn == "path nim" ];then
+			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.zshrc
+			elif [ shell_fn == "rm path nim" ];then
+			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.zshrc
+			fi;;
+    *bash*)	shell_current="bash"
+ 			if [ shell_fn == "path nim" ];then
+			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.bashrc
+			elif [ shell_fn == "rm path nim" ];then
+			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.bashrc 
+			fi;;
+    *fish*)	shell_current="fish"
+		echo -e "\nWhat do FISH pray to?\n"
+ 			if [ shell_fn == "path nim" ];then
+			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.config/fish/config.fish
+			elif [ shell_fn == "path nim" ];then
+			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.config/fish/config.fish
+			fi;;
+    *csh*)	shell_current="csh"
+ 			if [ shell_fn == "path nim" ];then
+			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.cshrc
+			elif [ shell_fn == "rm path nim" ];then
+			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.cshrc
+			fi;;
+    *tcsh*)	shell_current="tcsh"
+ 			if [ shell_fn == "path nim" ];then
+			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.tcshrc
+			elif [ shell_fn == "rm path nim" ];then
+			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.tcshrc
+			fi;;
     *sh*)	shell_current="sh";;
-    *)		echo "cannot find your current shell"
+    *)		echo "Cannot find your current shell"
   esac
+  shell_fn=""
 }
 
 function install_choosenim() {
-  check_shell
   if ! which nimble;then
     curl https://nim-lang.org/choosenim/init.sh -sSf | sh
-    echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.${shell_current}rc
+    shell_fn="path nim"
+    check_shell_fns
     export PATH=$HOME/.nimble/bin:$PATH
     choosenim update stable --verbose
   fi
@@ -355,11 +374,11 @@ function pt2_check() {
 
 
 function rm_kvm_group() {
-binary operator expected  check_distro
+  check_distro
   case $distro in
     "fedora")	sudo gpasswd -d $USER kvm;;
     "ubuntu")	deluser $USER kvm;;
-    "arch")
+    "arch")	sudo gpasswd -d $USER kvm;;
   esac	
 }
 
@@ -385,22 +404,14 @@ function rm_nim() {
   rm -rf ~/.choosenim
   rm -rf ~/.nimble
   rm -rf ~/.cache/nim
-  shell_path=$SHELL 
-  case $shell_path in
-    *zsh*)	shell_current="zsh";sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.zshrc;;
-    *bash*)	shell_current="bash";sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.bashrc;;
-    *fish*)	shell_current="fish";echo "What do FISH pray to?";sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/ >> ~/.config/fish/config.fish;;
-    *csh*)	shell_current="zsh";sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.cshrc;;
-    *tcsh*)	shell_current="zsh";sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.tcshrc;;
-    *sh*)	shell_current="sh";;
-    *)		echo "cannot find your current shell"
-  esac
-  #also counter   export PATH=$HOME/.nimble/bin:$PATH ?
+  shell_fn="rm path nim"
+  check_shell_fns
 }
 
 function def_driver() {
+  cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
   #GRUB
-  if [[ $cpuModel == *"GenuineIntel"* ]]; then
+    if [[ $cpuModel == *"GenuineIntel"* ]]; then
     sudo sed -i 's/intel_iommu=on iommu=pt vfio_pci vfio mdev//g' /etc/default/grub
     sudo sed -i 's/intel_iommu=on iommu=pt vfio_pci//g' /etc/default/grub
   elif [[ $cpuModel == *"AuthenticAMD"* ]]; then

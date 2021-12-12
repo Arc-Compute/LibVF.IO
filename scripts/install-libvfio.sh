@@ -48,9 +48,8 @@ install_choosenim
 # Compile and install libvfio
 install_libvfio
 
-# Download Looking Glass beta 4 sources
+# Download, compile & install Looking Glass beta 4 sources
 dl_lookingglass
-# Compile & install Looking Glass sources
 install_lookingglass
 
 # Download and install scream sources
