@@ -1,0 +1,336 @@
+diff --color -uaNr ./kernel/common/inc/nv-time.h ../nv-patch/kernel/common/inc/nv-time.h
+--- ./kernel/common/inc/nv-time.h	2021-04-01 17:57:14.000000000 -0400
++++ ../nv-patch/kernel/common/inc/nv-time.h	2021-12-05 17:24:43.000000000 -0500
+@@ -205,7 +205,7 @@
+         // the requested timeout has expired, loop until less
+         // than a jiffie of the desired delay remains.
+         //
+-        current->state = TASK_INTERRUPTIBLE;
++        current->__state = TASK_INTERRUPTIBLE;
+         do
+         {
+             schedule_timeout(jiffies);
+diff --color -uaNr ./kernel/conftest.sh ../nv-patch/kernel/conftest.sh
+--- ./kernel/conftest.sh	2021-06-22 08:21:32.000000000 -0400
++++ ../nv-patch/kernel/conftest.sh	2021-12-05 17:24:43.000000000 -0500
+@@ -4736,17 +4736,47 @@
+         #
+         VERBOSE=$6
+         iommu=CONFIG_VFIO_IOMMU_TYPE1
+-        mdev=CONFIG_VFIO_MDEV_DEVICE
++        mdev=CONFIG_VFIO_MDEV
+         kvm=CONFIG_KVM_VFIO
++        VFIO_IOMMU_PRESENT=0
++        VFIO_MDEV_DEVICE_PRESENT=0
++        KVM_PRESENT=0
+ 
+         if [ -n "$VGX_KVM_BUILD" ]; then
+-            if (test_configuration_option ${iommu} || test_configuration_option ${iommu}_MODULE) &&
+-               (test_configuration_option ${mdev} || test_configuration_option ${mdev}_MODULE) &&
+-               (test_configuration_option ${kvm} || test_configuration_option ${kvm}_MODULE); then
++            if (test_configuration_option ${iommu} || test_configuration_option ${iommu}_MODULE); then
++                VFIO_IOMMU_PRESENT=1
++            fi
++
++            if (test_configuration_option ${mdev} || test_configuration_option ${mdev}_MODULE); then
++                VFIO_MDEV_DEVICE_PRESENT=1
++            fi
++
++            if (test_configuration_option ${kvm} || test_configuration_option ${kvm}_MODULE); then
++                KVM_PRESENT=1
++            fi
++
++            if [ "$VFIO_IOMMU_PRESENT" != "0" ] &&
++               [ "$VFIO_MDEV_DEVICE_PRESENT" != "0" ] &&
++               [ "$KVM_PRESENT" != "0" ] ; then
+                     exit 0
+             else
+-                echo "The kernel is not running a vGPU on KVM host.";
++                echo "Below CONFIG options are missing on the kernel for installing";
++                echo "NVIDIA vGPU driver on KVM host";
++                if [ "$VFIO_IOMMU_PRESENT" = "0" ]; then
++                    echo "CONFIG_VFIO_IOMMU_TYPE1";
++                fi
++
++                if [ "$VFIO_MDEV_DEVICE_PRESENT" = "0" ]; then
++                    echo "CONFIG_VFIO_MDEV_DEVICE";
++                fi
++
++                if [ "$KVM_PRESENT" = "0" ]; then
++                    echo "CONFIG_KVM";
++                fi
++                echo "Please install the kernel with above CONFIG options set, then";
++                echo "try installing again";
+                 echo "";
++
+                 if [ "$VERBOSE" = "full_output" ]; then
+                     echo "*** Failed vGPU on KVM sanity check. Bailing out! ***";
+                     echo "";
+diff --color -uaNr ./kernel/Kbuild ../nv-patch/kernel/Kbuild
+--- ./kernel/Kbuild	2021-04-01 17:55:37.000000000 -0400
++++ ../nv-patch/kernel/Kbuild	2021-12-05 17:24:43.000000000 -0500
+@@ -75,7 +75,7 @@
+ EXTRA_CFLAGS += -D__KERNEL__ -DMODULE -DNVRM -DNV_VERSION_STRING=\"460.73.01\" -Wno-unused-function -Wuninitialized -fno-strict-aliasing -mno-red-zone -mcmodel=kernel -DNV_UVM_ENABLE
+ EXTRA_CFLAGS += $(call cc-option,-Werror=undef,)
+ EXTRA_CFLAGS += -DNV_SPECTRE_V2=$(NV_SPECTRE_V2)
+-EXTRA_CFLAGS += -DNV_KERNEL_INTERFACE_LAYER
++EXTRA_CFLAGS += -DNV_KERNEL_INTERFACE_LAYER -Wfatal-errors
+ 
+ #
+ # Detect SGI UV systems and apply system-specific optimizations.
+diff --color -uaNr ./kernel/nvidia-drm/nvidia-drm-crtc.c ../nv-patch/kernel/nvidia-drm/nvidia-drm-crtc.c
+--- ./kernel/nvidia-drm/nvidia-drm-crtc.c	2021-04-01 17:57:12.000000000 -0400
++++ ../nv-patch/kernel/nvidia-drm/nvidia-drm-crtc.c	2021-12-05 17:24:43.000000000 -0500
+@@ -227,7 +227,7 @@
+ }
+ 
+ static int nv_drm_plane_atomic_check(struct drm_plane *plane,
+-                                     struct drm_plane_state *plane_state)
++                                     struct drm_atomic_state *plane_state)
+ {
+     int i;
+     struct drm_crtc *crtc;
+@@ -238,7 +238,7 @@
+         goto done;
+     }
+ 
+-    nv_drm_for_each_crtc_in_state(plane_state->state, crtc, crtc_state, i) {
++    nv_drm_for_each_crtc_in_state(plane_state, crtc, crtc_state, i) {
+         struct nv_drm_crtc_state *nv_crtc_state = to_nv_crtc_state(crtc_state);
+         struct NvKmsKapiHeadRequestedConfig *head_req_config =
+             &nv_crtc_state->req_config;
+@@ -246,14 +246,14 @@
+             &head_req_config->layerRequestedConfig[type];
+ 
+         if (plane->state->crtc == crtc &&
+-            plane->state->crtc != plane_state->crtc) {
++            plane->state->crtc != plane_state->crtcs->ptr) {
+             plane_req_config_disable(plane_requested_config);
+             continue;
+         }
+ 
+-        if (plane_state->crtc == crtc) {
++        if (plane_state->crtcs->ptr == crtc) {
+             plane_req_config_update(plane,
+-                                    plane_state,
++                                    plane_state->planes->state,
+                                     plane_requested_config);
+ 
+             if (__is_async_flip_requested(plane, crtc_state)) {
+@@ -276,12 +276,12 @@
+ }
+ 
+ static void nv_drm_plane_atomic_update(struct drm_plane *plane,
+-                                       struct drm_plane_state *old_state)
++                                       struct drm_atomic_state *old_state)
+ {
+ }
+ 
+ static void nv_drm_plane_atomic_disable(struct drm_plane *plane,
+-                                        struct drm_plane_state *old_state)
++                                        struct drm_atomic_state *old_state)
+ {
+ }
+ 
+diff --color -uaNr ./kernel/nvidia-drm/nvidia-drm-drv.c ../nv-patch/kernel/nvidia-drm/nvidia-drm-drv.c
+--- ./kernel/nvidia-drm/nvidia-drm-drv.c	2021-04-01 17:57:13.000000000 -0400
++++ ../nv-patch/kernel/nvidia-drm/nvidia-drm-drv.c	2021-12-05 17:24:43.000000000 -0500
+@@ -866,7 +866,7 @@
+     dev->dev_private = nv_dev;
+     nv_dev->dev = dev;
+     if (device->bus == &pci_bus_type) {
+-        dev->pdev = to_pci_dev(device);
++        //dev->pdev = to_pci_dev(device);
+     }
+ 
+     /* Register DRM device to DRM sub-system */
+diff --color -uaNr ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c
+--- ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c	2021-06-28 11:17:00.000000000 -0400
++++ ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c	2021-12-05 17:24:43.000000000 -0500
+@@ -25,6 +25,9 @@
+ #include <linux/init.h>
+ #include <linux/err.h>
+ #include <linux/eventfd.h>
++#include <uapi/linux/uuid.h>
++#include <linux/device.h>
++#include <linux/mdev.h>
+ #include "nvstatus.h"
+ #include "nv-misc.h"
+ #include "nv-linux.h"
+@@ -38,6 +41,25 @@
+ struct vgpu_devs vgpu_devices;
+ struct phys_devs phys_devices;
+ 
++struct mdev_parent {
++	struct device *dev;
++	const struct mdev_parent_ops *ops;
++	struct kref ref;
++	struct list_head next;
++	struct kset *mdev_types_kset;
++	struct list_head type_list;
++	/* Synchronize device creation/removal with parent unregistration */
++	struct rw_semaphore unreg_sem;
++};
++
++struct mdev_type {
++	struct kobject kobj;
++	struct kobject *devices_kobj;
++	struct mdev_parent *parent;
++	struct list_head next;
++	unsigned int type_group_id;
++};
++
+ #define SLEEP_TIME_MILLISECONDS 20
+ #define VGPU_EXIT_TIMEOUT_MILLISECONDS 5000
+ #define WAITQUEUE_TIMEOUT_SECONDS 25000
+@@ -203,8 +225,8 @@
+     .remove           = nv_vgpu_vfio_destroy,
+     .read             = nv_vgpu_vfio_read,
+     .write            = nv_vgpu_vfio_write,
+-    .open             = nv_vgpu_vfio_open,
+-    .release          = nv_vgpu_vfio_close,
++    .open_device      = nv_vgpu_vfio_open,
++    .close_device    = nv_vgpu_vfio_close,
+     .ioctl            = nv_vgpu_vfio_ioctl,
+     .mmap             = nv_vgpu_vfio_mmap,
+ };
+@@ -412,9 +434,9 @@
+     return NV_OK;
+ }
+ 
+-static ssize_t name_show(struct kobject *kobj, struct device *dev, char *buf)
++static ssize_t name_show(struct mdev_type *mtype, struct mdev_type_attribute *attr, char *buf)
+ {
+-    struct pci_dev *pdev = to_pci_dev(dev);
++    struct pci_dev *pdev = to_pci_dev(mtype->parent->dev);
+     struct pci_dev *parent_device;
+     NvU32 vgpu_type_id;
+     NV_STATUS status;
+@@ -425,7 +447,7 @@
+ 
+         parent_device = pdev;
+ 
+-    if (nv_get_vgpu_type_id(kobj->name, dev, &vgpu_type_id)
++    if (nv_get_vgpu_type_id(mtype->kobj.name, mtype->parent->dev, &vgpu_type_id)
+          == NV_OK)
+         status = rm_vgpu_vfio_ops.get_name(parent_device, vgpu_type_id, buf);
+     else
+@@ -438,9 +460,9 @@
+ }
+ MDEV_TYPE_ATTR_RO(name);
+ 
+-static ssize_t description_show(struct kobject *kobj, struct device *dev, char *buf)
++static ssize_t description_show(struct mdev_type *mtype, struct mdev_type_attribute *attr, char *buf)
+ {
+-    struct pci_dev *pdev = to_pci_dev(dev);
++    struct pci_dev *pdev = to_pci_dev(mtype->parent->dev);
+     struct pci_dev *parent_device;
+     NvU32 vgpu_type_id;
+     NV_STATUS status;
+@@ -451,7 +473,7 @@
+ 
+         parent_device = pdev;
+ 
+-    if (nv_get_vgpu_type_id(kobj->name, dev, &vgpu_type_id)
++    if (nv_get_vgpu_type_id(mtype->kobj.name, mtype->parent->dev, &vgpu_type_id)
+          == NV_OK)
+         status = rm_vgpu_vfio_ops.get_description(parent_device, vgpu_type_id, buf);
+     else
+@@ -464,13 +486,13 @@
+ }
+ MDEV_TYPE_ATTR_RO(description);
+ 
+-static ssize_t available_instances_show(struct kobject *kobj, struct device *dev, char *buf)
++static ssize_t available_instances_show(struct mdev_type *t, struct mdev_type_attribute *ta, char *buf)
+ {
+-    struct pci_dev *pdev = to_pci_dev(dev);
++    struct pci_dev *pdev = to_pci_dev(t->parent->dev);
+     NvU32 vgpu_type_id;
+     NV_STATUS status;
+ 
+-    if ((nv_get_vgpu_type_id(kobj->name, dev, &vgpu_type_id)) == NV_OK)
++    if ((nv_get_vgpu_type_id(t->kobj.name, t->parent->dev, &vgpu_type_id)) == NV_OK)
+         status = rm_vgpu_vfio_ops.get_instances(pdev, vgpu_type_id, buf);
+     else
+         return -EINVAL;
+@@ -482,8 +504,7 @@
+ }
+ MDEV_TYPE_ATTR_RO(available_instances);
+ 
+-static ssize_t device_api_show(struct kobject *kobj, struct device *dev,
+-                               char *buf)
++static ssize_t device_api_show(struct mdev_type *t, struct mdev_type_attribute *ta, char *buf)
+ {
+     return sprintf(buf, "%s\n",
+                    VFIO_DEVICE_API_PCI_STRING);
+@@ -578,7 +599,7 @@
+     return ret;
+ }
+ 
+-static int nv_vgpu_vfio_create(struct kobject *kobj, struct mdev_device *mdev)
++static int nv_vgpu_vfio_create(struct mdev_device *mdev)
+ {
+     NV_STATUS status = NV_OK;
+     vgpu_dev_t *vgpu_dev = NULL;
+@@ -600,7 +621,7 @@
+     if (!pdev)
+         return -EINVAL;
+ 
+-    if (nv_get_vgpu_type_id(kobj->name, NV_GET_MDEV_PARENT(mdev), &vgpu_type_id)
++    if (nv_get_vgpu_type_id(mdev->type->kobj.name, NV_GET_MDEV_PARENT(mdev), &vgpu_type_id)
+         != NV_OK)
+     {
+         ret = -EINVAL;
+@@ -676,12 +697,7 @@
+     if (pdev->is_virtfn)
+     {
+ #if defined(NV_MDEV_SET_IOMMU_DEVICE_PRESENT)
+-        ret = mdev_set_iommu_device(NV_GET_MDEV_DEV(mdev), NV_GET_MDEV_PARENT(mdev));
+-        if (ret != 0)
+-        {
+-            NV_VGPU_DEV_LOG(VGPU_ERR, mdev, "Failed to set IOMMU device. ret: %d \n", ret);
+-            goto remove_vgpu;
+-        }
++        mdev_set_iommu_device(mdev, NV_GET_MDEV_PARENT(mdev));
+ #endif
+     }
+ 
+diff --color -uaNr ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h
+--- ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h	2021-06-28 11:16:11.000000000 -0400
++++ ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h	2021-12-05 17:24:43.000000000 -0500
+@@ -37,7 +37,6 @@
+ #include <linux/list.h>
+ #include <linux/pci.h>
+ #include <linux/sched.h>
+-#include <linux/eventfd.h>
+ 
+ struct vgpu_dev_s;
+ struct mapping_node_s;
+@@ -52,7 +51,7 @@
+ static NV_STATUS  nv_vgpu_vfio_validate_map_request(struct mdev_device *, loff_t, NvU64 *,
+                                                     NvU64 *, NvU64 *, pgprot_t *, NvBool *);
+ static void       nv_vgpu_remove(struct pci_dev *);
+-static int        nv_vgpu_vfio_create(struct kobject *, struct mdev_device *);
++static int        nv_vgpu_vfio_create(struct mdev_device *);
+ static int        nv_vgpu_vfio_destroy(struct mdev_device *mdev);
+ static int        nv_vgpu_vfio_open(struct mdev_device *);
+ static void       nv_vgpu_vfio_close(struct mdev_device *);
+@@ -307,6 +306,7 @@
+ 
+ } intr_info_t;
+ 
++
+ typedef struct
+ {
+     NvU64 pending;
+diff --color -uaNr ./pkg-history.txt ../nv-patch/pkg-history.txt
+--- ./pkg-history.txt	2021-04-01 18:17:11.000000000 -0400
++++ ../nv-patch/pkg-history.txt	2021-12-05 17:24:43.000000000 -0500
+@@ -4,3 +4,7 @@
+ 
+ NVIDIA-Linux-x86_64-460.73.01: Added 32 bit compatibility libraries
+ 
++NVIDIA-Linux-x86_64-460.73.01-grid-vgpu-kvm-v5-custom: Applied patch file: /home/paco/Downloads/twelve.patch
++
++NVIDIA-Linux-x86_64-460.73.01-grid-vgpu-kvm-v5-custom: Applied patch file: /home/paco/Downloads/new-scripted.patch
++
