@@ -282,7 +282,7 @@ function get_introspection() {
   cd $HOME/.local/libvf.io/
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
   cp introspection-installations.rom ~/.config/arc/
-  cd $compile_sandbox
+  cd $current_path
 }
 
 function arcd_deploy() {
@@ -313,16 +313,22 @@ function patch_nv() {
   # Patch NV driver according to kernel version 
   check_k_version
   check_optional_driver
+  cd $current_path
+  cd ./optional #in order for uodated driver to be placed in 'optional' folder
   custom=""  
-  if [[ ($major -eq 5) && ($minor -ge 13) ]];then
+  if [[ ($major -eq 5) && ($minor -ge 14) ]];then
     echo "Modifying the driver to have the version 5.14/15 patches."
     custom="-custom"
     $current_path/optional/*.run --apply-patch $current_path/patches/fourteen.patch 
+  elif [[ ($major -eq 5) && ($minor -eq 13) ]];then
+    echo "5.13 isnt completely supported. Try install on a different kernel version"
+    exit
   elif [[ ($major -eq 5) && ($minor -ge 12) ]];then
     echo "Modifying the driver to have the version 5.12 patches."
     custom="-custom"
     $current_path/optional/*.run --apply-patch $current_path/patches/twelve.patch 
   fi
+  cd $current_path
 }
 
 function install_nv() {
@@ -334,7 +340,7 @@ function install_nv() {
   openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
   echo "The following password will need to be used in enroll MOK on your next startup."
   sudo mokutil --import ~/.ssh/module-public.key
-  sudo ./*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
+  sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
 }
 
 # Check if nouveau is unloaded (pc rebooted)
@@ -347,7 +353,7 @@ function pt1_end() {
     install_nv
     echo "Install of Libvfio has been finalized!"
     echo "Reboot now to enroll MOK."
-    if [ -f "$HOME/preinstall" ];then;rm $HOME/preinstall;fi
+    if [ -f "$HOME/preinstall" ];then rm $HOME/preinstall;fi
   else
     touch $HOME/preinstall
     echo "Nouveau was found, please reboot and run ./install.sh again, it will start from this point."

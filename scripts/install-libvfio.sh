@@ -60,15 +60,12 @@ get_introspection
 # Deploying arcd (libvfio component)
 arcd_deploy
 
-# Patch NV driver according to kernel version
-patch_nv
-
 # Rmmod Nouveau
 rm_nouveau
 
 # Check if nouveau is unloaded (pc rebooted)
 # IF no, prime system to continue where install script left off after reboot
-# IF yes, install NV Optional Driver if nouveau is not loaded
+# IF yes, patch NV optional driver according to kernel version and install
 pt1_end
 
 
