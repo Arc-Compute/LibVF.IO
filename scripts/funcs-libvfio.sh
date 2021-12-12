@@ -171,34 +171,34 @@ function check_shell_fns() {
   shell_path=$SHELL
   case $shell_path in
     *zsh*)	shell_current="zsh"
-			if [ shell_fn == "path nim" ];then
+			if [[ $shell_fn == "path nim" ]];then
 			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.zshrc
-			elif [ shell_fn == "rm path nim" ];then
+			elif [[ $shell_fn == "rm path nim" ]];then
 			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.zshrc
 			fi;;
     *bash*)	shell_current="bash"
- 			if [ shell_fn == "path nim" ];then
+ 			if [[ $shell_fn == "path nim" ]];then
 			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.bashrc
-			elif [ shell_fn == "rm path nim" ];then
+			elif [[ $shell_fn == "rm path nim" ]];then
 			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.bashrc 
 			fi;;
     *fish*)	shell_current="fish"
 		echo -e "\nWhat do FISH pray to?\n"
- 			if [ shell_fn == "path nim" ];then
+ 			if [[ $shell_fn == "path nim" ]];then
 			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.config/fish/config.fish
-			elif [ shell_fn == "path nim" ];then
+			elif [[ $shell_fn == "path nim" ]];then
 			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.config/fish/config.fish
 			fi;;
     *csh*)	shell_current="csh"
- 			if [ shell_fn == "path nim" ];then
+ 			if [[ $shell_fn == "path nim" ]];then
 			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.cshrc
-			elif [ shell_fn == "rm path nim" ];then
+			elif [[ $shell_fn == "rm path nim" ]];then
 			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.cshrc
 			fi;;
     *tcsh*)	shell_current="tcsh"
- 			if [ shell_fn == "path nim" ];then
+ 			if [[ $shell_fn == "path nim" ]];then
 			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.tcshrc
-			elif [ shell_fn == "rm path nim" ];then
+			elif [[ $shell_fn == "rm path nim" ]];then
 			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.tcshrc
 			fi;;
     *sh*)	shell_current="sh";;
@@ -274,7 +274,7 @@ function get_introspection() {
   mkdir -p $HOME/.local/libvf.io/
   rm -rf $HOME/.local/libvf.io/introspection-installations
   mkdir -p $HOME/.local/libvf.io/introspection-installations
-  wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
+  wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/vir0tio-win10-prewhql-0.1-161.zip
   wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
   cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
@@ -295,8 +295,7 @@ function check_optional_driver() {
     echo "Optional drivers not found."
     exit 0
   else 
-    cd $current_path/optional
-    chmod 755 *.run
+    chmod 755 $current_path/optional/*.run
   fi
 }
 
@@ -318,17 +317,16 @@ function patch_nv() {
   if [[ ($major -eq 5) && ($minor -ge 13) ]];then
     echo "Modifying the driver to have the version 5.14/15 patches."
     custom="-custom"
-    ./*.run --apply-patch $current_path/patches/fourteen.patch 
+    $current_path/optional/*.run --apply-patch $current_path/patches/fourteen.patch 
   elif [[ ($major -eq 5) && ($minor -ge 12) ]];then
     echo "Modifying the driver to have the version 5.12 patches."
     custom="-custom"
-    ./*.run --apply-patch $current_path/patches/twelve.patch 
+    $current_path/optional/*.run --apply-patch $current_path/patches/twelve.patch 
   fi
 }
 
 function install_nv() {
-  check_optional_driver
-  # To ensure these are loaded beforehand
+  patch_nv
   sudo modprobe vfio
   sudo modprobe mdev
   # Generate a driver signing key
@@ -340,13 +338,16 @@ function install_nv() {
 }
 
 # Check if nouveau is unloaded (pc rebooted)
-# Install nvidia if nouveau is inloaded
+# Install nvidia if nouveau is isn't loaded
 function pt1_end() {
+  # To ensure these are loaded before install driver install
+  sudo modprobe vfio
+  sudo modprobe mdev
   if ! lsmod | grep "nouveau";then
     install_nv
     echo "Install of Libvfio has been finalized!"
-    echo "Reboot now to enrol MOK."
-    rm $HOME/preinstall
+    echo "Reboot now to enroll MOK."
+    if [ -f "$HOME/preinstall" ];then;rm $HOME/preinstall;fi
   else
     touch $HOME/preinstall
     echo "Nouveau was found, please reboot and run ./install.sh again, it will start from this point."
@@ -354,18 +355,18 @@ function pt1_end() {
 }
 
 function pt2_check() {
-  if [ -f "$HOME/preinstall" ] && [ -f "$HOME/.local/libvf.io/"] && lsmod | grep "nouveau";then
+  if [ -f "$HOME/preinstall" ] && [ -f "$HOME/.local/libvf.io/" ] && lsmod | grep "nouveau" ;then
     echo "Error, It seems you've been through the first part of install and reboot, but Nouveau is still loaded"
     echo "Try removing Nouveau manually, reboot, then run install script again to install NV drivers."
     exit
-  elif [ -f "$HOME/preinstall" ] && [ ! -f "$HOME/.local/libvf.io/"] && lsmod | grep "nouveau";then
+  elif [ -f "$HOME/preinstall" ] && [ ! -f "$HOME/.local/libvf.io/" ] && lsmod | grep "nouveau";then
     echo "Nouveau is still loaded, and you seem to be missing files that should've been added in Part 1 of libvfio install"
     echo "Try the install from the beginning. Otherwise submit an error report."
     rm $HOME/preinstall
     exit
   elif [ -f "$HOME/preinstall" ]; then
     install_nv
-    echo "Install of Libvfio has been finalized! Reboot may be necessary."
+    echo "Install of Libvfio has been finalized! Reboot may be necessary to enroll MOK."
     rm $HOME/preinstall
     exit
   fi
