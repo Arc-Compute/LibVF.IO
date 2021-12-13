@@ -4,7 +4,8 @@
 # Reason: libvf.io bash functions
 #
 
-
+full_path=$(realpath $0)
+script_dir_path=$(dirname $full_path)
 
 function root_kick() {
   if [[ $(/usr/bin/id -u) == 0 ]]; then

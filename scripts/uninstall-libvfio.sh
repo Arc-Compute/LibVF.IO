@@ -4,8 +4,10 @@
 # Reason: Uninstallation of libvf.io
 #
 
-source ./scripts/funcs-libvfio.sh
+full_path=$(realpath $0)
+script_dir_path=$(dirname $full_path)
 
+source $script_dir_path/funcs-libvfio.sh
 
 # Prevents user from running script with root
 root_kick
