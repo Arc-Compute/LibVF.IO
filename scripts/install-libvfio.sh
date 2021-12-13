@@ -6,6 +6,7 @@
 
 full_path=$(realpath $0)
 script_dir_path=$(dirname $full_path)
+cd $script_dir_path/..
 
 source $script_dir_path/funcs-libvfio.sh
 

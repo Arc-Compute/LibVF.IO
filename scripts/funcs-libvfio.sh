@@ -4,9 +4,6 @@
 # Reason: libvf.io bash functions
 #
 
-full_path=$(realpath $0)
-script_dir_path=$(dirname $full_path)
-
 function root_kick() {
   if [[ $(/usr/bin/id -u) == 0 ]]; then
     echo "This script should not be run as root."
@@ -287,6 +284,7 @@ function get_introspection() {
   cp -r * $HOME/.local/libvf.io/introspection-installations
   cd $HOME/.local/libvf.io/
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
+  mkdir -p ~/.config/arc/
   cp introspection-installations.rom ~/.config/arc/
   cd $current_path
 }
