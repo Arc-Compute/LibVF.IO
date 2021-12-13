@@ -62,7 +62,7 @@ else
 fi
 
 #Drivers and vfio
-read -p 'Revert back to default driver and kernel boot parameters (y or n): ' a_driver
+read -p 'Revert back to default graphics driver and kernel boot parameters (y or n): ' a_driver
 if [[ $a_driver == "y" ]];then
   read -p 'This require a reboot, are you sure? (y or n): ' a_driver_2
   if [[ $a_driver_2 == "y" ]];then
@@ -93,6 +93,8 @@ fi
 
 echo Uninstall of Libvf.io Complete. 
 if [[ $reboot_required == 'y' ]]; then 
-  echo "A reboot will be required to finalize this part of the uninstallation."
+  echo "A reboot will be required to finalize this uninstall."
+else
+  echo "Your uninstall is complete."
 fi
 exit

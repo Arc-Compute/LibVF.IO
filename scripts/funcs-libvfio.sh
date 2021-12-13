@@ -204,6 +204,11 @@ function check_shell_fns() {
     *sh*)	shell_current="sh";;
     *)		echo "Cannot find your current shell"
   esac
+  echo Shell detected: $shell_current.
+  if [[ $shell_fn == "path nim" ]];then echo Added Nim to $shell_current shell path
+  elif [[ $shell_fn == "rm path nim" ]];then echo Removed Nim from $shell_current shell path
+  fi
+
   shell_fn=""
 }
 
