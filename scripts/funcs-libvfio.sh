@@ -70,6 +70,7 @@ function check_distro() {
 function set_sandbox_dir {
   compile_sandbox=$(echo ~)"/.cache/libvf.io/compile/"
   mkdir -p $compile_sandbox
+  cd $compile_sandbox
 }
 
 function add_kvm_group {
@@ -230,8 +231,6 @@ function install_libvfio() {
 function dl_lookingglass() {
   set_sandbox_dir
  # Download Looking Glass beta 4 sources
-  mkdir -p $compile_sandbox
-  cd $compile_sandbox
   rm -rf LookingGlass
   git clone --recursive https://github.com/gnif/LookingGlass/
   cd LookingGlass
@@ -242,7 +241,7 @@ function dl_lookingglass() {
 function install_lookingglass() {
  # Compile & install Looking Glass sources
   set_sandbox_dir
-  cd $compile_sandbox/LookingGlass
+  cd LookingGlass
   mkdir client/build
   mkdir host/build
   cd client/build
@@ -261,7 +260,6 @@ function install_lookingglass() {
 function get_scream() {
   set_sandbox_dir
   # Download Scream sources
-  cd $compile_sandbox
   git clone https://github.com/duncanthrax/scream/
   cd scream/Receivers/unix
   # Compile & install scream sources
@@ -376,7 +374,7 @@ function pt2_check() {
     exit
   elif [ -f "$HOME/preinstall" ]; then
     install_nv
-    echo "Install of Libvfio has been finalized! Reboot may be necessary to enroll MOK."
+    echo "Install of Libvfio has been finalized! Reboot is necessary to enroll MOK."
     rm $HOME/preinstall
     exit
   fi

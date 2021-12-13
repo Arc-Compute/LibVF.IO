@@ -26,8 +26,6 @@ echo
 # Checks if first stage of install script is complete
 pt2_check
 
-# Set compile sandbox path
-set_sandbox_dir
 # Adds user to KVM Group
 add_kvm_group
 # Updates packages
