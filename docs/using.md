@@ -15,8 +15,7 @@ Here are some examples of such a command:
 
 ``` sh
 arcd start com.ubuntu.arc photogrammetry-drive.arc machine-learning.qcow2
-arcd start --config=ml.yaml
-arcd start
+arcd start ml.yaml
 ```
 
 If no arguments are passed, the kernel and additional states will be taken
@@ -34,10 +33,7 @@ This is used to install a new kernel image using an iso.
 Here are some examples of such a command:
 
 ``` sh
-arcd create ubuntu.iso 20
-arcd create windows.iso
-arcd create --config=ml.yaml
-arcd create
+arcd create intel-mdev.yaml ubuntu.iso 20
 ```
 
 NOTE: Size is in GBs.
@@ -56,7 +52,7 @@ Some examples are:
 
 ``` sh
 arcd stop $UUID
-arcd stop $UUID --config=ml.yaml
+arcd stop $UUID ml.yaml
 arcd stop --data=$root $UUID
 ```
 
