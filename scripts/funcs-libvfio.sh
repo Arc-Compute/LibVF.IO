@@ -386,7 +386,7 @@ function rm_kvm_group() {
   check_distro
   case $distro in
     "Fedora")	sudo gpasswd -d $USER kvm;;
-    "Ubuntu")	deluser $USER kvm;;
+    "Ubuntu")	sudo deluser $USER kvm;;
     "Arch")	sudo gpasswd -d $USER kvm;;
   esac	
 }
@@ -396,7 +396,8 @@ function rm_depen() {
   ls_depen 
   case $distro in
     "Fedora")	sudo dnf remove nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
-    "Ubuntu")	sudo apt remove mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
+    "Ubuntu")	sudo apt remove dkms libglvnd-dev curl gcc cmake libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl libpulse-dev libasound2-dev;;
+    #ubuntu present before libvfio install: mokutil fonts-freefont-ttf pkg-config python3
     "Arch")	yay -R "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse;;
     *)		echo $case_dist_msg;;
   esac
