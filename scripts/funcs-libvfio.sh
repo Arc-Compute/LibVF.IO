@@ -27,42 +27,42 @@ function check_distro() {
     other_distro="init"
   fi
   
-  if [[ $other_distro == "init" ]];then 
-    distro=$(uname -n)
-    
-    # if detected distro is not recognized 
-    if [ $distro != "fedora" ] &&  [ $distro != "ubuntu" ] && [ $distro != "arch" ];then
-      
-      echo What linux distribution are you running? 
-      echo -e "Type '1' or 'Fedora'\nType '2' or 'Ubuntu'\nType '3' or 'Arch'\nType '4' or 'OTHER' "
-      read -p "Response: " a1_distro
-      
-      a_distro=$(echo $a1_distro | tr '[:lower:]' '[:upper:]')
-      # user Input checks
-      if [ $a_distro == "1" ] || [ $a_distro == "FEDORA" ];then
-        distro="fedora"
-        other_distro="n/a"
-      elif [ $a_distro == "2" ] || [ $a_distro == "UBUNTU" ];then
-        distro="ubuntu"
-        other_distro="n/a"
-      elif [ $a_distro == "3" ] || [ $a_distro == "ARCH" ];then
-        distro="arch"
-        other_distro="n/a"
-      elif [ $a_distro == "4" ] || [ $a_distro == "OTHER" ];then
-        echo
-        echo "Note: your distribution likely isnt supported yet." 
-        echo "Some feautures may not work properly."
-        read -p "Your Distribution: " other_distro
-        distro=$other_distro
-      else
-        echo "Make a valid choice"
-        exit
-      fi
-    fi
-#  else #previous user inputted distro detected, will not warn distro unsupported
-#    distro=$other_distro
+  if [[ $other_distro == "init" ]];then
+    uname_a=$(uname -a)
+    uname_a_upper=$(echo $uname_a | tr '[:lower:]' '[:upper:]')
+
+    # if detected distro is not recognized
+    case $uname_a_upper in
+      *"FEDORA"*)	distro="Fedora";;
+      *"UBUNTU"*)	distro="Ubuntu";;
+      *"ARCH"*)	distro="Arch";;
+      *)		echo What linux distribution are you running?
+      			echo -e "Type '1' or 'Fedora'\nType '2' or 'Ubuntu'\nType '3' or 'Arch'\nType '4' or 'OTHER' "
+      		read -p "Response: " a1_distro
+
+      			a_distro=$(echo $a1_distro | tr '[:lower:]' '[:upper:]')
+      			# user Input checks
+      			if [ $a_distro == "1" ] || [ $a_distro == "FEDORA" ];then
+      			  distro="Fedora"
+      			  other_distro="n/a"
+      			elif [ $a_distro == "2" ] || [ $a_distro == "UBUNTU" ];then
+      			  distro="Ubuntu"
+      			  other_distro="n/a"
+      			elif [ $a_distro == "3" ] || [ $a_distro == "ARCH" ];then
+      			  distro="Arch"
+      			  other_distro="n/a"
+      			elif [ $a_distro == "4" ] || [ $a_distro == "OTHER" ];then
+      			  echo
+      			  echo "Note: your distribution likely isnt supported yet."
+      			  echo "Some feautures may not work properly."
+      			  read -p "Your Distribution: " other_distro
+      			  distro=$other_distro
+      			else
+      			  echo "Make a valid choice"
+      			  exit
+      			fi
+    esac
   fi
-#  echo check_distro called. distro is $distro
   # message displayed in case when distro unsupported
   case_dist_msg="Your distro, $distro, is not one that is supported (Fedora, Ubuntu, Arch). Unsure how to proceed."
 }
@@ -80,9 +80,9 @@ function add_kvm_group {
 function distro_update() {
   check_distro
   case $distro in
-    "fedora")	sudo dnf upgrade -y;;
-    "ubuntu")	sudo apt update -y; sudo apt upgrade -y;;
-    "arch")	sudo yay -Syu;;
+    "Fedora")	sudo dnf upgrade -y;;
+    "Ubuntu")	sudo apt update -y; sudo apt upgrade -y;;
+    "Arch")	sudo yay -Syu;;
     *)		echo $case_dist_msg;;
   esac
 }
@@ -98,9 +98,9 @@ function add_depen() {
   check_distro
   ls_depen
   case $distro in
-    "fedora") 	sudo dnf install -y nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
-    "ubuntu")	sudo apt install -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
-    "arch")	yay -S "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse;;
+    "Fedora") 	sudo dnf install -y nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
+    "Ubuntu")	sudo apt install -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
+    "Arch")	yay -S "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse;;
      *)		echo $case_dist_msg;;
   esac
 }
@@ -118,16 +118,16 @@ function add_boot_param() {
   fi
   # GRUB
   case $distro in 
-    "fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
-    "ubuntu")	sudo update-grub;;
-    "arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
+    "Fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
+    "Ubuntu")	sudo update-grub;;
+    "Arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
      *)		echo $case_dist_msg;;
   esac
 }
 
 
 function add_policies() {
-  if [ $distro == "ubuntu" ] || [ $distro == "arch" ];then
+  if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ];then
     # Configure AppArmor policies, shared memory file permissions, and blacklisting non-mediated device drivers.
     echo "Updating AppArmor policies."
     sudo su root -c "mkdir -p /etc/apparmor.d/local/abstractions/ && echo '/dev/shm/kvmfr-* rw,' >> /etc/apparmor.d/local/abstractions/libvirt-qemu"
@@ -147,7 +147,7 @@ function blacklist_drivers() {
 
 function restart_apparmor() {
   # Restarting apparmor service
-  if [ $distro == "ubuntu" ] || [ $distro == "arch" ];then
+  if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ];then
     sudo systemctl restart apparmor
   fi
 }
@@ -155,9 +155,9 @@ function restart_apparmor() {
 function update_initramfs() {
   # Updating initramfs
   case $distro in
-    "fedora")	sudo dracut -fv --regenerate-all;;
-    "ubuntu")	sudo update-initramfs -u -k all;;
-    "arch")	sudo mkinitcpio -P;;
+    "Fedora")	sudo dracut -fv --regenerate-all;;
+    "Ubuntu")	sudo update-initramfs -u -k all;;
+    "Arch")	sudo mkinitcpio -P;;
     *)		echo $case_dist_msg;;
   esac
 }
@@ -385,9 +385,9 @@ function pt2_check() {
 function rm_kvm_group() {
   check_distro
   case $distro in
-    "fedora")	sudo gpasswd -d $USER kvm;;
-    "ubuntu")	deluser $USER kvm;;
-    "arch")	sudo gpasswd -d $USER kvm;;
+    "Fedora")	sudo gpasswd -d $USER kvm;;
+    "Ubuntu")	deluser $USER kvm;;
+    "Arch")	sudo gpasswd -d $USER kvm;;
   esac	
 }
 
@@ -395,9 +395,9 @@ function rm_depen() {
   check_distro
   ls_depen 
   case $distro in
-    "fedora")	sudo dnf remove nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
-    "ubuntu")	sudo apt remove mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
-    "arch")	yay -R "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse;;
+    "Fedora")	sudo dnf remove nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
+    "Ubuntu")	sudo apt remove mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
+    "Arch")	yay -R "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse;;
     *)		echo $case_dist_msg;;
   esac
 }
@@ -432,9 +432,9 @@ function def_driver() {
   fi
   check_distro
   case $distro in
-    "fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
-    "ubuntu")	sudo update-grub;;
-    "arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
+    "Fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
+    "Ubuntu")	sudo update-grub;;
+    "Arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
     *)          echo $case_dist_msg;;
   esac
   #blacklist
@@ -450,7 +450,7 @@ function def_driver() {
   #load nouveau driver
   sudo modprobe nouveau
   #Fedora unload vfio and mdev modules
-  if [ $distro == "fedora" ];then sudo modprobe -r vfio;    sudo modprobe -r mdev;  fi
+  if [ $distro == "Fedora" ];then sudo modprobe -r vfio;    sudo modprobe -r mdev;  fi
 }
 
 function rm_main() {
