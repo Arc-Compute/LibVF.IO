@@ -290,6 +290,13 @@ function get_introspection() {
   cd $current_path
 }
 
+# Cause newer Arch requires a newer and unsupported driver
+function arch_ignore_abi() {
+  if [ $distro == "Arch" ]; then
+    sudo su root -c "echo 'Section \"ServerFlags\"' >> /etc/X11/xorg.conf.d/50-IgnoreABI.conf && echo '        Option \"IgnoreABI\" \"1\"' >> /etc/X11/xorg.conf.d/50-IgnoreABI.conf && echo 'EndSection' >> /etc/X11/xorg.conf.d/50-IgnoreABI.conf"
+  fi
+}
+
 function arcd_deploy() {
   # Deploying arcd (libvfio component)
   arcd deploy --root=$HOME/.local/libvf.io/
@@ -338,6 +345,7 @@ function patch_nv() {
 
 function install_nv() {
   patch_nv
+  arch_ignore_abi
   sudo modprobe vfio
   sudo modprobe mdev
   # Generate a driver signing key
