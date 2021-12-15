@@ -82,7 +82,10 @@ function distro_update() {
   case $distro in
     "Fedora")	sudo dnf upgrade -y;;
     "Ubuntu")	sudo apt update -y; sudo apt upgrade -y;;
-    "Arch")	sudo yay -Syu;;
+    "Arch")     echo
+                echo "Arch users will require yay to update Arch and install libvf.io dependencies."
+                read -p "Press 'Enter' key to acknowledge and proceed..."
+    		yay -Syu;;
     *)		echo $case_dist_msg;;
   esac
 }
@@ -275,7 +278,7 @@ function get_introspection() {
   mkdir -p $HOME/.local/libvf.io/
   rm -rf $HOME/.local/libvf.io/introspection-installations
   mkdir -p $HOME/.local/libvf.io/introspection-installations
-  wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/vir0tio-win10-prewhql-0.1-161.zip
+  wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
   wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
   cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
@@ -358,7 +361,7 @@ function pt1_end() {
     if [ -f "$HOME/preinstall" ];then rm $HOME/preinstall;fi
   else
     touch $HOME/preinstall
-    echo "Nouveau was found, please reboot and run ./install.sh again, it will start from this point."
+    echo "Nouveau was found, please reboot and run ./install-libvfio.sh again, it will start from this point."
   fi
 }
 
