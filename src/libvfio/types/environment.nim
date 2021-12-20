@@ -25,7 +25,7 @@ type
     sudo*: bool
 
   VM* = object                    ## Running VM object.
-    socket*: AsyncSocket          ## Connected QMP socket.
+    socket*: Option[AsyncSocket]  ## Connected QMP socket.
     child*: bool                  ## Are we in the parent or child process.
     lockFile*: string             ## Lock file path.
     socketDir*: string            ## Socket directory path.
