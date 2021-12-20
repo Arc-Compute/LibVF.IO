@@ -4,6 +4,7 @@
 #
 import asyncnet
 import asyncdispatch
+import asyncfutures
 import os
 import osproc
 import posix
@@ -50,7 +51,8 @@ proc realCleanup(vm: VM) =
     discard sendCommand(vm.monad, commandWriteFile("1", mdev.stop))
     info(&"Deleted MDEV: {mdev.devId}")
 
-  discard sendCommand(vm.monad, removeFiles(vm.introspections))
+  if vm.introspections != @[]:
+    discard sendCommand(vm.monad, removeFiles(vm.introspections))
 
   info("Cleaned up VM")
 
@@ -66,7 +68,8 @@ proc cleanupVm*(vm: VM) =
   var
     timeouts = 0
     poweringDown = false
-    res = getResponse(vm.socket)
+    res = if isSome(vm.socket): getResponse(get(vm.socket))
+          else: newFuture[QmpResponse]()
 
   while running(vm.qemuPid):
     if not(finished(res)):
@@ -82,7 +85,7 @@ proc cleanupVm*(vm: VM) =
 
     let x = read(res)
 
-    res = getResponse(vm.socket)
+    res = getResponse(get(vm.socket))
 
     case x.event
     of qrPowerDown:
@@ -93,7 +96,7 @@ proc cleanupVm*(vm: VM) =
       if poweringDown:
         waitFor(
           sendMessage(
-            vm.socket,
+            get(vm.socket),
             QmpCommand(command: qcSendKey, keys: @["kp_enter"])
           )
         )
@@ -216,6 +219,11 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
 
   sleep(3000) # Sleeping to avoid trying to open the file too soon.
 
+  result.qemuPid = qemuPid
+  if not running(qemuPid):
+      error("PID not started, cleaning up")
+      return
+
   let
     ownedFiles = sockets & introspections
     groupArgs = changeGroup(ownedFiles)
@@ -231,11 +239,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
 
   let
     socketMaybe = createSocket(socketDir / "main.sock")
-    socket = if isSome(socketMaybe): get(socketMaybe)
-             else: newAsyncSocket()
 
-  result.socket = socket
-  result.qemuPid = qemuPid
+  result.socket = socketMaybe
 
 proc cleanVM*(vm: VM) =
   ## cleanVM - Cleans the VM/waits for VM to finish.
@@ -244,10 +249,10 @@ proc cleanVM*(vm: VM) =
   ## @vm - VM object for the created VM.
   cleanupVm(vm)
 
-  if vm.newInstall or vm.save:
+  if (vm.newInstall or vm.save) and fileExists(vm.liveKernel):
     info("Installing to base kernel")
     moveFile(vm.liveKernel, vm.baseKernel)
-  elif not vm.noCopy:
+  elif not vm.noCopy and fileExists(vm.liveKernel):
     removeFile(vm.liveKernel)
 
 proc stopVm*(cfg: Config, cmd: CommandLineArguments) =
