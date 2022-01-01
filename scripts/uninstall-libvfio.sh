@@ -32,15 +32,15 @@ else
 fi
 
 #Dependency Packages
-read -p "Remove installed libvfio $distro dependencies? (y or n): " a_depen
-if [[ $a_depen == "y" ]];then
-  rm_depen
-  echo done
-  echo
-else
-  echo "ok, so no."
-  echo
-fi
+# read -p "Remove installed libvfio $distro dependencies? (y or n): " a_depen
+# if [[ $a_depen == "y" ]];then
+#   rm_depen
+#   echo done
+#   echo
+# else
+#   echo "ok, so no."
+#   echo
+# fi
 
 #Libvf.io and lookingglass
 read -p 'Remove libvf.io and looking-glass stuff? (y or n): ' a_stuff
