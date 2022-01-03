@@ -58,7 +58,6 @@ when isMainModule:
     )
   of ceUndeploy:
     removeFile(homeConfigDir / "arc.yaml")
-    removeDir(cfg.root)
 
   if cmd.save and isSome(cmd.config):
     info("Saving new config file.")
