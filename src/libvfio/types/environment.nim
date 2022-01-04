@@ -20,9 +20,9 @@ type
 
   ## MONAD: Creates a monad for commands
   CommandMonad* = object
-    oldUid*: Uid
-    rootUid*: Uid
-    sudo*: bool
+    oldUid*: Uid          ## User Identifier (UID) prior to root elevation.
+    rootUid*: Uid         ## User Identifier (UID) post root elevation.
+    sudo*: bool           ## Whether or not the process is currently running as root.
 
   VM* = object                    ## Running VM object.
     socket*: Option[AsyncSocket]  ## Connected QMP socket.

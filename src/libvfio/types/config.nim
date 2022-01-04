@@ -14,22 +14,22 @@ import connectivity, hardware, environment, process
 
 type
   CommandEnum* = enum                ## Different first layer commands.
-    ceLs = "ls",
-    ceStart = "start",
-    ceCreate = "create",
-    ceIntrospect = "introspect"
-    ceStop = "stop",
-    cePs = "ps",
-    ceDeploy = "deploy",
-    ceUndeploy = "undeploy"
+    ceLs = "ls",                     ## List kernels, states, and apps.
+    ceStart = "start",               ## Start a VM.
+    ceCreate = "create",             ## Create a VM.
+    ceIntrospect = "introspect"      ## Introspect a VM.
+    ceStop = "stop",                 ## Stop a VM.
+    cePs = "ps",                     ## List running VMs.
+    ceDeploy = "deploy",             ## Deploy arcd's resources to disk.
+    ceUndeploy = "undeploy"          ## Undeploy arcd's resources from disk.
 
-  IntrospectEnum* = enum             ## Available introspection tools
-    isNone = "none",
-    isLookingGlass = "looking-glass"
+  IntrospectEnum* = enum             ## Available introspection tools.
+    isNone = "none",                 ## No introspection.
+    isLookingGlass = "looking-glass" ## Looking Glass IVSHMEM Frame Relay
 
   RequestedGpuType* = enum           ## Types of GPUs we support.
-    rgSRIOVGpu = "sriovdev",
-    rgMdevGpu = "sysfsdev"
+    rgSRIOVGpu = "sriovdev",         ## PCI address based mediated device functionality.
+    rgMdevGpu = "sysfsdev"           ## VFIO-Mdev based mediated device functionality.
 
   RequestedGpu* = object             ## Object to request a GPU.
     maxVRam*: int                    ## Maximum acceptable vRAM.
