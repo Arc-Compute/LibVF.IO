@@ -247,7 +247,7 @@ proc getConfigFile*(args: CommandLineArguments): Config =
       close(fs)
     except:
       echo("Error reading config ", s, " or ", prevRoot, ": ", getCurrentExceptionMsg())
-      result = prev
+      quit(1)
 
   proc replaceConfig(d: Config, config: Option[string]): Config =
     # TODO: Add ability to only pass in from shells in the root.
@@ -257,14 +257,6 @@ proc getConfigFile*(args: CommandLineArguments): Config =
       result = d
 
   result = DefaultConfig
-
-  # If a user defined initial configuration is built.
-  if fileExists("/etc/arc.yaml") and not args.noconfig:
-    result = readConfig("/etc/arc.yaml", getHomeDir() / ".local" / "libvf.io", result)
-
-  let userConfig = getHomeDir() / ".config" / "arc" / "arc.yaml"
-  if fileExists(userConfig) and not args.noconfig:
-    result = readConfig(userConfig, getHomeDir() / ".local" / "libvf.io", result)
 
   # If no file was passed in.
   if isSome(args.config):
