@@ -142,7 +142,7 @@ proc createTableStates(d: LockData): string =
   for state in d.states:
     let
       loc = d.lock.config.root / "states" / state
-      size = float(getFileSize(loc)) / float(1_073_741_824)
+      size = float(getFileSize(loc)) / float(1_073_741_824) # POTENTIAL ROUNDING ERROR, CHANGE TO INTS
     tt.addRow(@[state, loc, $size])
 
   result = tt.render()
