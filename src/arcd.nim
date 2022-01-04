@@ -15,57 +15,39 @@ proc continueVM(vm: VM) =
   ## @vm - VM to continue the lifecycle for.
   ##
   ## Side Effects - VM side effects.
-  if vm.child:
-    # Continues VM.
+  if vm.child:                                                     ## Continues VM.
     cleanVM(vm)
 
-when isMainModule:
-  # Checks if process is running as root and exits if it is.
+when isMainModule:                                                 ## Checks if process is running as root and exits if it is.
   if getuid() == 0:
     echo("DO NOT RUN THIS AS ROOT")
     quit 0
 
   let
-    # Gets command line arguments.
-    cmd = getCommandLine()
-    # Get config file.
-    cfg = getConfigFile(cmd)
-    # Sets the log path.
-    log = cfg.root / "logs" / "arcd"
-    # Get the session UUID.
-    uid = getUUID()
-    # Sets the config path.
-    homeConfigDir = getHomeDir() / ".config" / "arc"
+    cmd = getCommandLine()                                        ## Gets command line arguments.
+    cfg = getConfigFile(cmd)                                      ## Gets config file. 
+    log = cfg.root / "logs" / "arcd"                              ## Sets the log path.
+    uid = getUUID()                                               ## Get the session UUID.
+    homeConfigDir = getHomeDir() / ".config" / "arc"              ## Sets the config path. 
 
-  # Create the log directory.
-  createDir(log)
-  # Create the config directory.
-  createDir(homeConfigDir)
-  # Start logging.
-  initLogger(log / (uid & ".log"), true)
+  createDir(log)                                                  ## Create the log directory. 
+  createDir(homeConfigDir)                                        ## Create the config directory.
+  initLogger(log / (uid & ".log"), true)                          ## Start logging.
 
-  # Command line interface cases.
-  case cmd.command
-  # Create VM.
-  of ceCreate:
+  case cmd.command                                                ## Command line interface cases.
+  of ceCreate:                                                    ## Create VM.
     continueVM(startVm(cfg, uid, true, false, false))
-  # Start VM.
-  of ceStart:
+  of ceStart:                                                     ## Start VM.
     continueVM(startVm(cfg, uid, false, cmd.nocopy, cmd.save))
-  # Stop VM via QEMU Machine Protocol (QMP) signal.
-  of ceStop:
+  of ceStop:                                                      ## Stop VM via QEMU Machine Protocol (QMP) signal.
     stopVm(cfg, cmd)
-  # Introspect a VM.
-  of ceIntrospect:
-    introspectVm(cfg, cmd.uuid)
-  # List available kernels, states, and apps.
-  of ceLs:
+  of ceIntrospect:                                                ## Introspect a VM.
+    introspectVm(cfg, cmd.uuid) 
+  of ceLs:                                                        ## List available kernels, states, and apps.
     arcLs(cfg, cmd)
-  # List running VMs by UUID.
-  of cePs:
+  of cePs:                                                        ## List running VMs by UUID.
     arcPs(cfg, cmd)
-  # Deploy the arcd directory.
-  of ceDeploy:
+  of ceDeploy:                                                    ## Deploy the arcd directory.
     removeFile(homeConfigDir / "arc.yaml")
     writeConfigFile(homeConfigDir / "arc.yaml", cfg)
     createDir(cfg.root / "states")
@@ -73,12 +55,10 @@ when isMainModule:
       homeConfigDir / "introspection-installations.rom",
       cfg.root / "introspection-installations.rom"
     )
-  # Undeploy the arcd directory
-  of ceUndeploy:
+  of ceUndeploy:                                                  ## Undeploy the arcd directory
     removeFile(homeConfigDir / "arc.yaml")
 
-  # Save the config file
-  if cmd.save and isSome(cmd.config):
+  if cmd.save and isSome(cmd.config):                             ## Save the config file
     info("Saving new config file.")
     let config = get(cmd.config)
     removeFile(config)
