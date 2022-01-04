@@ -34,7 +34,7 @@ type
       errorMessage*: string                   ## Error message on failure.
     else: discard
 
-proc `%`*(cmd: QmpCommand): JsonNode = ## Overload for converting to JSON.
+proc `%`*(cmd: QmpCommand): JsonNode =        ## Overload for converting to JSON.
   func addQCode(x: string): JsonNode =
     %*{"type": "qcode", "data": x}
 
