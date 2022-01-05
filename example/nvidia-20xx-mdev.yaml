@@ -1,0 +1,49 @@
+%YAML 1.2
+%TAG !n! tag:nimyaml.org,2016:
+--- !n!custom:Config 
+startintro: true
+nographics: true
+spice: true
+introspect: "looking-glass"
+shareddir: !!null ~
+connectivity: 
+  exposedPorts: 
+    - 
+      guest: 22
+      host: 2222
+container: 
+  kernel: windows.arc
+  state: []
+  initialSize: 20
+  iso: !!null ~
+cpus: 
+  cores: 4
+  sockets: 1
+  threads: 1
+  ramAlloc: 8192
+gpus: 
+  - 
+    - 
+      maxVRam: 2000
+    - 
+      minVRam: 1000
+    - 
+      gpuType: sysfsdev
+    - 
+      mdevType: ""
+    - 
+      parentPort: !!null ~
+    - 
+      devId: hostdev0
+    - 
+      suffix: Q
+nics: []
+root: ~/.local/libvf.io
+sudo: false
+commands: 
+  - 
+    arg: "-set"
+    values: ["device.hostdev0.x-pci-sub-device-id=4794"]
+  - 
+    arg: "-set"
+    values: ["device.hostdev0.x-pci-device-id=7728"]
