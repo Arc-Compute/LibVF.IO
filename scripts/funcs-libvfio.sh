@@ -235,10 +235,9 @@ function dl_lookingglass() {
   set_sandbox_dir
  # Download Looking Glass beta 4 sources
   rm -rf LookingGlass
-  git clone --recursive https://github.com/gnif/LookingGlass/
-  cd LookingGlass
-  git checkout Release/B4
-  cd $current_path
+  curl -o lg.tar.gz https://looking-glass.io/artifact/B4/source
+  tar -xvf lg.tar.gz
+  mv looking-glass-B4 LookingGlass
 }
 
 function install_lookingglass() {
