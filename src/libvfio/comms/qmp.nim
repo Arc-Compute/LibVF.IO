@@ -41,7 +41,10 @@ proc getResponse*(sock: AsyncSocket):
   ## Side effects - Reads a response from the socket.
   let r = await recvLine(sock)
   debug("Received from socket: ", r)
-  result = parseResponse(parseJson(r))
+  try:
+    result = parseResponse(parseJson(r))
+  except:
+    result = QmpResponse(event: qrInvalid, errorMessage: "Not parsed")
   debug("Response: ", $result)
 
 proc createSocket*(sockPath: string): Option[AsyncSocket] =

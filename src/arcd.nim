@@ -8,15 +8,15 @@ import std/posix
 
 import libvfio/[control, logger, types, comms]
 
-proc continueVM(vm: VM) =
-  ## continueVM - Code for continuing a VM's sequence after it is started.
+proc continueVm(vm: VM) =
+  ## continueVm - Code for continuing a VM's sequence after it is started.
   ##
   ## Input
   ## @vm - VM to continue the lifecycle for.
   ##
   ## Side Effects - VM side effects.
   if vm.child:                                                     ## Continues VM.
-    cleanVM(vm)
+    cleanVm(vm)
 
 proc printHelp() =
   ## printHelp - Code for printing help dialog
@@ -57,9 +57,9 @@ when isMainModule:                                                 ## Checks if 
   of ceHelp:                                                      ## Print help dialog.
     printHelp()
   of ceCreate:                                                    ## Create VM.
-    continueVM(startVm(cfg, uid, true, false, false))
+    continueVm(startVm(cfg, uid, true, false, false))
   of ceStart:                                                     ## Start VM.
-    continueVM(startVm(cfg, uid, false, cmd.nocopy, cmd.save))
+    continueVm(startVm(cfg, uid, false, cmd.nocopy, cmd.save))
   of ceStop:                                                      ## Stop VM via QEMU Machine Protocol (QMP) signal.
     stopVm(cfg, cmd)
   of ceIntrospect:                                                ## Introspect a VM.

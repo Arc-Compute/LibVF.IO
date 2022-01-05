@@ -242,8 +242,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
 
   result.socket = socketMaybe
 
-proc cleanVM*(vm: VM) =
-  ## cleanVM - Cleans the VM/waits for VM to finish.
+proc cleanVm*(vm: VM) =
+  ## cleanVm - Cleans the VM/waits for VM to finish.
   ##
   ## Inputs
   ## @vm - VM object for the created VM.
