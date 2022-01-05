@@ -14,6 +14,7 @@ import connectivity, hardware, environment, process
 
 type
   CommandEnum* = enum                ## Different first layer commands.
+    ceHelp = "help",                 ## Help dialog.
     ceLs = "ls",                     ## List kernels, states, and apps.
     ceStart = "start",               ## Start a VM.
     ceCreate = "create",             ## Create a VM.
@@ -134,6 +135,8 @@ proc getCommandLine*(): CommandLineArguments =
   ## Side effects - Reads the command line arguments.
   func getCommand(key: string): Option[CommandEnum] =
     case toLowerAscii(key)
+    of $ceHelp:
+      some(ceHelp)
     of $ceIntrospect:
       some(ceIntrospect)
     of $ceCreate:

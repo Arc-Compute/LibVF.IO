@@ -18,6 +18,25 @@ proc continueVM(vm: VM) =
   if vm.child:                                                     ## Continues VM.
     cleanVM(vm)
 
+proc printHelp() =
+  ## printHelp - Code for printing help dialog
+  ##
+  ## Input
+  ## none
+  ##
+  ## Side Effects - Prints help dialog to the terminal.
+  echo("LibVF.IO: A vendor neutral GPU multiplexing tool driven by VFIO & YAML.")
+  echo("")
+  echo("usage: arcd <operation> [...]")
+  echo("operations:")
+  echo("  arcd create user.yaml")
+  echo("  arcd start user.yaml --preinstall")
+  echo("  arcd start user.yaml")
+  echo("  arcd ls")
+  echo("  arcd ps")
+  echo("  arcd introspect $UUID user.yaml")
+  quit 0
+
 when isMainModule:                                                 ## Checks if process is running as root and exits if it is.
   if getuid() == 0:
     echo("DO NOT RUN THIS AS ROOT")
@@ -35,6 +54,8 @@ when isMainModule:                                                 ## Checks if 
   initLogger(log / (uid & ".log"), true)                          ## Start logging.
 
   case cmd.command                                                ## Command line interface cases.
+  of ceHelp:                                                      ## Print help dialog.
+    printHelp()
   of ceCreate:                                                    ## Create VM.
     continueVM(startVm(cfg, uid, true, false, false))
   of ceStart:                                                     ## Start VM.
