@@ -68,7 +68,7 @@ function check_distro() {
     esac
   fi
   # message displayed in case when distro unsupported
-  case_dist_msg="Your distro, $distro, is not one that is supported (Fedora, Ubuntu, Arch, Pop!_OS). Unsure how to proceed."
+  case_dist_msg="Your distro, $distro, is not one that is supported (Fedora, Ubuntu, Arch, PopOS). Unsure how to proceed."
 }
 
 function set_sandbox_dir {
