@@ -332,8 +332,9 @@ function patch_nv() {
     custom="-custom"
     $current_path/optional/*.run --apply-patch $current_path/patches/fourteen.patch 
   elif [[ ($major -eq 5) && ($minor -eq 13) ]];then
-    echo "5.13 isnt completely supported. Try install on a different kernel version"
-    exit
+    echo "Modifying the driver to have the version 5.13 patches."
+    custom="-custom"
+    $current_path/optional/*.run --apply-patch $current_path/patches/thirteen.patch 
   elif [[ ($major -eq 5) && ($minor -ge 12) ]];then
     echo "Modifying the driver to have the version 5.12 patches."
     custom="-custom"
