@@ -3,6 +3,7 @@
 # Reason: Provide function to get locks
 #
 import os
+import std/strformat
 
 import ../types
 
@@ -25,10 +26,14 @@ proc getLocks*(cfg: Config): seq[wLock] =
   let pattern = cfg.root / "lock" / "*.json"
 
   for filePath in walkPattern(pattern):
-    result &= wLock(
+    let l = wLock(
       lock: getLockFile(filePath),
       path: filePath
     )
+    if not dirExists(&"/proc/{l.lock.pidNum}"):
+      removeFile(filePath)
+    else:
+      result &= l
 
 proc findLocksByUuid*(cfg: Config, uuid: string): seq[wLock] =
   ## findLocksByUuid - Finds locks by matching UUID
@@ -44,10 +49,14 @@ proc findLocksByUuid*(cfg: Config, uuid: string): seq[wLock] =
   let pattern = cfg.root / "lock" / "*" & uuid & "*.json"
 
   for filePath in walkPattern(pattern):
-    result &= wLock(
+    let l = wLock(
       lock: getLockFile(filePath),
       path: filePath
     )
+    if not dirExists(&"/proc/{l.lock.pidNum}"):
+      removeFile(filePath)
+    else:
+      result &= l
 
 proc findLocksByPid*(cfg: Config, pid: int): seq[wLock] =
   ## findLocksByPid - Finds locks by matching PID
@@ -65,7 +74,11 @@ proc findLocksByPid*(cfg: Config, pid: int): seq[wLock] =
   for filePath in walkPattern(pattern):
     let lock = getLockFile(filePath)
     if lock.pidNum == pid:
-      result &= wLock(
+      let l = wLock(
         lock: getLockFile(filePath),
         path: filePath
       )
+      if not dirExists(&"/proc/{l.lock.pidNum}"):
+        removeFile(filePath)
+      else:
+        result &= l

@@ -219,7 +219,7 @@ func qemuLaunch*(cfg: Config, uuid: string,
     # Spice port
     result.args &= "-spice"
     result.args &=
-      "port=5900,addr=127.0.0.1,disable-ticketing,image-compression=off,seamless-migration=on"
+      "port=5900,addr=127.0.0.1,disable-ticketing=on,image-compression=off,seamless-migration=on"
 
     # SPICE USB Redirects
     result.args &= "-chardev"
@@ -298,14 +298,24 @@ func qemuLaunch*(cfg: Config, uuid: string,
   for mdev in mdevs:
     result.args &= mdevArgs(mdev)
 
+  # Port forward ssh port
+  result.args &= "-device"
+  result.args &= "rtl8139,netdev=net0"
+  result.args &= "-netdev"
+  result.args &= join(
+    @["user", "id=net0"] &
+    @[&"hostfwd=tcp::{cfg.sshPort}-:22"],
+    ","
+  )
+
   # Port forward for all exposed ports
   if len(cfg.connectivity.exposedPorts) > 0:
     let hostfwds = map(cfg.connectivity.exposedPorts,
                       (port: Port) => &"hostfwd=tcp::{port.host}-:{port.guest}")
     result.args &= "-device"
-    result.args &= "rtl8139,netdev=net0"
+    result.args &= "rtl8139,netdev=net1"
     result.args &= "-netdev"
-    result.args &= join(@["user", "id=net0"] & hostfwds, ",")
+    result.args &= join(@["user", "id=net1"] & hostfwds, ",")
 
   if isSome(cfg.shareddir) and not install:
     result.args &= "-hdb"

@@ -1,16 +1,16 @@
 %YAML 1.2
 %TAG !n! tag:nimyaml.org,2016:
 --- !n!custom:Config 
-startintro: true
+startintro: false
 startapp: false
-nographics: true
-spice: true
+nographics: false
+spice: false
 introspect: "looking-glass"
 shareddir: !!null ~
 sshPort: 2222
 connectivity: 
   exposedPorts: []
-container:
+container: 
   kernel: windows.arc
   state: []
   initialSize: 20
@@ -20,21 +20,18 @@ cpus:
   sockets: 1
   threads: 2
   ramAlloc: 8192
-gpus: 
-  - 
-    -
-      gpuType: "sriovdev"
-    - 
-      acceptableTypes: [S7150]
-    - 
-      maxVRam: 8192
-    - 
-      minVRam: 0
+gpus: []
 nics: []
-root: ~/.local/libvf.io
+root: /home/mbuchel/.local/libvf.io
 sudo: false
 commands: []
 startupCommands: []
 teardownCommands: []
 installCommands: []
-appCommands: []
+appCommands: 
+  - 
+    is_root: true
+    list: 
+      - 
+        exec: echo
+        args: [hello, world]

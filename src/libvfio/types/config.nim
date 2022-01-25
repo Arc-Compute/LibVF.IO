@@ -13,7 +13,7 @@ import yaml
 import connectivity, hardware, environment, process
 
 type
-  CommandEnum* = enum                ## Different first layer commands.
+  CommandEnum* = enum                 ## Different first layer commands.
     ceHelp = "help",                 ## Help dialog.
     ceLs = "ls",                     ## List kernels, states, and apps.
     ceStart = "start",               ## Start a VM.
@@ -23,6 +23,7 @@ type
     cePs = "ps",                     ## List running VMs.
     ceDeploy = "deploy",             ## Deploy arcd's resources to disk.
     ceUndeploy = "undeploy"          ## Undeploy arcd's resources from disk.
+    ceApp = "app"                    ## Runs arcd application.
 
   IntrospectEnum* = enum             ## Available introspection tools.
     isNone = "none",                 ## No introspection.
@@ -48,22 +49,30 @@ type
   RequestedNet* = object             ## Object to request a network NIC.
     mac*: string                     ## MAC address for the requested NIC.
 
-  Config* = object                   ## Configuration object for spawning a
-                                     ##  VM.
-    startintro*: bool                ## If we start the introspection by default.
-    nographics*: bool                ## If we have the no graphics flag set.
-    spice*: bool                     ## If we want to use a spice server.
-    introspect*: IntrospectEnum      ## What type of introspection we use.
-    shareddir*: Option[string]       ## Shared directory between os and host.
-    connectivity*: Connectivity      ## Code to connect to the machine.
-    container*: ArcContainer         ## The specifics for how to spawn the
-                                     ##  container.
-    cpus*: Cpu                       ## CPU parameters.
-    gpus*: seq[RequestedGpu]         ## Structure for requesting GPUs.
-    nics*: seq[RequestedNet]         ## Structure for requestion network nics.
-    root*: string                    ## Current root for the system.
-    sudo*: bool                      ## Do we run this vm as sudo?
-    commands*: seq[QemuArgs]         ## Additional commands to pass into qemu.
+  Config* = object                       ## Configuration object for spawning a
+                                         ##  VM.
+    startintro*: bool                    ## If we start the introspection by
+                                         ##  default.
+    startapp*: bool                      ## If we start the application by
+                                         ##  default.
+    nographics*: bool                    ## If we have the no graphics flag set.
+    spice*: bool                         ## If we want to use a spice server.
+    introspect*: IntrospectEnum          ## What type of introspection we use.
+    shareddir*: Option[string]           ## Shared directory between os and host.
+    sshPort*: int                        ## SSH port number.
+    connectivity*: Connectivity          ## Code to connect to the machine.
+    container*: ArcContainer             ## The specifics for how to spawn the
+                                         ##  container.
+    cpus*: Cpu                           ## CPU parameters.
+    gpus*: seq[RequestedGpu]             ## Structure for requesting GPUs.
+    nics*: seq[RequestedNet]             ## Structure for requestion network nics.
+    root*: string                        ## Current root for the system.
+    sudo*: bool                          ## Do we run this vm as sudo?
+    commands*: seq[QemuArgs]             ## Additional commands to pass into qemu.
+    startupCommands*: seq[CommandList]  ## Startup command list.
+    teardownCommands*: seq[CommandList] ## Teardown command list.
+    installCommands*: seq[CommandList]  ## Installation command list.
+    appCommands*: seq[CommandList]      ## Application command list.
 
   CommandLineArguments* = object     ## Arguments passed into the system.
     config*: Option[string]          ## Path for the configuration file.
@@ -84,7 +93,7 @@ type
       size*: Option[int]             ## Size of the initial kernel.
     of ceStart:
       additionalStates*: seq[string] ## Additional state variables to send in.
-    of ceStop, ceIntrospect:
+    of ceStop, ceIntrospect, ceApp:
       uuid*: string                  ## UUID of the container we want to stop.
     of ceLs:
       option*: Option[string]        ## Option for ls [all, kernels, states, apps]
@@ -97,14 +106,14 @@ const
   DefaultConfig = Config(            ## Default configuration value if nothing
                                      ##  is already found.
     startintro: false,
+    startapp: false,
     nographics: false,
     spice: false,
     introspect: isLookingGlass,
     shareddir: none(string),
+    sshPort: 2222,
     connectivity: Connectivity(
-      exposedPorts: @[
-        Port(guest: 22, host: 2222),
-      ]
+      exposedPorts: @[]
     ),
     container: ArcContainer(
       kernel: "windows.arc",
@@ -122,7 +131,11 @@ const
     nics: @[],
     root: getHomeDir() / ".local" / "libvf.io",
     sudo: false,
-    commands: @[]
+    commands: @[],
+    startupCommands: @[],
+    teardownCommands: @[],
+    installCommands: @[],
+    appCommands: @[]
   )
 
 proc getCommandLine*(): CommandLineArguments =
@@ -153,6 +166,8 @@ proc getCommandLine*(): CommandLineArguments =
       some(ceDeploy)
     of $ceUndeploy:
       some(ceUndeploy)
+    of $ceApp:
+      some(ceApp)
     else: none(CommandEnum)
 
   var
@@ -198,6 +213,13 @@ proc getCommandLine*(): CommandLineArguments =
         of cePs:
           if i == 1:
             result.search = some(key)
+        of ceApp:
+          if ".yaml" in key:
+            result.config = some(key)
+            i -= 1
+          else:
+            if i == 1:
+              result.uuid = key
         else: discard
       i += 1
     of cmdLongOption:
@@ -221,10 +243,16 @@ proc getCommandLine*(): CommandLineArguments =
         result.shareddir = some(val)
       of "preinstall":
         result.preinstall = true
+      of "advanced-help":
+        echo("HELP ME I AM STUCK IN YOUR CPU")
+        quit(1)
       else: discard
     else: discard
   if result.command in @[ceStart, ceCreate] and isNone(result.config):
     echo("Config must be passed into arcd for these commands")
+    quit(1)
+  if result.command in @[ceStop, ceApp, ceIntrospect] and result.uuid == "":
+    echo("UUID must be passed into arcd for these commands")
     quit(1)
 
 proc getConfigFile*(args: CommandLineArguments): Config =
@@ -253,7 +281,6 @@ proc getConfigFile*(args: CommandLineArguments): Config =
       quit(1)
 
   proc replaceConfig(d: Config, config: Option[string]): Config =
-    # TODO: Add ability to only pass in from shells in the root.
     if isSome(config):
       result = readConfig(get(config), d.root, d)
     else:

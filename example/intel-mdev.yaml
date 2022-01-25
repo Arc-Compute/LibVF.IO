@@ -2,16 +2,15 @@
 %TAG !n! tag:nimyaml.org,2016:
 --- !n!custom:Config 
 startintro: true
+startapp: false
 nographics: true
 spice: true
 introspect: "looking-glass"
 shareddir: !!null ~
+sshPort: 2222
 connectivity: 
-  exposedPorts: 
-    - 
-      guest: 22
-      host: 2222
-container: 
+  exposedPorts: []
+container:
   kernel: windows.arc
   state: []
   initialSize: 20
@@ -41,3 +40,7 @@ nics: []
 root: ~/.local/libvf.io
 sudo: false
 commands: []
+startupCommands: []
+teardownCommands: []
+installCommands: []
+appCommands: []

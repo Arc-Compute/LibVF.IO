@@ -1,4 +1,4 @@
-
+#
 # Copyright: 2666680 Ontario Inc.
 # Reason: Code to interact with VMs.
 #
@@ -14,6 +14,7 @@ import sequtils
 import sugar
 import logging
 
+import app
 import arguments
 import introspection
 import iommu
@@ -54,6 +55,11 @@ proc realCleanup(vm: VM) =
   if vm.introspections != @[]:
     discard sendCommand(vm.monad, removeFiles(vm.introspections))
 
+  # Runs the teardown command.
+  info("Running teardown command lists")
+  for cmdList in vm.teardownCommands:
+    discard sendCommandList(vm.monad, cmdList)
+
   info("Cleaned up VM")
 
 proc cleanupVm*(vm: VM) =
@@ -71,15 +77,17 @@ proc cleanupVm*(vm: VM) =
     res = if isSome(vm.socket): getResponse(get(vm.socket))
           else: newFuture[QmpResponse]()
 
-  while running(vm.qemuPid):
+  while vm.child and running(vm.qemuPid):
     if not(finished(res)):
       if timeouts < 1000 and poweringDown: # Keeps going for up to 30 seconds
                                            #  before killing the process.
         timeouts += 1
       elif poweringDown:                   # KILL THE PROCESS
+        discard setRoot(vm.monad, true)    # Sets the root if necessary to kill.
         terminate(vm.qemuPid)              # Prevents self garbage collection
                                            # need garbage collection daemon
                                            # to run after this.
+        discard setRoot(vm.monad, false)   # Sets back to the user.
       waitFor(sleepAsync(300))
       continue
 
@@ -199,6 +207,19 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   result.newInstall = newInstall
   result.save = save
   result.noCopy = noCopy
+  result.sshPort = cfg.sshPort
+  result.teardownCommands = cfg.teardownCommands
+
+  # Runs startup commands.
+  var commands = true
+  for cmdList in cfg.startupCommands:
+    commands = commands and sendCommandList(result.monad, cmdList)
+
+  if not commands:
+    error("Failed startup commands, cleaning up VM.")
+    realCleanup(result)
+    result.child = false
+    return
 
   # Spawn up qemu image
   let forkRet = fork()
@@ -241,6 +262,18 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     socketMaybe = createSocket(socketDir / "main.sock")
 
   result.socket = socketMaybe
+
+  if newInstall:
+    commands = startRealApp(result.monad, cfg.install_commands, result.uuid,
+                            result.sshPort)
+    if not commands:
+      error("Could not install the VM.")
+      discard setRoot(result.monad, true)
+      terminate(result.qemuPid)
+      discard setRoot(result.monad, false)
+  elif cfg.startapp:
+    discard startRealApp(result.monad, cfg.app_commands, result.uuid,
+                         result.sshPort)
 
 proc cleanVm*(vm: VM) =
   ## cleanVm - Cleans the VM/waits for VM to finish.

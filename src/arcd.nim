@@ -63,21 +63,21 @@ when isMainModule:                                                 ## Checks if 
   of ceStop:                                                      ## Stop VM via QEMU Machine Protocol (QMP) signal.
     stopVm(cfg, cmd)
   of ceIntrospect:                                                ## Introspect a VM.
-    introspectVm(cfg, cmd.uuid) 
+    introspectVm(cfg, cmd.uuid)
   of ceLs:                                                        ## List available kernels, states, and apps.
     arcLs(cfg, cmd)
   of cePs:                                                        ## List running VMs by UUID.
     arcPs(cfg, cmd)
   of ceDeploy:                                                    ## Deploy the arcd directory.
-    removeFile(homeConfigDir / "arc.yaml")
-    writeConfigFile(homeConfigDir / "arc.yaml", cfg)
     createDir(cfg.root / "states")
     copyFile(
       homeConfigDir / "introspection-installations.rom",
       cfg.root / "introspection-installations.rom"
     )
   of ceUndeploy:                                                  ## Undeploy the arcd directory
-    removeFile(homeConfigDir / "arc.yaml")
+    discard
+  of ceApp:
+    startApp(cfg, cmd)
 
   if cmd.save and isSome(cmd.config):                             ## Save the config file
     info("Saving new config file.")
