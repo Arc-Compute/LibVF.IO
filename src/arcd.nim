@@ -29,12 +29,12 @@ proc printHelp() =
   echo("")
   echo("usage: arcd <operation> [...]")
   echo("operations:")
-  echo("  arcd create user.yaml")
+  echo("  arcd create user.yaml boot.iso [disk-size]")
   echo("  arcd start user.yaml --preinstall")
   echo("  arcd start user.yaml")
   echo("  arcd ls")
   echo("  arcd ps")
-  echo("  arcd introspect $UUID user.yaml")
+  echo("  arcd introspect $UUID")
   quit 0
 
 when isMainModule:                                                 ## Checks if process is running as root and exits if it is.
