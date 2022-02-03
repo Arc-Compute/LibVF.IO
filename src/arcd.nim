@@ -32,6 +32,7 @@ proc printHelp() =
   echo("  arcd create user.yaml boot.iso [disk-size]")
   echo("  arcd start user.yaml --preinstall")
   echo("  arcd start user.yaml")
+  echo("  arcd start user.yaml --safemode")
   echo("  arcd ls")
   echo("  arcd ps")
   echo("  arcd introspect $UUID")
