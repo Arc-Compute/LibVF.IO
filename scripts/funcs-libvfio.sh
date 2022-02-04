@@ -101,9 +101,9 @@ function add_depen() {
   check_distro
   ls_depen
   case $distro in
-    "Fedora") 	sudo dnf install -y nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
-    "Ubuntu")	sudo apt install -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
-    "Arch")	yay -S "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
+    "Fedora") 	sudo dnf install -y nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl samba;;
+    "Ubuntu")	sudo apt install -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev samba;;
+    "Arch")	yay -S "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget samba;;
      *)		echo $case_dist_msg;;
   esac
 }
@@ -278,7 +278,9 @@ function get_introspection() {
   rm -rf $HOME/.local/libvf.io/introspection-installations
   mkdir -p $HOME/.local/libvf.io/introspection-installations
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
+  wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win-guest-tools.exe
   wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
+  cp $HOME/.ssh/id_rsa.pub ./authorized_keys
   cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
   cp -r * $HOME/.local/libvf.io/introspection-installations
@@ -286,6 +288,7 @@ function get_introspection() {
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
   mkdir -p ~/.config/arc/
   cp introspection-installations.rom ~/.config/arc/
+  cp $current_path/conf/smb.conf ~/.config/arc/
   cd $current_path
 }
 

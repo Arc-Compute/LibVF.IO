@@ -84,6 +84,7 @@ type
     kernel*: Option[string]          ## Kernel image to use.
     shareddir*: Option[string]       ## Shared directory.
     preinstall*: bool                ## If the user is in a preinstall state.
+    safemode*: bool                  ## If the user is in a safemode state.
     case command*: CommandEnum       ## Different commands have different
                                      ##  variables, so we need to only allow
                                      ##  some variables to be used in the
@@ -246,6 +247,8 @@ proc getCommandLine*(): CommandLineArguments =
       of "advanced-help":
         echo("HELP ME I AM STUCK IN YOUR CPU")
         quit(1)
+      of "safemode":
+        result.safemode = true
       else: discard
     else: discard
   if result.command in @[ceStart, ceCreate] and isNone(result.config):
@@ -314,6 +317,10 @@ proc getConfigFile*(args: CommandLineArguments): Config =
     if isSome(args.size):
       result.container.initialSize = get(args.size)
   of ceStart:
+    if args.safemode:
+      result.startintro = false
+      result.nographics = false
+      result.spice = false
     if args.preinstall:
       result.startintro = false
       result.nographics = false

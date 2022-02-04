@@ -297,7 +297,6 @@ func qemuLaunch*(cfg: Config, uuid: string,
   # Set mdev arguments
   for mdev in mdevs:
     result.args &= mdevArgs(mdev)
-
   # Port forward ssh port
   result.args &= "-device"
   result.args &= "rtl8139,netdev=net0"
@@ -307,7 +306,6 @@ func qemuLaunch*(cfg: Config, uuid: string,
     @[&"hostfwd=tcp::{cfg.sshPort}-:22"],
     ","
   )
-
   # Port forward for all exposed ports
   if len(cfg.connectivity.exposedPorts) > 0:
     let hostfwds = map(cfg.connectivity.exposedPorts,
@@ -316,6 +314,12 @@ func qemuLaunch*(cfg: Config, uuid: string,
     result.args &= "rtl8139,netdev=net1"
     result.args &= "-netdev"
     result.args &= join(@["user", "id=net1"] & hostfwds, ",")
+
+  # VirtIO netdev
+  result.args &= "-net"
+  result.args &= "user"
+  result.args &= "-net"
+  result.args &= "nic,model=virtio"
 
   if isSome(cfg.shareddir) and not install:
     result.args &= "-hdb"
