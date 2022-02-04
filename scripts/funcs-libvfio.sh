@@ -288,6 +288,7 @@ function get_introspection() {
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
   mkdir -p ~/.config/arc/
   cp introspection-installations.rom ~/.config/arc/
+  cp $current_path/conf/smb.conf ~/.config/arc/
   cd $current_path
 }
 
