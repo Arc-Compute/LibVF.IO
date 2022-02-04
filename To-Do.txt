@@ -1,0 +1,25 @@
+To Do:
+- Powershell force install Nvidia (if vendorid = 10de:)
+- Powershell install Samba at Z:\
+- Call smbd in arguments.nim
+- Blog post (LIME Is Mediated Emulation: Win64 Compatibility via LibVF.IO)
+- Powershell auto-login
+- Powershell script install LIME Disable Explorer (y/n)
+- lime-run script
+
+
+Doing:
+- Powershell install virtio network driver
+- Custom smb.conf file
+
+
+Done:
+- Powershell set SSH authorized_keys permissions
+- Change default networking to virtio
+- Install ssh guest
+- Powershell register SSH public key
+- Powershell restart sshd service
+- Powershell install Looking Glass
+- Powershell install ivshmem driver 
+- Powershell install Scream
+- Powershell install Scream regedit
