@@ -25,10 +25,14 @@ if (!(Get-NetFirewallRule -Name "OpenSSH-Server-In-TCP" -ErrorAction SilentlyCon
 }
 
 # Register SSH public keys in $env:USERPROFILE\.ssh\authorized_keys.
+mkdir $env:USERPROFILE\.ssh\
+cp $env:USERPROFILE\temp-install\authorized_keys $env:USERPROFILE\.ssh\
 
 # Fix SSH authorized_keys permissions.
+icacls.exe $env:USERPROFILE\.ssh\authorized_keys /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
 
 # Restart sshd. 
+Restart-Service sshd
 
 # Install IVSHMEM driver.
 PNPUtil.exe /add-driver $env:USERPROFILE\temp-install\Win10\amd64\ivshmem.inf /install

@@ -280,6 +280,7 @@ function get_introspection() {
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win-guest-tools.exe
   wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
+  cp $HOME/.ssh/id_rsa.pub ./authorized_keys
   cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
   cp -r * $HOME/.local/libvf.io/introspection-installations
