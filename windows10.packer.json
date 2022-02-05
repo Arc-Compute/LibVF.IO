@@ -1,0 +1,41 @@
+{
+    "builders":
+    [
+        {
+            "vm_name": "windows-10.arc",
+            "type": "qemu",
+            "accelerator": "kvm",
+
+            "cpus": 1,
+            "memory": 4096,
+            "disk_size": 40360,
+      
+            "iso_url": "win-new.iso",
+            "iso_checksum": "2c112aa1c2b8ed59c804b3a2ed85b10e",
+            "iso_checksum_type": "md5",
+
+            "floppy_files":
+            [
+                "autounattend.xml"
+            ],
+
+            "output_directory": "qemu-drives",
+            "qemuargs":
+            [
+                [ "-drive", "file=qemu-drives/{{ .Name }},if=virtio,cache=writeback,discard=ignore,format=qcow2,index=1" ],
+                [ "-drive", "file=./virtio-win.iso,media=cdrom,index=3" ],
+                [ "-display", "gtk" ]
+            ],
+
+            "communicator": "winrm",
+            "winrm_username": "packer",
+            "winrm_password": "packer",
+            "winrm_use_ssl": "true",
+            "winrm_insecure": "true",
+            "winrm_timeout" : "1h",
+
+            "shutdown_command": "shutdown /s /t 30 /f",
+            "shutdown_timeout": "15m"
+        }
+    ]
+}

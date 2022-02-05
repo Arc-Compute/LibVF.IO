@@ -55,6 +55,8 @@ type
                                          ##  default.
     startapp*: bool                      ## If we start the application by
                                          ##  default.
+    installOs*: OsInstallEnum            ## Installs the given operating system
+                                         ##  in a create command.
     nographics*: bool                    ## If we have the no graphics flag set.
     spice*: bool                         ## If we want to use a spice server.
     introspect*: IntrospectEnum          ## What type of introspection we use.
@@ -107,6 +109,7 @@ const
                                      ##  is already found.
     startintro: false,
     startapp: false,
+    installOs: osNone,
     nographics: false,
     spice: false,
     introspect: isLookingGlass,
@@ -248,7 +251,7 @@ proc getCommandLine*(): CommandLineArguments =
         quit(1)
       else: discard
     else: discard
-  if result.command in @[ceStart, ceCreate] and isNone(result.config):
+  if result.command in @[ceStart, ceCreate, ceIntrospect] and isNone(result.config):
     echo("Config must be passed into arcd for these commands")
     quit(1)
   if result.command in @[ceStop, ceApp, ceIntrospect] and result.uuid == "":

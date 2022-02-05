@@ -233,7 +233,7 @@ function install_libvfio() {
 
 function dl_lookingglass() {
   set_sandbox_dir
- # Download Looking Glass beta 4 sources
+  # Download Looking Glass beta 4 sources
   rm -rf LookingGlass
   curl -o lg.tar.gz https://looking-glass.io/artifact/B4/source
   tar -xvf lg.tar.gz
@@ -241,7 +241,7 @@ function dl_lookingglass() {
 }
 
 function install_lookingglass() {
- # Compile & install Looking Glass sources
+  # Compile & install Looking Glass sources
   set_sandbox_dir
   cd LookingGlass
   mkdir client/build
@@ -281,11 +281,14 @@ function get_introspection() {
   wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
   cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
+  wget -O adksetup.exe "https://go.microsoft.com/fwlink/?linkid=2120254"
+  wget -O virtio-win.iso "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.215-2/virtio-win-0.1.215.iso"
   cp -r * $HOME/.local/libvf.io/introspection-installations
   cd $HOME/.local/libvf.io/
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
   mkdir -p ~/.config/arc/
   cp introspection-installations.rom ~/.config/arc/
+  cp -r $HOME/.local/libvf.io/introspection-installations/ ~/.config/arc/
   cd $current_path
 }
 

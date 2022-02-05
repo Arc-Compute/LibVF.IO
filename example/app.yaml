@@ -3,6 +3,7 @@
 --- !n!custom:Config 
 startintro: false
 startapp: false
+installOs: "win10"
 nographics: false
 spice: false
 introspect: "looking-glass"
@@ -19,10 +20,10 @@ cpus:
   cores: 8
   sockets: 1
   threads: 2
-  ramAlloc: 8192
+  ramAlloc: 4000
 gpus: []
 nics: []
-root: /home/mbuchel/.local/libvf.io
+root: ~/.local/libvf.io
 sudo: false
 commands: []
 startupCommands: []

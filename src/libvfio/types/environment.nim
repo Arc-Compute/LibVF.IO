@@ -10,6 +10,10 @@ import std/osproc
 import hardware, process
 
 type
+  OsInstallEnum* = enum              ## Installs the specific OS in the system.
+    osNone = "none",                 ## No auto installation script.
+    osWin10 = "win10"                ## Auto install windows 10.
+
   ArcContainer* = object  ## Container for an Arc Kernel.
     kernel*: string       ## The kernel name.
     state*: seq[string]   ## Additional state drives.
@@ -17,6 +21,19 @@ type
     iso*: Option[string]  ## ISO file if we are creating a new file.
                           ## NOTE: Apps are removed for the moment, they
                           ##       will come into the system a bit later.
+
+  Installation* = object      ## Installation object.
+    username*: string         ## Username to use.
+    password*: string         ## Installation password to use.
+    pathToSsh*: string        ## SSH Key to use.
+    limeInstall*: string      ## LIME installation directory.
+    introspectionDir*: string ## Introspection directory.
+    lang*: string             ## Default language/locale to use.
+    case os*: OsInstallEnum   ## Type of Os we are installing requires different things.
+    of osWin10:
+      productKey*: string     ## Windows product key.
+    else:
+      nil
 
   ## MONAD: Creates a monad for commands
   CommandMonad* = object
@@ -41,4 +58,4 @@ type
     save*: bool                          ## Do we save the VM.
     noCopy*: bool                        ## Do we copy the VM.
     sshPort*: int                        ## SSH Port to use.
-    teardownCommands*: seq[CommandList] ## Tearing down commands.
+    teardownCommands*: seq[CommandList]  ## Tearing down commands.
