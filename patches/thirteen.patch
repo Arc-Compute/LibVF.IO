@@ -1,6 +1,6 @@
-diff --color -uaNr ./kernel/conftest.sh ../nv-patch/kernel/conftest.sh
+diff -uaNr ./kernel/conftest.sh ../nv-patch/kernel/conftest.sh
 --- ./kernel/conftest.sh	2021-06-22 08:21:32.000000000 -0400
-+++ ../nv-patch/kernel/conftest.sh	2021-12-05 17:24:43.000000000 -0500
++++ ../nv-patch/kernel/conftest.sh	2022-01-19 11:24:48.000000000 -0500
 @@ -4736,17 +4736,47 @@
          #
          VERBOSE=$6
@@ -54,9 +54,9 @@ diff --color -uaNr ./kernel/conftest.sh ../nv-patch/kernel/conftest.sh
                  if [ "$VERBOSE" = "full_output" ]; then
                      echo "*** Failed vGPU on KVM sanity check. Bailing out! ***";
                      echo "";
-diff --color -uaNr ./kernel/Kbuild ../nv-patch/kernel/Kbuild
+diff -uaNr ./kernel/Kbuild ../nv-patch/kernel/Kbuild
 --- ./kernel/Kbuild	2021-04-01 17:55:37.000000000 -0400
-+++ ../nv-patch/kernel/Kbuild	2021-12-05 17:24:43.000000000 -0500
++++ ../nv-patch/kernel/Kbuild	2022-01-19 11:24:48.000000000 -0500
 @@ -75,7 +75,7 @@
  EXTRA_CFLAGS += -D__KERNEL__ -DMODULE -DNVRM -DNV_VERSION_STRING=\"460.73.01\" -Wno-unused-function -Wuninitialized -fno-strict-aliasing -mno-red-zone -mcmodel=kernel -DNV_UVM_ENABLE
  EXTRA_CFLAGS += $(call cc-option,-Werror=undef,)
@@ -66,9 +66,63 @@ diff --color -uaNr ./kernel/Kbuild ../nv-patch/kernel/Kbuild
  
  #
  # Detect SGI UV systems and apply system-specific optimizations.
-diff --color -uaNr ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c
+diff -uaNr ./kernel/nvidia-drm/nvidia-drm-crtc.c ../nv-patch/kernel/nvidia-drm/nvidia-drm-crtc.c
+--- ./kernel/nvidia-drm/nvidia-drm-crtc.c	2021-04-01 17:57:12.000000000 -0400
++++ ../nv-patch/kernel/nvidia-drm/nvidia-drm-crtc.c	2022-01-19 13:59:16.626584848 -0500
+@@ -227,7 +227,7 @@
+ }
+ 
+ static int nv_drm_plane_atomic_check(struct drm_plane *plane,
+-                                     struct drm_plane_state *plane_state)
++                                     struct drm_atomic_state *plane_state)
+ {
+     int i;
+     struct drm_crtc *crtc;
+@@ -238,7 +238,7 @@
+         goto done;
+     }
+ 
+-    nv_drm_for_each_crtc_in_state(plane_state->state, crtc, crtc_state, i) {
++    nv_drm_for_each_crtc_in_state(plane_state, crtc, crtc_state, i) {
+         struct nv_drm_crtc_state *nv_crtc_state = to_nv_crtc_state(crtc_state);
+         struct NvKmsKapiHeadRequestedConfig *head_req_config =
+             &nv_crtc_state->req_config;
+@@ -246,14 +246,14 @@
+             &head_req_config->layerRequestedConfig[type];
+ 
+         if (plane->state->crtc == crtc &&
+-            plane->state->crtc != plane_state->crtc) {
++            plane->state->crtc != plane_state->crtcs->ptr) {
+             plane_req_config_disable(plane_requested_config);
+             continue;
+         }
+ 
+-        if (plane_state->crtc == crtc) {
++        if (plane_state->crtcs->ptr == crtc) {
+             plane_req_config_update(plane,
+-                                    plane_state,
++                                    plane_state->planes->state,
+                                     plane_requested_config);
+ 
+             if (__is_async_flip_requested(plane, crtc_state)) {
+@@ -276,12 +276,12 @@
+ }
+ 
+ static void nv_drm_plane_atomic_update(struct drm_plane *plane,
+-                                       struct drm_plane_state *old_state)
++                                       struct drm_atomic_state *old_state)
+ {
+ }
+ 
+ static void nv_drm_plane_atomic_disable(struct drm_plane *plane,
+-                                        struct drm_plane_state *old_state)
++                                        struct drm_atomic_state *old_state)
+ {
+ }
+ 
+diff -uaNr ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c
 --- ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c	2021-06-28 11:17:00.000000000 -0400
-+++ ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c	2021-12-05 17:24:43.000000000 -0500
++++ ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c	2022-01-19 11:24:48.000000000 -0500
 @@ -25,6 +25,9 @@
  #include <linux/init.h>
  #include <linux/err.h>
@@ -206,9 +260,9 @@ diff --color -uaNr ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.c ../nv-patch/kern
  #endif
      }
  
-diff --color -uaNr ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h
+diff -uaNr ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h
 --- ./kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h	2021-06-28 11:16:11.000000000 -0400
-+++ ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h	2021-12-05 17:24:43.000000000 -0500
++++ ../nv-patch/kernel/nvidia-vgpu-vfio/nvidia-vgpu-vfio.h	2022-01-19 11:24:48.000000000 -0500
 @@ -37,7 +37,6 @@
  #include <linux/list.h>
  #include <linux/pci.h>
