@@ -3,13 +3,11 @@ To Do:
 - Powershell install Samba at Z:\
 - Call smbd in arguments.nim
 - Blog post (LIME Is Mediated Emulation: Win64 Compatibility via LibVF.IO)
-- Powershell auto-login
 - Powershell script install LIME Disable Explorer (y/n)
 - lime-run script
 
 
 Doing:
-- Powershell install virtio network driver
 - Custom smb.conf file
 
 
@@ -23,3 +21,5 @@ Done:
 - Powershell install ivshmem driver 
 - Powershell install Scream
 - Powershell install Scream regedit
+- Powershell auto-login
+- Powershell install virtio network driver

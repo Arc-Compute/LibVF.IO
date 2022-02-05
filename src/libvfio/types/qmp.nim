@@ -4,6 +4,7 @@
 #
 import sequtils
 import strutils
+import strformat
 import sugar
 import json
 
@@ -54,7 +55,7 @@ func parseResponse*(node: JsonNode): QmpResponse =
   ##
   ## Returns
   ## result - Resulting response.
-  result = QmpResponse(event: qrInvalid, errorMessage: "Not parsed")
+  result = QmpResponse(event: qrInvalid, errorMessage: &"Not parsed: {$node}")
 
   if "return" in node:
     result = QmpResponse(event: qrSuccess)

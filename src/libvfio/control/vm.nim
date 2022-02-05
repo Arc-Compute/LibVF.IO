@@ -16,6 +16,7 @@ import logging
 
 import app
 import arguments
+import install
 import introspection
 import iommu
 import root
@@ -131,12 +132,14 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     livePath = cfg.root / "live"
     lockPath = cfg.root / "lock"
     qemuLogs = cfg.root / "logs" / "qemu"
+    limeDir = cfg.root / "lime" / uuid
     baseKernel = kernelPath / cfg.container.kernel
     lockFile = lockPath / (uuid & ".json")
     liveKernel = if noCopy: baseKernel else: livePath / uuid
     socketDir = "/tmp" / "sockets" / uuid
     dirs = [
-      kernelPath, livePath, lockPath, qemuLogs, socketDir
+      kernelPath, livePath, lockPath, qemuLogs, socketDir,
+      limeDir
     ]
     sockets = map(
       @["main.sock", "master.sock"],
@@ -153,8 +156,24 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     rootMonad = createCommandMonad(cfg.sudo)
     userMonad = createCommandMonad(false)
 
+  result.monad = rootMonad
+
   # If we are passing a vfio, we need to run the command as sudo
   let (vfios, mdevs) = getIommuGroups(cfg, uuid, rootMonad)
+
+  result.vfios = vfios
+  result.mdevs = mdevs
+  result.lockFile = lockFile
+  result.socketDir = socketDir
+  result.uuid = uuid
+  result.introspections = introspections & limeDir
+  result.liveKernel = liveKernel
+  result.baseKernel = baseKernel
+  result.newInstall = newInstall
+  result.save = save
+  result.noCopy = noCopy
+  result.sshPort = cfg.sshPort
+  result.teardownCommands = cfg.teardownCommands
 
   # If we do not have the necessary directories, create them
   for dir in dirs:
@@ -172,7 +191,15 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   # Either moves the file or creates a new file
   if fileExists(baseKernel) and not newInstall and not noCopy:
     copyFile(baseKernel, liveKernel)
-  elif newInstall:
+  elif newInstall and isSome(cfg.container.iso):
+    if cfg.installOs != osNone:
+      var t = getInstallationParams(limeDir, cfg.installOs)
+      t.introspectionDir = cfg.root / "introspection-installations"
+      updateIso(get(cfg.container.iso), t, cfg.installOs, cfg.container.initialSize, baseKernel)
+      realCleanup(result)
+      result.child = false
+      return
+
     let
       kernelArgs = createKernel(liveKernel, cfg.container.initialSize)
     discard sendCommand(userMonad, kernelArgs)
@@ -194,21 +221,6 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
       logDir=qemuLogs,
       sockets=sockets
     )
-
-  result.lockFile = lockFile
-  result.socketDir = socketDir
-  result.uuid = uuid
-  result.vfios = vfios
-  result.mdevs = mdevs
-  result.introspections = introspections
-  result.monad = rootMonad
-  result.liveKernel = liveKernel
-  result.baseKernel = baseKernel
-  result.newInstall = newInstall
-  result.save = save
-  result.noCopy = noCopy
-  result.sshPort = cfg.sshPort
-  result.teardownCommands = cfg.teardownCommands
 
   # Runs startup commands.
   var commands = true
@@ -288,15 +300,15 @@ proc cleanVm*(vm: VM) =
   elif not vm.noCopy and fileExists(vm.liveKernel):
     removeFile(vm.liveKernel)
 
-proc stopVm*(cfg: Config, cmd: CommandLineArguments) =
+proc stopVm*(uuid: string) =
   ## stopVm - Stops a VM.
   ##
   ## Inputs
-  ## @cmd - Command line arguments for stopping a VM.
+  ## @uuid - Stops the VM with the given UUID.
   ##
   ## Side effects - Stops a VM.
   let
-    socketPath = "/tmp" / "sockets" / cmd.uuid / "master.sock"
+    socketPath = "/tmp" / "sockets" / uuid / "master.sock"
 
   # Sends kill command
   let socket = createSocket(socketPath)

@@ -9,6 +9,7 @@ import options
 import nativesockets
 import json
 import logging
+import strformat
 import strutils
 
 import ../types
@@ -44,7 +45,7 @@ proc getResponse*(sock: AsyncSocket):
   try:
     result = parseResponse(parseJson(r))
   except:
-    result = QmpResponse(event: qrInvalid, errorMessage: "Not parsed")
+    result = QmpResponse(event: qrInvalid, errorMessage: &"Not parsed: {$r}")
   debug("Response: ", $result)
 
 proc createSocket*(sockPath: string): Option[AsyncSocket] =
