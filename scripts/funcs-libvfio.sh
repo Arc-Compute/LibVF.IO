@@ -287,6 +287,7 @@ function get_introspection() {
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
   wget -O adksetup.exe "https://go.microsoft.com/fwlink/?linkid=2120254"
   wget -O virtio-win.iso "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.215-2/virtio-win-0.1.215.iso"
+  cp $current_path/scripts/win-guest-install/*.ps1 .
   cp -r * $HOME/.local/libvf.io/introspection-installations
   cd $HOME/.local/libvf.io/
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
