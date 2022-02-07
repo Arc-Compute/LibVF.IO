@@ -119,8 +119,8 @@
           <RequiresUserInput>true</RequiresUserInput>
         </SynchronousCommand>
         <SynchronousCommand wcm:action="add">
-          <CommandLine>cmd.exe /c powershell -File a:\install.ps1</CommandLine>
-          <Description>Install tools for LibVF.IO LIME</Description>
+          <CommandLine>cmd.exe /c powershell -File a:\scheduledinstall.bat</CommandLine>
+          <Description>Enable Powershell in guest.</Description>
           <Order>5</Order>
           <RequiresUserInput>true</RequiresUserInput>
         </SynchronousCommand>
