@@ -3,6 +3,7 @@
 --- !n!custom:Config 
 startintro: true
 startapp: false
+installOs: "none"
 nographics: true
 spice: true
 introspect: "looking-glass"
