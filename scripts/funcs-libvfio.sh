@@ -26,7 +26,7 @@ function check_distro() {
   if [ -z ${other_distro+x} ];then
     other_distro="init"
   fi
-  
+
   if [[ $other_distro == "init" ]];then
     uname_a=$(uname -a)
     uname_a_upper=$(echo $uname_a | tr '[:lower:]' '[:upper:]')
@@ -35,9 +35,10 @@ function check_distro() {
     case $uname_a_upper in
       *"FEDORA"*)	distro="Fedora";;
       *"UBUNTU"*)	distro="Ubuntu";;
+      *"POP_OS"*)	distro="Pop";;
       *"ARCH"*)	distro="Arch";;
       *)		echo What linux distribution are you running?
-      			echo -e "Type '1' or 'Fedora'\nType '2' or 'Ubuntu'\nType '3' or 'Arch'\nType '4' or 'OTHER' "
+      			echo -e "Type '1' or 'Fedora'\nType '2' or 'Ubuntu'\nType '3' or 'Arch'\nType '4' or 'Pop_OS' \nType '5' or 'OTHER' "
       		read -p "Response: " a1_distro
 
       			a_distro=$(echo $a1_distro | tr '[:lower:]' '[:upper:]')
@@ -51,7 +52,10 @@ function check_distro() {
       			elif [ $a_distro == "3" ] || [ $a_distro == "ARCH" ];then
       			  distro="Arch"
       			  other_distro="n/a"
-      			elif [ $a_distro == "4" ] || [ $a_distro == "OTHER" ];then
+      			elif [ $a_distro == "4" ] || [ $a_distro == "POP_OS" ];then
+      			  distro="Pop"
+      			  other_distro="n/a"
+      			elif [ $a_distro == "5" ] || [ $a_distro == "OTHER" ];then
       			  echo
       			  echo "Note: your distribution likely isnt supported yet."
       			  echo "Some feautures may not work properly."
@@ -64,7 +68,7 @@ function check_distro() {
     esac
   fi
   # message displayed in case when distro unsupported
-  case_dist_msg="Your distro, $distro, is not one that is supported (Fedora, Ubuntu, Arch). Unsure how to proceed."
+  case_dist_msg="Your distro, $distro, is not one that is supported (Fedora, Ubuntu, Arch, PopOS). Unsure how to proceed."
 }
 
 function set_sandbox_dir {
@@ -74,14 +78,14 @@ function set_sandbox_dir {
 }
 
 function add_kvm_group {
-  sudo usermod -a -G kvm $USER 
+  sudo usermod -a -G kvm $USER
 }
 
 function distro_update() {
   check_distro
   case $distro in
     "Fedora")	sudo dnf upgrade -y;;
-    "Ubuntu")	sudo apt update -y; sudo apt upgrade -y;;
+    "Ubuntu"|"Pop")	sudo apt update -y; sudo apt upgrade -y;;
     "Arch")     echo
                 echo "Arch users will require yay to update Arch and install libvf.io dependencies."
                 read -p "Press 'Enter' key to acknowledge and proceed..."
@@ -92,8 +96,9 @@ function distro_update() {
 
 function ls_depen() {
   lookingglass_dep_fedora=" binutils-devel cmake texlive-gnu-freefont fontconfig-devel SDL2-devel SDL2_ttf-devel spice-protocol libX11-devel nettle-devel wayland-protocols-devel libXScrnSaver-devel libXfixes-devel libXi-devel wayland-devel libXinerama-devel "
-  lookingglass_dep_ubuntu="  " 
+  lookingglass_dep_ubuntu="  "
   lookingglass_dep_arch="  "
+  lookingglass_dep_pop="  "
   xyz_dep_fedora="  "
 }
 
@@ -104,6 +109,8 @@ function add_depen() {
     "Fedora") 	sudo dnf install -y nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
     "Ubuntu")	sudo apt install -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
     "Arch")	yay -S "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
+    # Only difference from Ubuntu is the addition of "genisoimage" which provides mkisofs
+    "Pop")	sudo apt install -y genisoimage mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
      *)		echo $case_dist_msg;;
   esac
 }
@@ -114,23 +121,37 @@ function add_boot_param() {
   echo "Updating kernel boot parameters."
   # Intel users
   if [[ $cpuModel == *"GenuineIntel"* ]]; then
-    sudo sed -i 's/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"intel_iommu=on iommu=pt vfio_pci vfio mdev /g' /etc/default/grub
+    # Pop OS uses systemd-boot
+    if [[ $distro == "Pop" ]]; then
+      sudo kernelstub --add-options "intel_iommu=on iommu=pt vfio_pci vfio mdev"
+    # GRUB
+    else
+      sudo sed -i 's/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"intel_iommu=on iommu=pt vfio_pci vfio mdev /g' /etc/default/grub
+    fi
   # AMD users
   elif [[ $cpuModel == *"AuthenticAMD"* ]]; then
-    sudo sed -i 's/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"amd_iommu=on iommu=pt vfio_pci vfio mdev /g' /etc/default/grub
+    # Pop OS uses systemd-boot
+    if [[ $distro == "Pop" ]]; then
+      sudo kernelstub --add-options "amd_iommu=on iommu=pt vfio_pci vfio mdev"
+    # GRUB
+    else
+      sudo sed -i 's/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"amd_iommu=on iommu=pt vfio_pci vfio mdev /g' /etc/default/grub
+    fi
   fi
   # GRUB
-  case $distro in 
+  case $distro in
     "Fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
     "Ubuntu")	sudo update-grub;;
     "Arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
+    # Updating initramfs is needed in order to update the current boot entry
+    "Pop") sudo update-initramfs -c -k all;;
      *)		echo $case_dist_msg;;
   esac
 }
 
 
 function add_policies() {
-  if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ];then
+  if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ] || [ $distro == "Pop" ];then
     # Configure AppArmor policies, shared memory file permissions, and blacklisting non-mediated device drivers.
     echo "Updating AppArmor policies."
     sudo su root -c "mkdir -p /etc/apparmor.d/local/abstractions/ && echo '/dev/shm/kvmfr-* rw,' >> /etc/apparmor.d/local/abstractions/libvirt-qemu"
@@ -146,11 +167,11 @@ function blacklist_drivers() {
   echo "Blacklisting non-mediated device drivers."
   sudo su root -c "echo '# Libvf.io GPU driver blacklist' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist nouveau' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist amdgpu' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist amdkfd' >> /etc/modprobe.d/blacklist.conf"
 
-}  
+}
 
 function restart_apparmor() {
   # Restarting apparmor service
-  if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ];then
+  if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ] || [ $distro == "Pop" ];then
     sudo systemctl restart apparmor
   fi
 }
@@ -159,7 +180,7 @@ function update_initramfs() {
   # Updating initramfs
   case $distro in
     "Fedora")	sudo dracut -fv --regenerate-all;;
-    "Ubuntu")	sudo update-initramfs -u -k all;;
+    "Ubuntu"|"Pop")	sudo update-initramfs -u -k all;;
     "Arch")	sudo mkinitcpio -P;;
     *)		echo $case_dist_msg;;
   esac
@@ -182,7 +203,7 @@ function check_shell_fns() {
  			if [[ $shell_fn == "path nim" ]];then
 			  echo "export PATH=$HOME/.nimble/bin:$PATH" >> ~/.bashrc
 			elif [[ $shell_fn == "rm path nim" ]];then
-			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.bashrc 
+			  sed -i "s|export PATH=$HOME/.nimble/bin:$PATH| |g" ~/.bashrc
 			fi;;
     *fish*)	shell_current="fish"
 		echo -e "\nWhat do FISH pray to?\n"
@@ -305,7 +326,7 @@ function check_optional_driver() {
   if [ ! -f $current_path/optional/*.run ]; then
     echo "Optional drivers not found."
     exit 0
-  else 
+  else
     chmod 755 $current_path/optional/*.run
   fi
 }
@@ -321,16 +342,16 @@ function check_k_version() {
 }
 
 function patch_nv() {
-  # Patch NV driver according to kernel version 
+  # Patch NV driver according to kernel version
   check_k_version
   check_optional_driver
   cd $current_path
   cd ./optional #in order for uodated driver to be placed in 'optional' folder
-  custom=""  
+  custom=""
   if [[ ($major -eq 5) && ($minor -ge 14) ]];then
     echo "Modifying the driver to have the version 5.14/15 patches."
     custom="-custom"
-    $current_path/optional/*.run --apply-patch $current_path/patches/fourteen.patch 
+    $current_path/optional/*.run --apply-patch $current_path/patches/fourteen.patch
   elif [[ ($major -eq 5) && ($minor -eq 13) ]];then
     echo "Modifying the driver to have the version 5.13 patches."
     custom="-custom"
@@ -338,7 +359,7 @@ function patch_nv() {
   elif [[ ($major -eq 5) && ($minor -ge 12) ]];then
     echo "Modifying the driver to have the version 5.12 patches."
     custom="-custom"
-    $current_path/optional/*.run --apply-patch $current_path/patches/twelve.patch 
+    $current_path/optional/*.run --apply-patch $current_path/patches/twelve.patch
   fi
   cd $current_path
 }
@@ -397,19 +418,20 @@ function rm_kvm_group() {
   check_distro
   case $distro in
     "Fedora")	sudo gpasswd -d $USER kvm;;
-    "Ubuntu")	sudo deluser $USER kvm;;
+    "Ubuntu"|"Pop")	sudo deluser $USER kvm;;
     "Arch")	sudo gpasswd -d $USER kvm;;
-  esac	
+  esac
 }
 
 function rm_depen() {
   check_distro
-  ls_depen 
+  ls_depen
   case $distro in
     "Fedora")	sudo dnf remove nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
     "Ubuntu")	sudo apt remove dkms libglvnd-dev curl gcc cmake libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl libpulse-dev libasound2-dev;;
     #ubuntu present before libvfio install: mokutil fonts-freefont-ttf pkg-config python3
     "Arch")	yay -R "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
+    "Pop")	sudo apt remove genisoimage jq dkms libglvnd-dev curl gcc cmake libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl libpulse-dev libasound2-dev;;
     *)		echo $case_dist_msg;;
   esac
 }
@@ -432,13 +454,25 @@ function rm_nim() {
 function def_driver() {
   cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
   #GRUB
-    if [[ $cpuModel == *"GenuineIntel"* ]]; then
-    sudo sed -i 's/intel_iommu=on iommu=pt vfio_pci vfio mdev//g' /etc/default/grub
-    sudo sed -i 's/intel_iommu=on iommu=pt vfio_pci//g' /etc/default/grub
+  if [[ $cpuModel == *"GenuineIntel"* ]]; then
+    # Pop OS uses systemd-boot
+    if [[ $distro == "Pop" ]]; then
+      sudo kernelstub --delete-options "intel_iommu=on iommu=pt vfio_pci vfio mdev"
+    # GRUB
+    else
+      sudo sed -i 's/intel_iommu=on iommu=pt vfio_pci vfio mdev//g' /etc/default/grub
+      sudo sed -i 's/intel_iommu=on iommu=pt vfio_pci//g' /etc/default/grub
+    fi
   elif [[ $cpuModel == *"AuthenticAMD"* ]]; then
-    sudo sed -i 's/amd_iommu=on iommu=pt vfio_pci vfio mdev//g' /etc/default/grub
-    sudo sed -i 's/amd_iommu=on iommu=pt vfio_pci//g' /etc/default/grub
-  else 
+    # Pop OS uses systemd-boot
+    if [[ $distro == "Pop" ]]; then
+      sudo kernelstub --delete-options "amd_iommu=on iommu=pt vfio_pci vfio mdev"
+    # GRUB
+    else
+      sudo sed -i 's/amd_iommu=on iommu=pt vfio_pci vfio mdev//g' /etc/default/grub
+      sudo sed -i 's/amd_iommu=on iommu=pt vfio_pci//g' /etc/default/grub
+    fi
+  else
     echo cpu model?
     exit
   fi
@@ -447,6 +481,8 @@ function def_driver() {
     "Fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
     "Ubuntu")	sudo update-grub;;
     "Arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
+    # Updating initramfs is needed in order to update the current boot entry
+    "Pop") sudo update-initramfs -c -k all;;
     *)          echo $case_dist_msg;;
   esac
   #blacklist
