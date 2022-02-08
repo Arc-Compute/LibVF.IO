@@ -64,8 +64,16 @@ start-process .\Install-x64.bat
 cd $env:USERPROFILE\temp-install\
 start-process .\looking-glass-host-setup.exe /S
 
-# Disable automatic screen timeout
-powercfg -change -monitor-timeout-ac 0
+# Disable all Windows power management timeouts.
+powercfg /h off
+powercfg /x -hibernate-timeout-ac 0
+powercfg /x -hibernate-timeout-dc 0
+powercfg /x -disk-timeout-ac 0
+powercfg /x -disk-timeout-dc 0
+powercfg /x -monitor-timeout-ac 0
+powercfg /x -monitor-timeout-dc 0
+Powercfg /x -standby-timeout-ac 0
+powercfg /x -standby-timeout-dc 0
 
 # Verify guest GPU driver (force install if vendorid == 10de && no driver).
 

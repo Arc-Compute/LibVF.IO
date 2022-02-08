@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend">
-  <settings pass="windowsPE">
+   <settings pass="windowsPE">
     <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <SetupUILanguage>
         <UILanguage>{installParams.lang}</UILanguage>
@@ -51,7 +51,7 @@
         </ProductKey>
       </UserData>
     </component>
-    <component name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <!--<component name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <DriverPaths>
         <PathAndCredentials wcm:action="add" wcm:keyValue="1">
           <Path>E:\NetKVM\w10\amd64\</Path>
@@ -60,7 +60,7 @@
           <Path>E:\viostor\2k16\amd64\</Path>
         </PathAndCredentials>
       </DriverPaths>
-    </component>
+    </component>-->
   </settings>
   <settings pass="oobeSystem">
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -95,12 +95,12 @@
       </OOBE>
       <FirstLogonCommands>
         <SynchronousCommand wcm:action="add">
-          <CommandLine>cmd.exe /c powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force"</CommandLine>
+          <CommandLine>cmd.exe /c powershell -Command "Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Force"</CommandLine>
           <Description>Set Execution Policy 64 Bit</Description>
           <Order>1</Order>
           <RequiresUserInput>true</RequiresUserInput>
         </SynchronousCommand>
-        <SynchronousCommand wcm:action="add">
+	<!--<SynchronousCommand wcm:action="add">
           <CommandLine>cmd.exe /c powershell -File a:\fixnetwork.ps1</CommandLine>
           <Description>Fix public network</Description>
           <Order>2</Order>
@@ -117,13 +117,13 @@
           <Description>Network prompt</Description>
           <Order>4</Order>
           <RequiresUserInput>true</RequiresUserInput>
-        </SynchronousCommand>
+  </SynchronousCommand>-->
         <SynchronousCommand wcm:action="add">
-          <CommandLine>cmd.exe /c powershell -File a:\scheduledinstall.bat</CommandLine>
-          <Description>Enable Powershell in guest.</Description>
-          <Order>5</Order>
+          <CommandLine>cmd.exe /c powershell -Command "Start-Process powershell -verb RunAs -ArgumentList "e:\install.ps1""</CommandLine>
+          <Description>Install guest utils.</Description>
+          <Order>2</Order>
           <RequiresUserInput>true</RequiresUserInput>
-        </SynchronousCommand>
+	</SynchronousCommand>
       </FirstLogonCommands>
     </component>
   </settings>

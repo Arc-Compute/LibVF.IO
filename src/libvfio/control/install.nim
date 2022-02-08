@@ -9,6 +9,7 @@ import std/rdstdin
 import std/strformat
 import std/sequtils
 import std/strutils
+import std/sugar
 import std/json
 import std/md5
 
@@ -81,6 +82,7 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
     currentPwd = getCurrentDir()
     autounattend = fmt(buffer)
     md5sum = split(execProcess(&"md5sum {isoFile}"))[0]
+    floppy_files = @["autounattend.xml", installParams.pathToSsh] # & collect(for k in walkDir(installParams.introspectionDir): k.path)
     jsonObject = %*{
       "builders": [
         {
@@ -96,18 +98,12 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
           "iso_checksum": md5sum,
           "iso_checksum_type": "md5",
 
-          "floppy_files": [
-            "autounattend.xml",
-            installParams.introspectionDir / "fixnetwork.ps1",
-            installParams.introspectionDir / "configureAnsible.ps1",
-            installParams.introspectionDir / "scheduledinstall.bat",
-            installParams.pathToSsh
-          ],
+          "floppy_files": floppy_files,
 
           "output_directory": "qemu-drives",
           "qemuargs": [
-            [ "-drive", "file=qemu-drives/{{ .Name }},if=virtio,cache=writeback,discard=ignore,format=qcow2,index=1" ],
-            [ "-drive", &"file={installParams.introspectionDir}/virtio-win.iso,media=cdrom,index=3" ],
+            [ "-drive", "file=qemu-drives/{{ .Name }},format=qcow2,index=1" ],
+            [ "-drive", &"file={installParams.introspectionDir}.rom,media=cdrom,index=3" ],
             [ "-display", "gtk" ]
           ],
 
@@ -120,6 +116,13 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
 
           "shutdown_command": "shutdown /s /t 30 /f",
           "shutdown_timeout": "15m"
+        }
+      ],
+      "provisioners": [
+        {
+          "destination": &"C:\\Users\\{installParams.username}\\temp-install",
+          "source": installParams.introspectionDir,
+          "type": "file"
         }
       ]
     }
