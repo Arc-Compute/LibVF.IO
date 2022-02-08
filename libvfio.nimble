@@ -5,6 +5,7 @@ author        = "2666680 Ontario Inc."
 description   = "Release 1"
 license       = "AGPL"
 srcDir        = "src"
+installDirs   = @["templates"]
 installExt    = @["nim"]
 bin           = @["arcd"]
 
