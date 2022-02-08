@@ -98,9 +98,9 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
 
           "floppy_files": [
             "autounattend.xml",
-            installParams.introspectionDir / "scheduledinstall.bat",
             installParams.introspectionDir / "fixnetwork.ps1",
             installParams.introspectionDir / "configureAnsible.ps1",
+            installParams.introspectionDir / "scheduledinstall.bat",
             installParams.pathToSsh
           ],
 
