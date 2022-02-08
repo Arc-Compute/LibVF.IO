@@ -101,7 +101,6 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
             installParams.introspectionDir / "scheduledinstall.bat",
             installParams.introspectionDir / "fixnetwork.ps1",
             installParams.introspectionDir / "configureAnsible.ps1",
-            installParams.introspectionDir / "install.ps1",
             installParams.pathToSsh
           ],
 
