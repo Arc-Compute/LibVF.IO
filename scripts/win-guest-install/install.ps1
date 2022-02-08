@@ -64,6 +64,9 @@ start-process .\Install-x64.bat
 cd $env:USERPROFILE\temp-install\
 start-process .\looking-glass-host-setup.exe /S
 
+# Disable automatic screen timeout
+powercfg -change -monitor-timeout-ac 0
+
 # Verify guest GPU driver (force install if vendorid == 10de && no driver).
 
 # Mount Samba permanently at Z:\.
