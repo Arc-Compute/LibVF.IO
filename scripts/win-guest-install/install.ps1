@@ -50,7 +50,7 @@ PNPUtil.exe /add-driver $env:USERPROFILE\temp-install\Win10\amd64\ivshmem.inf /i
 
 # Install VirtIO network drivers.
 cd $env:USERPROFILE\temp-install\
-start-process .\virtio-win-guest-tools.exe /install /passive
+start-process .\virtio-win-guest-tools.exe -ArgumentList "/install /passive"
 
 # Install Scream registry tweak.
 cd $env:USERPROFILE\temp-install\
