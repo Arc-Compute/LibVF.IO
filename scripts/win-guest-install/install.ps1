@@ -1,6 +1,6 @@
 # Copy files to temp install path.
 mkdir $env:USERPROFILE\temp-install\
-cp -r * $env:USERPROFILE\temp-install\
+cp -r D:\ $env:USERPROFILE\temp-install\
 cd $env:USERPROFILE\temp-install\
 
 # Extract guestutil zip files.
