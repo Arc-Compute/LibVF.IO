@@ -211,6 +211,8 @@ proc getCommandLine*(): CommandLineArguments =
         of ceStop, ceIntrospect:
           if i == 1:
             result.uuid = key
+          elif i == 2:
+            result.config = some(key)
         of ceLs:
           if i == 1:
             result.option = some(key)
