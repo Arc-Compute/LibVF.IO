@@ -117,13 +117,6 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
           "shutdown_command": "shutdown /s /t 30 /f",
           "shutdown_timeout": "15m"
         }
-      ],
-      "provisioners": [
-        {
-          "destination": &"C:\\Users\\{installParams.username}\\temp-install",
-          "source": installParams.introspectionDir,
-          "type": "file"
-        }
       ]
     }
 
