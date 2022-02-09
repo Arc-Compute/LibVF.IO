@@ -35,7 +35,7 @@ proc printHelp() =
   echo("  arcd start user.yaml --safemode")
   echo("  arcd ls")
   echo("  arcd ps")
-  echo("  arcd introspect $UUID")
+  echo("  arcd introspect $UUID user.yaml")
   quit 0
 
 when isMainModule:                                                  ## Checks if process is running as root and exits if it is.
