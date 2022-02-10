@@ -62,7 +62,7 @@ proc getInstallationParams*(limePath: string, isoType: OsInstallEnum): Installat
     discard
 
 proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstallEnum, size: int,
-                finalPath: string, mdevs: seq[Mdev], vfios: seq[Vfio]) =
+                finalPath: string, mdevs: seq[Mdev], vfios: seq[Vfio], root: CommandMonad) =
   ## updateIso - Updates the ISO file to the modified version.
   ##
   ## Inputs
@@ -73,6 +73,7 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
   ## @finalPath - Final path to install the qcow image.
   ## @mdevs - Mdev devices to add.
   ## @vfios - Vfio devices to add.
+  ## @root - Command monad to allow root elevation.
   ##
   ## Side Effects - Modifies the ISO file.
   const
@@ -85,6 +86,8 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
     autounattend = fmt(buffer)
     md5sum = split(execProcess(&"md5sum {isoFile}"))[0]
     floppy_files = @["autounattend.xml", installParams.pathToSsh]
+    newIsoFile = if fileExists(isoFile): isoFile
+                 else: currentPwd / isoFile
     qemuargs = @[
       @[ "-drive", "file=qemu-drives/{{ .Name }},format=qcow2,index=1" ],
       @[ "-drive", &"file={installParams.introspectionDir}.rom,media=cdrom,index=3" ],
@@ -103,7 +106,7 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
           "memory": 4096,
           "disk_size": size * 1024,
 
-          "iso_url": isoFile,
+          "iso_url": newIsoFile,
           "iso_checksum": md5sum,
           "iso_checksum_type": "md5",
 
@@ -125,6 +128,7 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
       ]
     }
 
+  discard setRoot(root, true)
   setCurrentDir(installParams.limeInstall)
 
   writeFile("autounattend.xml", autounattend)
@@ -135,3 +139,4 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
   moveFile("qemu-drives/temp.arc", finalPath)
 
   setCurrentDir(currentPwd)
+  discard setRoot(root, false)
