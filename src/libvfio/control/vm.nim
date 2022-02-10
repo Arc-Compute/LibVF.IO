@@ -195,7 +195,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     if cfg.installOs != osNone:
       var t = getInstallationParams(limeDir, cfg.installOs)
       t.introspectionDir = cfg.root / "introspection-installations"
-      updateIso(get(cfg.container.iso), t, cfg.installOs, cfg.container.initialSize, baseKernel)
+      updateIso(get(cfg.container.iso), t, cfg.installOs, cfg.container.initialSize, baseKernel, mdevs, vfios)
       realCleanup(result)
       result.child = false
       return

@@ -129,6 +129,30 @@ func changePermissions*(files: seq[string]): Args =
   # Add all files
   result.args &= files
 
+func vfioArgs*(device: Vfio): seq[string] =
+  ## vfioArgs - Qemu arguments for adding VFIO device.
+  ##
+  ## Inputs
+  ## @device - Device to make into arguments.
+  ##
+  ## Returns
+  ## result - Arguments to add to qemu arguments to attach vfio device.
+  if isGpu(device):
+    result &= "-device"
+    result &= &"vfio-pci,host={device},multifunction=on,display=off"
+
+func mdevArgs*(device: Mdev): seq[string] =
+  ## mdevArgs - Qemu arguments for adding MDEV device.
+  ##
+  ## Inputs
+  ## @device - Device to make into arguments.
+  ##
+  ## Returns
+  ## result - Arguments to add to qemu arguments to attach mdev device.
+  const mdevBase = "/sys/bus/mdev/devices"
+  result &= "-device"
+  result &=
+        &"vfio-pci,id={device.devId},sysfsdev={mdevBase}/{device.uuid},display=off"
 
 func qemuLaunch*(cfg: Config, uuid: string,
                  vfios: seq[Vfio], mdevs: seq[Mdev],
@@ -148,18 +172,6 @@ func qemuLaunch*(cfg: Config, uuid: string,
   ##
   ## Returns
   ## result - Arguments to launch a kernel.
-  func vfioArgs(device: Vfio): seq[string] =
-    if isGpu(device):
-      result &= "-device"
-      result &= &"vfio-pci,host={device},multifunction=on,display=off"
-      result &= "-mem-prealloc"
-
-  func mdevArgs(device: Mdev): seq[string] =
-    const mdevBase = "/sys/bus/mdev/devices"
-    result &= "-device"
-    result &=
-       &"vfio-pci,id={device.devId},sysfsdev={mdevBase}/{device.uuid},display=off"
-
   let
     qemuLogFile = logDir / (uuid & "-session.txt")
 
@@ -172,6 +184,9 @@ func qemuLaunch*(cfg: Config, uuid: string,
 
   # Causes issues with mdev devices.
   result.args &= "-no-hpet"
+
+  # Preallocating RAM.
+  result.args &= "-mem-prealloc"
 
   # NOTE: We do not allow installing in no graphics mode just yet.
   if cfg.nographics and not install:

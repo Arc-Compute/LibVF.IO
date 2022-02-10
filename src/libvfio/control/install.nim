@@ -62,7 +62,7 @@ proc getInstallationParams*(limePath: string, isoType: OsInstallEnum): Installat
     discard
 
 proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstallEnum, size: int,
-                finalPath: string) =
+                finalPath: string, mdevs: seq[Mdev], vfios: seq[Vfio]) =
   ## updateIso - Updates the ISO file to the modified version.
   ##
   ## Inputs
@@ -71,6 +71,8 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
   ## @isoType - How to modify the ISO.
   ## @size - Size of the VM.
   ## @finalPath - Final path to install the qcow image.
+  ## @mdevs - Mdev devices to add.
+  ## @vfios - Vfio devices to add.
   ##
   ## Side Effects - Modifies the ISO file.
   const
@@ -82,7 +84,14 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
     currentPwd = getCurrentDir()
     autounattend = fmt(buffer)
     md5sum = split(execProcess(&"md5sum {isoFile}"))[0]
-    floppy_files = @["autounattend.xml", installParams.pathToSsh] # & collect(for k in walkDir(installParams.introspectionDir): k.path)
+    floppy_files = @["autounattend.xml", installParams.pathToSsh]
+    qemuargs = @[
+      @[ "-drive", "file=qemu-drives/{{ .Name }},format=qcow2,index=1" ],
+      @[ "-drive", &"file={installParams.introspectionDir}.rom,media=cdrom,index=3" ],
+      @[ "-device", "rtl8139,netdev=net0" ],
+      @[ "-netdev", &"user,id=net0" ],
+      @[ "-display", "gtk" ]
+    ] & map(mdevs, mdevArgs) & map(vfios, vfioArgs)
     jsonObject = %*{
       "builders": [
         {
@@ -101,11 +110,7 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
           "floppy_files": floppy_files,
 
           "output_directory": "qemu-drives",
-          "qemuargs": [
-            [ "-drive", "file=qemu-drives/{{ .Name }},format=qcow2,index=1" ],
-            [ "-drive", &"file={installParams.introspectionDir}.rom,media=cdrom,index=3" ],
-            [ "-display", "gtk" ]
-          ],
+          "qemuargs": qemuargs,
 
           "communicator": "winrm",
           "winrm_username": installParams.username,
