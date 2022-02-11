@@ -98,6 +98,7 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
       @[ "-machine", MachineConfig ],
       @[ "-cpu", CpuConfig ],
       @[ "-display", "gtk" ]
+      #@[ "-device", "rtl8139" ]
     ] & map(mdevs, mdevArgs) & map(vfios, vfioArgs) & map(qemuAdd, additionalArgs)
     jsonObject = %*{
       "builders": [
