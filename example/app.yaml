@@ -1,17 +1,17 @@
 %YAML 1.2
 %TAG !n! tag:nimyaml.org,2016:
 --- !n!custom:Config 
-startintro: true
+startintro: false
 startapp: false
-installOs: "none"
-nographics: true
-spice: true
+installOs: "win10"
+nographics: false
+spice: false
 introspect: "looking-glass"
 shareddir: !!null ~
 sshPort: 2222
 connectivity: 
   exposedPorts: []
-container:
+container: 
   kernel: windows.arc
   state: []
   initialSize: 20
@@ -20,23 +20,8 @@ cpus:
   cores: 8
   sockets: 1
   threads: 2
-  ramAlloc: 8192
-gpus: 
-  - 
-    -
-      maxVRam: 9000
-    -
-      minVRam: 8000
-    -
-      gpuType: "sysfsdev"
-    - 
-      parentPort: !!null ~
-    - 
-      mdevType: "i915-GVTg_V4_1"
-    - 
-      devId: "hostdev0"
-    -
-      suffix: "Q"
+  ramAlloc: 4000
+gpus: []
 nics: []
 root: ~/.local/libvf.io
 sudo: false
@@ -44,4 +29,10 @@ commands: []
 startupCommands: []
 teardownCommands: []
 installCommands: []
-appCommands: []
+appCommands: 
+  - 
+    is_root: true
+    list: 
+      - 
+        exec: echo
+        args: [hello, world]

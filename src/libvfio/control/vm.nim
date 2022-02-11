@@ -1,4 +1,4 @@
-
+#
 # Copyright: 2666680 Ontario Inc.
 # Reason: Code to interact with VMs.
 #
@@ -14,7 +14,9 @@ import sequtils
 import sugar
 import logging
 
+import app
 import arguments
+import install
 import introspection
 import iommu
 import root
@@ -54,6 +56,11 @@ proc realCleanup(vm: VM) =
   if vm.introspections != @[]:
     discard sendCommand(vm.monad, removeFiles(vm.introspections))
 
+  # Runs the teardown command.
+  info("Running teardown command lists")
+  for cmdList in vm.teardownCommands:
+    discard sendCommandList(vm.monad, cmdList)
+
   info("Cleaned up VM")
 
 proc cleanupVm*(vm: VM) =
@@ -71,15 +78,17 @@ proc cleanupVm*(vm: VM) =
     res = if isSome(vm.socket): getResponse(get(vm.socket))
           else: newFuture[QmpResponse]()
 
-  while running(vm.qemuPid):
+  while vm.child and running(vm.qemuPid):
     if not(finished(res)):
       if timeouts < 1000 and poweringDown: # Keeps going for up to 30 seconds
                                            #  before killing the process.
         timeouts += 1
       elif poweringDown:                   # KILL THE PROCESS
+        discard setRoot(vm.monad, true)    # Sets the root if necessary to kill.
         terminate(vm.qemuPid)              # Prevents self garbage collection
                                            # need garbage collection daemon
                                            # to run after this.
+        discard setRoot(vm.monad, false)   # Sets back to the user.
       waitFor(sleepAsync(300))
       continue
 
@@ -123,12 +132,14 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     livePath = cfg.root / "live"
     lockPath = cfg.root / "lock"
     qemuLogs = cfg.root / "logs" / "qemu"
+    limeDir = cfg.root / "lime" / uuid
     baseKernel = kernelPath / cfg.container.kernel
     lockFile = lockPath / (uuid & ".json")
     liveKernel = if noCopy: baseKernel else: livePath / uuid
     socketDir = "/tmp" / "sockets" / uuid
     dirs = [
-      kernelPath, livePath, lockPath, qemuLogs, socketDir
+      kernelPath, livePath, lockPath, qemuLogs, socketDir,
+      limeDir
     ]
     sockets = map(
       @["main.sock", "master.sock"],
@@ -145,8 +156,24 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     rootMonad = createCommandMonad(cfg.sudo)
     userMonad = createCommandMonad(false)
 
+  result.monad = rootMonad
+
   # If we are passing a vfio, we need to run the command as sudo
   let (vfios, mdevs) = getIommuGroups(cfg, uuid, rootMonad)
+
+  result.vfios = vfios
+  result.mdevs = mdevs
+  result.lockFile = lockFile
+  result.socketDir = socketDir
+  result.uuid = uuid
+  result.introspections = introspections & limeDir
+  result.liveKernel = liveKernel
+  result.baseKernel = baseKernel
+  result.newInstall = newInstall
+  result.save = save
+  result.noCopy = noCopy
+  result.sshPort = cfg.sshPort
+  result.teardownCommands = cfg.teardownCommands
 
   # If we do not have the necessary directories, create them
   for dir in dirs:
@@ -164,7 +191,19 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   # Either moves the file or creates a new file
   if fileExists(baseKernel) and not newInstall and not noCopy:
     copyFile(baseKernel, liveKernel)
-  elif newInstall:
+  elif newInstall and isSome(cfg.container.iso):
+    if cfg.installOs != osNone:
+      var t = getInstallationParams(limeDir, cfg.installOs)
+      t.introspectionDir = cfg.root / "introspection-installations"
+      updateIso(
+        get(cfg.container.iso), t, cfg.installOs,
+        cfg.container.initialSize, baseKernel, mdevs,
+        vfios, rootMonad, uuid
+      )
+      realCleanup(result)
+      result.child = false
+      return
+
     let
       kernelArgs = createKernel(liveKernel, cfg.container.initialSize)
     discard sendCommand(userMonad, kernelArgs)
@@ -187,18 +226,16 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
       sockets=sockets
     )
 
-  result.lockFile = lockFile
-  result.socketDir = socketDir
-  result.uuid = uuid
-  result.vfios = vfios
-  result.mdevs = mdevs
-  result.introspections = introspections
-  result.monad = rootMonad
-  result.liveKernel = liveKernel
-  result.baseKernel = baseKernel
-  result.newInstall = newInstall
-  result.save = save
-  result.noCopy = noCopy
+  # Runs startup commands.
+  var commands = true
+  for cmdList in cfg.startupCommands:
+    commands = commands and sendCommandList(result.monad, cmdList)
+
+  if not commands:
+    error("Failed startup commands, cleaning up VM.")
+    realCleanup(result)
+    result.child = false
+    return
 
   # Spawn up qemu image
   let forkRet = fork()
@@ -242,6 +279,18 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
 
   result.socket = socketMaybe
 
+  if newInstall:
+    commands = startRealApp(result.monad, cfg.install_commands, result.uuid,
+                            result.sshPort)
+    if not commands:
+      error("Could not install the VM.")
+      discard setRoot(result.monad, true)
+      terminate(result.qemuPid)
+      discard setRoot(result.monad, false)
+  elif cfg.startapp:
+    discard startRealApp(result.monad, cfg.app_commands, result.uuid,
+                         result.sshPort)
+
 proc cleanVm*(vm: VM) =
   ## cleanVm - Cleans the VM/waits for VM to finish.
   ##
@@ -255,15 +304,15 @@ proc cleanVm*(vm: VM) =
   elif not vm.noCopy and fileExists(vm.liveKernel):
     removeFile(vm.liveKernel)
 
-proc stopVm*(cfg: Config, cmd: CommandLineArguments) =
+proc stopVm*(uuid: string) =
   ## stopVm - Stops a VM.
   ##
   ## Inputs
-  ## @cmd - Command line arguments for stopping a VM.
+  ## @uuid - Stops the VM with the given UUID.
   ##
   ## Side effects - Stops a VM.
   let
-    socketPath = "/tmp" / "sockets" / cmd.uuid / "master.sock"
+    socketPath = "/tmp" / "sockets" / uuid / "master.sock"
 
   # Sends kill command
   let socket = createSocket(socketPath)

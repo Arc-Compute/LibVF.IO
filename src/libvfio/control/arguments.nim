@@ -13,7 +13,7 @@ import ../types
 
 const
   # Additional strings to help hide KVM status from the resources.
-  MachineConfig = join(
+  MachineConfig* = join(
     @["pc-q35-4.2",
       "accel=kvm",
       "usb=off",
@@ -22,7 +22,7 @@ const
     ],
     ","
   )
-  CpuConfig = join(
+  CpuConfig* = join(
     @["host",
       "ss=on",
       "vmx=on",
@@ -129,6 +129,41 @@ func changePermissions*(files: seq[string]): Args =
   # Add all files
   result.args &= files
 
+func vfioArgs*(device: Vfio): seq[string] =
+  ## vfioArgs - Qemu arguments for adding VFIO device.
+  ##
+  ## Inputs
+  ## @device - Device to make into arguments.
+  ##
+  ## Returns
+  ## result - Arguments to add to qemu arguments to attach vfio device.
+  if isGpu(device):
+    result &= "-device"
+    result &= &"vfio-pci,host={device},multifunction=on,display=off"
+
+func mdevArgs*(device: Mdev): seq[string] =
+  ## mdevArgs - Qemu arguments for adding MDEV device.
+  ##
+  ## Inputs
+  ## @device - Device to make into arguments.
+  ##
+  ## Returns
+  ## result - Arguments to add to qemu arguments to attach mdev device.
+  const mdevBase = "/sys/bus/mdev/devices"
+  result &= "-device"
+  result &=
+        &"vfio-pci,id={device.devId},sysfsdev={mdevBase}/{device.uuid},display=off"
+
+func additionalArgs*(args: QemuArgs): seq[string] =
+  ## additionalArgs - Qemu arguments for additional commands.
+  ##
+  ## Inputs
+  ## @args - Args to add
+  ##
+  ## Returns
+  ## result - Arguments to add to qemu arguments to modify the object.
+  let values = join(args.values, ",")
+  result = @[args.arg, values]
 
 func qemuLaunch*(cfg: Config, uuid: string,
                  vfios: seq[Vfio], mdevs: seq[Mdev],
@@ -148,18 +183,6 @@ func qemuLaunch*(cfg: Config, uuid: string,
   ##
   ## Returns
   ## result - Arguments to launch a kernel.
-  func vfioArgs(device: Vfio): seq[string] =
-    if isGpu(device):
-      result &= "-device"
-      result &= &"vfio-pci,host={device},multifunction=on,display=off"
-      result &= "-mem-prealloc"
-
-  func mdevArgs(device: Mdev): seq[string] =
-    const mdevBase = "/sys/bus/mdev/devices"
-    result &= "-device"
-    result &=
-       &"vfio-pci,id={device.devId},sysfsdev={mdevBase}/{device.uuid},display=off"
-
   let
     qemuLogFile = logDir / (uuid & "-session.txt")
 
@@ -172,6 +195,9 @@ func qemuLaunch*(cfg: Config, uuid: string,
 
   # Causes issues with mdev devices.
   result.args &= "-no-hpet"
+
+  # Preallocating RAM.
+  result.args &= "-mem-prealloc"
 
   # NOTE: We do not allow installing in no graphics mode just yet.
   if cfg.nographics and not install:
@@ -219,7 +245,7 @@ func qemuLaunch*(cfg: Config, uuid: string,
     # Spice port
     result.args &= "-spice"
     result.args &=
-      "port=5900,addr=127.0.0.1,disable-ticketing,image-compression=off,seamless-migration=on"
+      "port=5900,addr=127.0.0.1,disable-ticketing=on,image-compression=off,seamless-migration=on"
 
     # SPICE USB Redirects
     result.args &= "-chardev"
@@ -297,15 +323,29 @@ func qemuLaunch*(cfg: Config, uuid: string,
   # Set mdev arguments
   for mdev in mdevs:
     result.args &= mdevArgs(mdev)
-
+  # Port forward ssh port
+  result.args &= "-device"
+  result.args &= "rtl8139,netdev=net0"
+  result.args &= "-netdev"
+  result.args &= join(
+    @["user", "id=net0"] &
+    @[&"hostfwd=tcp::{cfg.sshPort}-:22"],
+    ","
+  )
   # Port forward for all exposed ports
   if len(cfg.connectivity.exposedPorts) > 0:
     let hostfwds = map(cfg.connectivity.exposedPorts,
                       (port: Port) => &"hostfwd=tcp::{port.host}-:{port.guest}")
     result.args &= "-device"
-    result.args &= "rtl8139,netdev=net0"
+    result.args &= "rtl8139,netdev=net1"
     result.args &= "-netdev"
-    result.args &= join(@["user", "id=net0"] & hostfwds, ",")
+    result.args &= join(@["user", "id=net1"] & hostfwds, ",")
+
+  # VirtIO netdev
+  result.args &= "-net"
+  result.args &= "user"
+  result.args &= "-net"
+  result.args &= "nic,model=virtio"
 
   if isSome(cfg.shareddir) and not install:
     result.args &= "-hdb"
@@ -330,7 +370,4 @@ func qemuLaunch*(cfg: Config, uuid: string,
   # Additional commands sent into the qemu command
   # NOTE: Start Process quotes these commands.
   for command in cfg.commands:
-    let values = join(command.values, ",")
-    result.args &= command.arg
-    if values != "":
-      result.args &= values
+    result.args &= additionalArgs(command)

@@ -107,7 +107,7 @@ function add_depen() {
   ls_depen
   case $distro in
     "Fedora") 	sudo dnf install -y nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
-    "Ubuntu")	sudo apt install -y mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
+    "Ubuntu")	sudo apt install -y packer mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
     "Arch")	yay -S "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
     # Only difference from Ubuntu is the addition of "genisoimage" which provides mkisofs
     "Pop")	sudo apt install -y genisoimage mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
@@ -254,7 +254,7 @@ function install_libvfio() {
 
 function dl_lookingglass() {
   set_sandbox_dir
- # Download Looking Glass beta 4 sources
+  # Download Looking Glass beta 4 sources
   rm -rf LookingGlass
   curl -o lg.tar.gz https://looking-glass.io/artifact/B4/source
   tar -xvf lg.tar.gz
@@ -262,7 +262,7 @@ function dl_lookingglass() {
 }
 
 function install_lookingglass() {
- # Compile & install Looking Glass sources
+  # Compile & install Looking Glass sources
   set_sandbox_dir
   cd LookingGlass
   mkdir client/build
@@ -299,14 +299,24 @@ function get_introspection() {
   rm -rf $HOME/.local/libvf.io/introspection-installations
   mkdir -p $HOME/.local/libvf.io/introspection-installations
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
+  wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win-guest-tools.exe
   wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
+  cp $current_path/scripts/win-guest-install/install.ps1 ./
+  cp $current_path/scripts/win-guest-install/scheduledinstall.bat ./
+  cp $current_path/scripts/win-guest-install/start-install.bat ./
+  cp $HOME/.ssh/id_rsa.pub ./authorized_keys
   cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
+  wget -O adksetup.exe "https://go.microsoft.com/fwlink/?linkid=2120254"
+  wget -O virtio-win.iso "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.215-2/virtio-win-0.1.215.iso"
+  cp $current_path/scripts/win-guest-install/*.ps1 .
   cp -r * $HOME/.local/libvf.io/introspection-installations
   cd $HOME/.local/libvf.io/
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
   mkdir -p ~/.config/arc/
   cp introspection-installations.rom ~/.config/arc/
+  cp -r $HOME/.local/libvf.io/introspection-installations/ ~/.config/arc/
+  cp $current_path/conf/smb.conf ~/.config/arc/
   cd $current_path
 }
 
