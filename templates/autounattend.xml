@@ -100,31 +100,19 @@
           <Order>1</Order>
           <RequiresUserInput>true</RequiresUserInput>
         </SynchronousCommand>
-	<SynchronousCommand wcm:action="add">
-          <CommandLine>cmd.exe /c powershell -File e:\fixnetwork.ps1</CommandLine>
-          <Description>Fix public network</Description>
+        <SynchronousCommand wcm:action="add">
+          <CommandLine>cmd.exe /c powershell -Command "Start-Process powershell -verb RunAs -ArgumentList "e:\install.ps1""</CommandLine>
+          <Description>Install guest utils.</Description>
           <Order>2</Order>
           <RequiresUserInput>true</RequiresUserInput>
-        </SynchronousCommand>
+	</SynchronousCommand>
         <SynchronousCommand wcm:action="add">
           <CommandLine>cmd.exe /c powershell -File "e:\configureAnsible.ps1"</CommandLine>
           <Description>Enable WinRM</Description>
           <Order>3</Order>
           <RequiresUserInput>true</RequiresUserInput>
         </SynchronousCommand>
-        <SynchronousCommand wcm:action="add">
-          <CommandLine>cmd.exe /c reg add "HKLM\System\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
-          <Description>Network prompt</Description>
-          <Order>4</Order>
-          <RequiresUserInput>true</RequiresUserInput>
-        </SynchronousCommand>
-        <SynchronousCommand wcm:action="add">
-          <CommandLine>cmd.exe /c powershell -Command "Start-Process powershell -verb RunAs -ArgumentList "e:\install.ps1""</CommandLine>
-          <Description>Install guest utils.</Description>
-          <Order>5</Order>
-          <RequiresUserInput>true</RequiresUserInput>
-	</SynchronousCommand>
-      </FirstLogonCommands>
+     </FirstLogonCommands>
     </component>
   </settings>
   <settings pass="specialize">

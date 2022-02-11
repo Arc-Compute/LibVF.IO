@@ -13,7 +13,7 @@ import ../types
 
 const
   # Additional strings to help hide KVM status from the resources.
-  MachineConfig = join(
+  MachineConfig* = join(
     @["pc-q35-4.2",
       "accel=kvm",
       "usb=off",
@@ -22,7 +22,7 @@ const
     ],
     ","
   )
-  CpuConfig = join(
+  CpuConfig* = join(
     @["host",
       "ss=on",
       "vmx=on",
@@ -153,6 +153,17 @@ func mdevArgs*(device: Mdev): seq[string] =
   result &= "-device"
   result &=
         &"vfio-pci,id={device.devId},sysfsdev={mdevBase}/{device.uuid},display=off"
+
+func additionalArgs*(args: QemuArgs): seq[string] =
+  ## additionalArgs - Qemu arguments for additional commands.
+  ##
+  ## Inputs
+  ## @args - Args to add
+  ##
+  ## Returns
+  ## result - Arguments to add to qemu arguments to modify the object.
+  let values = join(args.values, ",")
+  result = @[args.arg, values]
 
 func qemuLaunch*(cfg: Config, uuid: string,
                  vfios: seq[Vfio], mdevs: seq[Mdev],
@@ -359,7 +370,4 @@ func qemuLaunch*(cfg: Config, uuid: string,
   # Additional commands sent into the qemu command
   # NOTE: Start Process quotes these commands.
   for command in cfg.commands:
-    let values = join(command.values, ",")
-    result.args &= command.arg
-    if values != "":
-      result.args &= values
+    result.args &= additionalArgs(command)

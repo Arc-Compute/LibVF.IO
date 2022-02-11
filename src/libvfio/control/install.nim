@@ -62,7 +62,8 @@ proc getInstallationParams*(limePath: string, isoType: OsInstallEnum): Installat
     discard
 
 proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstallEnum, size: int,
-                finalPath: string, mdevs: seq[Mdev], vfios: seq[Vfio], root: CommandMonad) =
+                finalPath: string, mdevs: seq[Mdev], vfios: seq[Vfio], root: CommandMonad,
+                uuid: string, qemuAdd: seq[QemuArgs]) =
   ## updateIso - Updates the ISO file to the modified version.
   ##
   ## Inputs
@@ -74,6 +75,8 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
   ## @mdevs - Mdev devices to add.
   ## @vfios - Vfio devices to add.
   ## @root - Command monad to allow root elevation.
+  ## @uuid - UUID to use (NECESSARY FOR NVIDIA 0X57).
+  ## @qemuAdd - Additional Qemu commands
   ##
   ## Side Effects - Modifies the ISO file.
   const
@@ -91,10 +94,11 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
     qemuargs = @[
       @[ "-drive", "file=qemu-drives/{{ .Name }},format=qcow2,index=1" ],
       @[ "-drive", &"file={installParams.introspectionDir}.rom,media=cdrom,index=3" ],
-      @[ "-device", "rtl8139,netdev=net0" ],
-      @[ "-netdev", &"user,id=net0" ],
+      @[ "-uuid", uuid ],
+      @[ "-machine", MachineConfig ],
+      @[ "-cpu", CpuConfig ],
       @[ "-display", "gtk" ]
-    ] & map(mdevs, mdevArgs) & map(vfios, vfioArgs)
+    ] & map(mdevs, mdevArgs) & map(vfios, vfioArgs) & map(qemuAdd, additionalArgs)
     jsonObject = %*{
       "builders": [
         {
@@ -105,6 +109,7 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
           "cpus": 1,
           "memory": 4096,
           "disk_size": size * 1024,
+          "net_device": "rtl8139",
 
           "iso_url": newIsoFile,
           "iso_checksum": md5sum,
@@ -122,13 +127,14 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
           "winrm_insecure": "true",
           "winrm_timeout": "1h",
 
-          "shutdown_command": "shutdown /s /t 30 /f",
-          "shutdown_timeout": "15m"
+          "shutdown_command": "echo hi",
+          "shutdown_timeout": "60m"
         }
       ]
     }
 
-  discard setRoot(root, true)
+  info(qemuargs)
+  info("Setting root: ", setRoot(root, true))
   setCurrentDir(installParams.limeInstall)
 
   writeFile("autounattend.xml", autounattend)
@@ -139,4 +145,4 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
   moveFile("qemu-drives/temp.arc", finalPath)
 
   setCurrentDir(currentPwd)
-  discard setRoot(root, false)
+  info("Removing root: ", setRoot(root, false))
