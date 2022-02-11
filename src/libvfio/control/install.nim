@@ -63,7 +63,7 @@ proc getInstallationParams*(limePath: string, isoType: OsInstallEnum): Installat
 
 proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstallEnum, size: int,
                 finalPath: string, mdevs: seq[Mdev], vfios: seq[Vfio], root: CommandMonad,
-                uuid: string, qemuAdd: seq[QemuArgs]) =
+                uuid: string) =
   ## updateIso - Updates the ISO file to the modified version.
   ##
   ## Inputs
@@ -76,7 +76,6 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
   ## @vfios - Vfio devices to add.
   ## @root - Command monad to allow root elevation.
   ## @uuid - UUID to use (NECESSARY FOR NVIDIA 0X57).
-  ## @qemuAdd - Additional Qemu commands
   ##
   ## Side Effects - Modifies the ISO file.
   const
@@ -98,8 +97,7 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
       @[ "-machine", MachineConfig ],
       @[ "-cpu", CpuConfig ],
       @[ "-display", "gtk" ]
-      #@[ "-device", "rtl8139" ]
-    ] & map(mdevs, mdevArgs) & map(vfios, vfioArgs) & map(qemuAdd, additionalArgs)
+    ]
     jsonObject = %*{
       "builders": [
         {

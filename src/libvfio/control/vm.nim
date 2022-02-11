@@ -198,7 +198,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
       updateIso(
         get(cfg.container.iso), t, cfg.installOs,
         cfg.container.initialSize, baseKernel, mdevs,
-        vfios, rootMonad, uuid, cfg.commands
+        vfios, rootMonad, uuid
       )
       realCleanup(result)
       result.child = false
