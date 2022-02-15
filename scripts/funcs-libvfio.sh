@@ -106,11 +106,11 @@ function add_depen() {
   check_distro
   ls_depen
   case $distro in
-    "Fedora") 	sudo dnf install -y nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
-    "Ubuntu")	sudo apt install -y packer mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
-    "Arch")	yay -S "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
+    "Fedora") 	sudo dnf install -y samba nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
+    "Ubuntu")	sudo apt install -y samba packer mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
+    "Arch")	yay -S "nsis" samba mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
     # Only difference from Ubuntu is the addition of "genisoimage" which provides mkisofs
-    "Pop")	sudo apt install -y genisoimage mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
+    "Pop")	sudo apt install -y samba packer genisoimage mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
      *)		echo $case_dist_msg;;
   esac
 }
@@ -325,6 +325,21 @@ function arch_ignore_abi() {
   if [ $distro == "Arch" ]; then
     sudo su root -c "echo 'Section \"ServerFlags\"' >> /etc/X11/xorg.conf.d/50-IgnoreABI.conf && echo '        Option \"IgnoreABI\" \"1\"' >> /etc/X11/xorg.conf.d/50-IgnoreABI.conf && echo 'EndSection' >> /etc/X11/xorg.conf.d/50-IgnoreABI.conf"
   fi
+}
+
+function create_smb() {
+  # Stop smbd service
+  sudo systemctl stop smbd
+  # Disable smbd service
+  sudo systemctl disable smbd
+  # Creating SMB group
+  sudo groupadd --system smbgroup
+  # Creating SMB user
+  sudo useradd --system --no-create-home --group smbgroup -s /bin/false smbuser
+  # Creating SMB share path
+  sudo mkdir -p /share/public_files/
+  # Set SMB share path permissions
+  sudo chown -R smbuser:smbgroup /share/
 }
 
 function arcd_deploy() {

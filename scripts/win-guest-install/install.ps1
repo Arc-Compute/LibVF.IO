@@ -78,6 +78,7 @@ powercfg /x -standby-timeout-dc 0
 # Verify guest GPU driver (force install if vendorid == 10de && no driver).
 
 # Mount Samba permanently at Z:\.
+New-PSDrive -Name 'Z' -Root '\\10.0.2.2\Public Files' -Persist -PSProvider Filesystem
 
 # Prompt user for disabling explorer.exe (Y/n)?
 

@@ -59,6 +59,9 @@ get_scream
 # Install and configure introspection files
 get_introspection
 
+# Create SMB resources
+create_smb
+
 # Deploying arcd (libvfio component)
 arcd_deploy
 
