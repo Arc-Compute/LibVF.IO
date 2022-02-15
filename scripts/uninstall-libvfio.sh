@@ -31,6 +31,17 @@ else
   echo
 fi
 
+#SMB Removal
+read -p "Remove Samba share? (y or n): " a_smb
+if [[ $a_smb == "y" ]];then
+  rm_smb
+  echo done
+  echo
+else
+  echo "ok, so no."
+  echo
+fi
+
 #Dependency Packages
 # read -p "Remove installed libvfio $distro dependencies? (y or n): " a_depen
 # if [[ $a_depen == "y" ]];then

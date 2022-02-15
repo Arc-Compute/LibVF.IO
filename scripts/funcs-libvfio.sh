@@ -479,6 +479,15 @@ function rm_nim() {
   check_shell_fns
 }
 
+function rm_smb() {
+  # Remove Samba share directory
+  sudo rm -rf /share/
+  # Remove smbuser
+  sudo userdel smbuser
+  # Remove smbgroup
+  sudo groupdel smbgroup
+}
+
 function def_driver() {
   cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
   #GRUB
