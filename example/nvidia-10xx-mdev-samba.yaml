@@ -1,0 +1,62 @@
+%YAML 1.2
+%TAG !n! tag:nimyaml.org,2016:
+--- !n!custom:Config 
+startintro: true
+startapp: false
+installOs: "win10"
+nographics: true
+spice: true
+introspect: "looking-glass"
+shareddir: !!null ~
+sshPort: 2222
+connectivity: 
+  exposedPorts: []
+container:
+  kernel: windows.arc
+  state: []
+  initialSize: 20
+  iso: !!null ~
+cpus: 
+  cores: 4
+  sockets: 1
+  threads: 1
+  ramAlloc: 8192
+gpus: 
+  - 
+    - 
+      maxVRam: 2000
+    - 
+      minVRam: 1000
+    - 
+      gpuType: sysfsdev
+    - 
+      mdevType: ""
+    - 
+      parentPort: !!null ~
+    - 
+      devId: hostdev0
+    - 
+      suffix: Q
+nics: []
+root: ~/.local/libvf.io
+sudo: false
+commands: 
+  - 
+    arg: "-set"
+    values: ["device.hostdev0.x-pci-device-id=6960"]
+startupCommands:
+  -
+    is_root: true
+    list:
+      -
+        exec: /usr/sbin/smbd
+        args: ["-d", "--configfile=/home/user/git/LibVF.IO/conf/smb.conf", "&"]
+teardownCommands:
+  -
+    is_root: true
+    list:
+      -
+        exec: /usr/bin/killall
+        args: [smbd]
+installCommands: []
+appCommands: []
