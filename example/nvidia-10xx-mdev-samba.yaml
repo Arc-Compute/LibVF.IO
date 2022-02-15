@@ -50,7 +50,7 @@ startupCommands:
     list:
       -
         exec: /usr/sbin/smbd
-        args: ["-d", "--configfile=/home/user/git/LibVF.IO/conf/smb.conf", "&"]
+        args: ["-d", "--configfile=/share/smb.conf", "&"]
 teardownCommands:
   -
     is_root: true

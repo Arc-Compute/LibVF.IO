@@ -338,6 +338,8 @@ function create_smb() {
   sudo useradd --system --no-create-home --group smbgroup -s /bin/false smbuser
   # Creating SMB share path
   sudo mkdir -p /share/public_files/
+  # Copy smb configuration file to SMB share root path
+  sudo cp $HOME/.config/arc/smb.conf /share/
   # Set SMB share path permissions
   sudo chown -R smbuser:smbgroup /share/
 }
