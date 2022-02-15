@@ -77,9 +77,9 @@ powercfg /x -standby-timeout-dc 0
 
 # Verify guest GPU driver (force install if vendorid == 10de && no driver).
 
-# Mount Samba permanently at Z:\.
+# Allow unauthenticated Samba mount.
 Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters\" -Name "AllowInsecureGuestAuth" -Value 1
-New-PSDrive -Name 'Z' -Root '\\10.0.2.2\Public Files' -Persist -PSProvider Filesystem
+cp E:\mount-smb.bat $env:USERPROFILE'\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\'
 
 # Prompt user for disabling explorer.exe (Y/n)?
 
