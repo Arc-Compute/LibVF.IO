@@ -50,7 +50,7 @@ startupCommands:
     list:
       -
         exec: /usr/sbin/smbd
-        args: ["-d", "--configfile=/share/smb.conf", "&"]
+        args: ["-i", "--configfile=/share/smb.conf", "&"]
 teardownCommands:
   -
     is_root: true
