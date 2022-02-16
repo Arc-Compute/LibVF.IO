@@ -43,10 +43,10 @@ sudo: false
 commands: 
   - 
     arg: "-set"
-    values: ["device.hostdev0.x-pci-sub-device-id=4794"]
+    values: ["device.hostdev0.x-pci-device-id=0x1e30"]
   - 
     arg: "-set"
-    values: ["device.hostdev0.x-pci-device-id=7728"]
+    values: ["device.hostdev0.x-pci-sub-device-id=0x12ba"]
 startupCommands: []
 teardownCommands: []
 installCommands: []
