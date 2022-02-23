@@ -79,7 +79,7 @@ proc updateIso*(isoFile: string, installParams: Installation, isoType: OsInstall
   ##
   ## Side Effects - Modifies the ISO file.
   const
-    buffer: string = staticRead("../../../templates/autounattend.xml")
+    buffer: string = staticRead("../templates/autounattend.xml")
 
   info("Getting MD5 sum of the executable file, may take a while")
 
