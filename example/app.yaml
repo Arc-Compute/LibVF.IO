@@ -8,6 +8,7 @@ nographics: false
 spice: false
 introspect: "looking-glass"
 shareddir: !!null ~
+spicePort: 5900
 sshPort: 2222
 connectivity: 
   exposedPorts: []
