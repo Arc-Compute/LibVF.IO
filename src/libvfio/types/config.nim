@@ -61,6 +61,7 @@ type
     spice*: bool                         ## If we want to use a spice server.
     introspect*: IntrospectEnum          ## What type of introspection we use.
     shareddir*: Option[string]           ## Shared directory between os and host.
+    spicePort*: int                      ## Spice port number.
     sshPort*: int                        ## SSH port number.
     connectivity*: Connectivity          ## Code to connect to the machine.
     container*: ArcContainer             ## The specifics for how to spawn the

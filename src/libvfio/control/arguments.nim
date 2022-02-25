@@ -245,7 +245,7 @@ func qemuLaunch*(cfg: Config, uuid: string,
     # Spice port
     result.args &= "-spice"
     result.args &=
-      "port=5900,addr=127.0.0.1,disable-ticketing=on,image-compression=off,seamless-migration=on"
+      &"port={cfg.spicePort},addr=127.0.0.1,disable-ticketing=on,image-compression=off,seamless-migration=on"
 
     # SPICE USB Redirects
     result.args &= "-chardev"
