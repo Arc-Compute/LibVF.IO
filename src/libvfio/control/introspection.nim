@@ -27,7 +27,7 @@ func getIntrospections*(cfg: Config, uuid: string,
       result = @["/dev/shm/kvmfr-" & uuid, "/dev/shm/kvmsr-" & uuid]
     else: discard
 
-proc lookingGlassIntrospect(cfg: Config, introspections: seq[string], uuid: string) =
+proc lookingGlassIntrospect(spicePort: int, introspections: seq[string], uuid: string) =
   ## lookingGlassIntrospect - Introspection using looking glass.
   ##
   ## Inputs
@@ -39,7 +39,7 @@ proc lookingGlassIntrospect(cfg: Config, introspections: seq[string], uuid: stri
     lookingGlassArgs = Args(
       exec: "/usr/local/bin/looking-glass-client",
       args: @[
-        "-f", introspections[0], "-a", "yes", "egl:scale", "1", "-m", "58", "-p", cfg.spicePort,
+        "-f", introspections[0], "-a", "yes", "egl:scale", "1", "-m", "58", "-p", $spicePort,
         "input:rawMouse", "yes", "input:captureOnly", "yes", "spice:captureOnStart", "yes",
         "win:title=" & "Looking Glass + LibVF.IO (CapsLock toggles input | Hold CapsLock for menu) UUID: " & uuid
       ]
@@ -78,7 +78,7 @@ proc lookingGlassIntrospect(cfg: Config, introspections: seq[string], uuid: stri
   terminate(screamPid)
   quit(0)
 
-proc realIntrospect*(intro: IntrospectEnum, introspections: seq[string],
+proc realIntrospect*(cfg: Config, intro: IntrospectEnum, introspections: seq[string],
                      uuid: string) =
   ## introspectVm - Starts an introspection script for the VM.
   ##
@@ -90,7 +90,7 @@ proc realIntrospect*(intro: IntrospectEnum, introspections: seq[string],
   ## Side effects - Opens all introspection devices.
   case intro
   of isLookingGlass:
-    lookingGlassIntrospect(cfg, introspections, uuid)
+    lookingGlassIntrospect(cfg.spicePort, introspections, uuid)
   else: discard
 
 proc introspectVm*(cfg: Config, uuid: string) =
@@ -105,4 +105,4 @@ proc introspectVm*(cfg: Config, uuid: string) =
     lockFile = cfg.root / "lock" / &"{uuid}.json"
     lock = getLockFile(lockFile)
     config = lock.config
-  realIntrospect(config.introspect, getIntrospections(config, uuid), uuid)
+  realIntrospect(cfg, config.introspect, getIntrospections(config, uuid), uuid)

@@ -272,7 +272,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     discard sendCommand(rootMonad, permissionsArgs)
 
   if cfg.startintro and not newInstall:
-    realIntrospect(cfg.introspect, introspections, uuid)
+    realIntrospect(cfg, cfg.introspect, introspections, uuid)
 
   let
     socketMaybe = createSocket(socketDir / "main.sock")
