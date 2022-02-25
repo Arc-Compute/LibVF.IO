@@ -3,7 +3,7 @@
 --- !n!custom:Config 
 startintro: true
 startapp: false
-installOs: "win10"
+installOs: "none"
 nographics: true
 spice: true
 introspect: "looking-glass"
@@ -40,10 +40,7 @@ gpus:
 nics: []
 root: ~/.local/libvf.io
 sudo: false
-commands: 
-  - 
-    arg: "-set"
-    values: ["device.hostdev0.x-pci-device-id=6960"]
+commands: []
 startupCommands:
   -
     is_root: true

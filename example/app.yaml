@@ -3,7 +3,7 @@
 --- !n!custom:Config 
 startintro: false
 startapp: false
-installOs: "win10"
+installOs: "none"
 nographics: false
 spice: false
 introspect: "looking-glass"
