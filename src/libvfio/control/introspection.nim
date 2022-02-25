@@ -27,7 +27,7 @@ func getIntrospections*(cfg: Config, uuid: string,
       result = @["/dev/shm/kvmfr-" & uuid, "/dev/shm/kvmsr-" & uuid]
     else: discard
 
-proc lookingGlassIntrospect(introspections: seq[string], uuid: string) =
+proc lookingGlassIntrospect(cfg: Config, introspections: seq[string], uuid: string) =
   ## lookingGlassIntrospect - Introspection using looking glass.
   ##
   ## Inputs
@@ -90,7 +90,7 @@ proc realIntrospect*(intro: IntrospectEnum, introspections: seq[string],
   ## Side effects - Opens all introspection devices.
   case intro
   of isLookingGlass:
-    lookingGlassIntrospect(introspections, uuid)
+    lookingGlassIntrospect(cfg, introspections, uuid)
   else: discard
 
 proc introspectVm*(cfg: Config, uuid: string) =
