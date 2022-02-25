@@ -83,6 +83,7 @@ proc realIntrospect*(cfg: Config, intro: IntrospectEnum, introspections: seq[str
   ## introspectVm - Starts an introspection script for the VM.
   ##
   ## Inputs
+  ## @cfg - Config type.
   ## @intro - Introspection type.
   ## @introspections - List of introspection devices.
   ## @uuid - UUID for the name of the introspection.
