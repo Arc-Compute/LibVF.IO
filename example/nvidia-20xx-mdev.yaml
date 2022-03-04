@@ -1,6 +1,7 @@
 %YAML 1.2
 %TAG !n! tag:nimyaml.org,2016:
---- !n!custom:Config 
+--- !n!custom:Config
+name: "LibVF.IO VM"
 startintro: true
 startapp: false
 installOs: "none"
