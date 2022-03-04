@@ -4,9 +4,15 @@
 # Reason: Installation of libvf.io
 #
 
+
 full_path=$(realpath $0)
 script_dir_path=$(dirname $full_path)
 cd $script_dir_path/..
+
+# Check for command line flags
+arg0=$(basename "$0" .sh)
+blnk=$(echo "$arg0" | sed 's/./ /g')
+
 
 source $script_dir_path/funcs-libvfio.sh
 
@@ -16,11 +22,13 @@ source $script_dir_path/funcs-libvfio.sh
 root_kick
 # Ensures script is ran from proper directory
 check_dir
+# Runs functions based off of optional install script flags
+user_flags "$@"
 # Checks which distribution user is using
 check_distro
 
 echo
-echo "Running libvfio install script for $distro distribution"
+echo "Running LibVF.IO install script for $distro distribution"
 echo
 
 # Checks if first stage of install script is complete
@@ -58,6 +66,8 @@ install_lookingglass
 get_scream
 # Install and configure introspection files
 get_introspection
+# Cleanup unnecesary/conflicting files
+sandbox_and_old_driver_cleanup
 
 # Create SMB resources
 create_smb
