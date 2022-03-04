@@ -53,6 +53,7 @@ type
                                          ##  VM.
     startintro*: bool                    ## If we start the introspection by
                                          ##  default.
+    name*: string                        ## VM name identifier
     startapp*: bool                      ## If we start the application by
                                          ##  default.
     installOs*: OsInstallEnum            ## Installs the given operating system
