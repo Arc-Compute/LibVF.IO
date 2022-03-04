@@ -13,7 +13,7 @@ type
     lock*: Lock
     path*: string
 
-proc getLocks*(cfg: Config): seq[wLock] =
+proc getLocks*(root: string): seq[wLock] =
   ## getLocks - Gets locks
   ## 
   ## Inputs
@@ -23,7 +23,7 @@ proc getLocks*(cfg: Config): seq[wLock] =
   ## result - List of wrapped locks 
   ## 
   ## Side effects - reading files on system
-  let pattern = cfg.root / "lock" / "*.json"
+  let pattern = root / "lock" / "*.json"
 
   for filePath in walkPattern(pattern):
     let l = wLock(

@@ -251,7 +251,7 @@ proc arcPs*(cfg: Config, cmd: CommandLineArguments) =
   ##  Reading files (Lock)
   ##  Outputting to stdout
   proc psOverview(cfg: Config) =
-    let locks = getLocks(cfg)
+    let locks = getLocks(cfg.root)
     if len(locks) == 0:
       echo textNoActiveSessions
     else:
