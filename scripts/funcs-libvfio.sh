@@ -12,6 +12,48 @@ function root_kick() {
 
 }
 
+function user_flags() {
+  arg0=$(basename "$0" .sh)
+  blnk=$(echo "$arg0" | sed 's/./ /g')
+
+  driver_install=true
+  lookingglass_install=true
+
+  function helpout() {
+    echo """
+    You dont need Help. You will install and things will never be the same.
+    {-d|--no-driver}                -- Install LibVF.IO without modifying current driver configutations
+    {-l|--no-looking-glass}         -- Skip Looking-Glass installations
+    {-b|--no-driver-looking-glass}  -- Skip both driver and Looking-Glass installations
+    """
+    exit 0
+  }
+
+  while test $# -gt 0
+  do
+    case "$1" in
+      (-d | --no-driver)
+        shift
+        driver_install=false
+        echo "Flag received - will not change current driver configuration."
+        shift;;
+      (-l | --no-looking-glass)
+        shift
+        lookingglass_install=false
+        echo "Flag received - will not install Looking-Glass."
+        shift;;
+      (-b | --no-driver-looking-glass)
+        shift
+        lookingglass_install=false
+        driver_install=false
+        echo "Flag received - will not change current drivers or install Looking-Glass."
+        shift;;
+      (-h | --help)
+        helpout;;
+    esac
+  done
+}
+
 function check_dir() {
   if [ ! -f ./src/arcd.nim ];then
     echo "Run the script from the main libvf.io directory, using ./scripts/uninstall-libvfio.sh"
@@ -95,11 +137,15 @@ function distro_update() {
 }
 
 function ls_depen() {
-  lookingglass_dep_fedora=" binutils-devel cmake texlive-gnu-freefont fontconfig-devel SDL2-devel SDL2_ttf-devel spice-protocol libX11-devel nettle-devel wayland-protocols-devel libXScrnSaver-devel libXfixes-devel libXi-devel wayland-devel libXinerama-devel "
-  lookingglass_dep_ubuntu="  "
-  lookingglass_dep_arch="  "
-  lookingglass_dep_pop="  "
-  xyz_dep_fedora="  "
+  if [ $lookingglass_install == true ]; then
+    lookingglass_dep_fedora=" binutils-devel cmake texlive-gnu-freefont fontconfig-devel SDL2-devel SDL2_ttf-devel spice-protocol libX11-devel nettle-devel wayland-protocols-devel libXScrnSaver-devel libXfixes-devel libXi-devel wayland-devel libXinerama-devel "
+  else
+    lookingglass_dep_fedora="  "
+    lookingglass_dep_ubuntu="  "
+    lookingglass_dep_arch="  "
+    lookingglass_dep_pop="  "
+    xyz_dep_fedora="  "
+  fi
 }
 
 function add_depen() {
@@ -115,7 +161,11 @@ function add_depen() {
   esac
 }
 
+
 function add_boot_param() {
+  if [ $driver_install == false ]; then
+    return
+  fi
   check_distro
   cpuModel=$(cat /proc/cpuinfo | grep vendor | head -n1)
   echo "Updating kernel boot parameters."
@@ -151,19 +201,28 @@ function add_boot_param() {
 
 
 function add_policies() {
+  if [ $lookingglass_install == false ]; then
+    return
+  fi
   if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ] || [ $distro == "Pop" ];then
-    # Configure AppArmor policies, shared memory file permissions, and blacklisting non-mediated device drivers.
+  # Configure AppArmor policies, shared memory file permissions, and blacklisting non-mediated device drivers.
     echo "Updating AppArmor policies."
     sudo su root -c "mkdir -p /etc/apparmor.d/local/abstractions/ && echo '/dev/shm/kvmfr-* rw,' >> /etc/apparmor.d/local/abstractions/libvirt-qemu"
   fi
 }
 
 function mem_permissions() {
+  if [ $lookingglass_install == false ]; then
+    return
+  fi
   echo "Configuring shared memory device file permissions."
   sudo su root -c "echo \"f /dev/shm/kvmfr-* 0660 $USER kvm -\" >> /etc/tmpfiles.d/10-looking-glass.conf"
 }
 
 function blacklist_drivers() {
+  if [ $driver_install == false ]; then
+    return
+  fi
   echo "Blacklisting non-mediated device drivers."
   sudo su root -c "echo '# Libvf.io GPU driver blacklist' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist nouveau' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist amdgpu' >> /etc/modprobe.d/blacklist.conf && echo 'blacklist amdkfd' >> /etc/modprobe.d/blacklist.conf"
 
@@ -171,6 +230,9 @@ function blacklist_drivers() {
 
 function restart_apparmor() {
   # Restarting apparmor service
+  if [ $lookingglass_install == false ]; then
+    return
+  fi
   if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ] || [ $distro == "Pop" ];then
     sudo systemctl restart apparmor
   fi
@@ -178,6 +240,9 @@ function restart_apparmor() {
 
 function update_initramfs() {
   # Updating initramfs
+  if [ $driver_install == false ]; then
+    return
+  fi
   case $distro in
     "Fedora")	sudo dracut -fv --regenerate-all;;
     "Ubuntu"|"Pop")	sudo update-initramfs -u -k all;;
@@ -187,6 +252,9 @@ function update_initramfs() {
 }
 
 function rm_nouveau() {
+  if [ $driver_install == false ]; then
+    return
+  fi
   sudo rmmod nouveau
 }
 
@@ -253,6 +321,9 @@ function install_libvfio() {
 }
 
 function dl_lookingglass() {
+  if [ $lookingglass_install == false ]; then
+    return
+  fi
   set_sandbox_dir
   # Download Looking Glass beta 4 sources
   rm -rf LookingGlass
@@ -262,6 +333,9 @@ function dl_lookingglass() {
 }
 
 function install_lookingglass() {
+  if [ $lookingglass_install == false ]; then
+    return
+  fi
   # Compile & install Looking Glass sources
   set_sandbox_dir
   cd LookingGlass
@@ -281,6 +355,9 @@ function install_lookingglass() {
 }
 
 function get_scream() {
+  if [ $lookingglass_install == false ]; then
+    return
+  fi
   set_sandbox_dir
   # Download Scream sources
   git clone https://github.com/duncanthrax/scream/
@@ -294,6 +371,9 @@ function get_scream() {
 }
 
 function get_introspection() {
+  if [ $lookingglass_install == false ]; then
+    return
+  fi
   set_sandbox_dir
   mkdir -p $HOME/.local/libvf.io/
   rm -rf $HOME/.local/libvf.io/introspection-installations
@@ -316,9 +396,18 @@ function get_introspection() {
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
   mkdir -p ~/.config/arc/
   cp introspection-installations.rom ~/.config/arc/
+  rm -rf $HOME/.local/libvf.io/introspection-installations/scream/.git/
   cp -r $HOME/.local/libvf.io/introspection-installations/ ~/.config/arc/
   cp $current_path/conf/smb.conf ~/.config/arc/
   cd $current_path
+}
+
+function sandbox_and_old_driver_cleanup() {
+  set_sandbox_dir
+  cd $current_path
+  rm -rf $compile_sandbox
+  rm ./optional/*custom.run
+
 }
 
 # Cause newer Arch requires a newer and unsupported driver
@@ -409,6 +498,10 @@ function install_nv() {
 # Install nvidia if nouveau is isn't loaded
 function pt1_end() {
   # To ensure these are loaded before install driver install
+  if [ $driver_install == false ]; then
+    echo "Install of Libvfio has been finalized!"
+    return
+  fi
   sudo modprobe vfio
   sudo modprobe mdev
   if ! lsmod | grep "nouveau";then
