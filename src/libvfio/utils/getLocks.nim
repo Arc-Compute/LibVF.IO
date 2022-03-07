@@ -58,7 +58,7 @@ proc findLocksByUuid*(root: string, uuid: string): seq[wLock] =
     else:
       result &= l
 
-proc findLocksByPid*(cfg: Config, pid: int): seq[wLock] =
+proc findLocksByPid*(root: string, pid: int): seq[wLock] =
   ## findLocksByPid - Finds locks by matching PID
   ## 
   ## Inputs
@@ -69,7 +69,7 @@ proc findLocksByPid*(cfg: Config, pid: int): seq[wLock] =
   ## result - list of wrapped Locks
   ## 
   ## Side effects - reading files on system
-  let pattern = cfg.root / "lock" / "*.json"
+  let pattern = root / "lock" / "*.json"
 
   for filePath in walkPattern(pattern):
     let lock = getLockFile(filePath)
