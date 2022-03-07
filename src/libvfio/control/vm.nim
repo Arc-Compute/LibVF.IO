@@ -298,9 +298,8 @@ proc cleanVm*(vm: VM) =
   ##
   ## Inputs
   ## @vm - VM object for the created VM.
-  cleanupVm(vm)
-
   let save = getLockFile(vm.lockFile).save
+  cleanupVm(vm)
 
   if (vm.newInstall or save) and fileExists(vm.liveKernel):
     info("Installing to base kernel")
