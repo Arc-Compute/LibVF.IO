@@ -35,18 +35,18 @@ proc getLocks*(root: string): seq[wLock] =
     else:
       result &= l
 
-proc findLocksByUuid*(cfg: Config, uuid: string): seq[wLock] =
+proc findLocksByUuid*(root: string, uuid: string): seq[wLock] =
   ## findLocksByUuid - Finds locks by matching UUID
   ## 
   ## Inputs
-  ## @cfg: Config - Config object to get arcRoot
+  ## @root: string - String to get arcRoot
   ## @uuid: string - UUID to match
   ## 
   ## Returns
   ## result - list of wrapped Locks
   ## 
   ## Side effects - reading files on system
-  let pattern = cfg.root / "lock" / "*" & uuid & "*.json"
+  let pattern = root / "lock" / "*" & uuid & "*.json"
 
   for filePath in walkPattern(pattern):
     let l = wLock(

@@ -265,7 +265,7 @@ proc arcPs*(cfg: Config, cmd: CommandLineArguments) =
     else:
       echo overviewPs(locks)
   proc psUuid(cfg: Config, uuid: string) =
-    let locks = findLocksByUuid(cfg, uuid)
+    let locks = findLocksByUuid(cfg.root, uuid)
     psA(cfg, locks)
 
   if isSome(cmd.search):
