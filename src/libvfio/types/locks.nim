@@ -13,6 +13,7 @@ type
     vfios*: seq[Vfio] ## List of VFIOs.
     mdevs*: seq[Mdev] ## List of MDEV devices
     pidNum*: int      ## PID number controlling the lock file.
+    save*: bool       ## Do we save the VM changes or not?
 
 proc writeLockFile*(lockFile: string, lock: Lock) =
   ## writeLockFile - Writes a lock into a file named lockFile.

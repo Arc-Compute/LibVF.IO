@@ -185,7 +185,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
       config: cfg,
       vfios: vfios,
       mdevs: mdevs,
-      pidNum: 0
+      pidNum: 0,
+      save: save
     )
 
   # Either moves the file or creates a new file
@@ -291,6 +292,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     discard startRealApp(result.monad, cfg.app_commands, result.uuid,
                          result.sshPort)
 
+
 proc cleanVm*(vm: VM) =
   ## cleanVm - Cleans the VM/waits for VM to finish.
   ##
@@ -298,7 +300,9 @@ proc cleanVm*(vm: VM) =
   ## @vm - VM object for the created VM.
   cleanupVm(vm)
 
-  if (vm.newInstall or vm.save) and fileExists(vm.liveKernel):
+  let save = getLockFile(vm.lockFile).save
+
+  if (vm.newInstall or save) and fileExists(vm.liveKernel):
     info("Installing to base kernel")
     moveFile(vm.liveKernel, vm.baseKernel)
   elif not vm.noCopy and fileExists(vm.liveKernel):
