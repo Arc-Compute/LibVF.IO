@@ -8,8 +8,6 @@ Join the LibVF.IO community here, we'd love to hear your suggestions or help you
 
 Discord: https://discord.gg/Rb9K9DYxKK
 
-Matrix: https://matrix.to/#/#LibVF.IO:OpenMdev
-
 # Documentation
 
 Read the setup guide here:
