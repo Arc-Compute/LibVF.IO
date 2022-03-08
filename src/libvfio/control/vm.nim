@@ -32,7 +32,6 @@ proc realCleanup(vm: VM) =
   ##
   ## Side effects - Cleans up the VM.
   info("Cleaning up VM")
-  removeFile(vm.lockFile)
   removeDir(vm.socketDir)
 
   # Unlock all locked vfios.
@@ -298,8 +297,10 @@ proc cleanVm*(vm: VM) =
   ##
   ## Inputs
   ## @vm - VM object for the created VM.
-  let save = getLockFile(vm.lockFile).save
   cleanupVm(vm)
+
+  let save = getLockFile(vm.lockFile).save
+  removeFile(vm.lockFile)
 
   if (vm.newInstall or save) and fileExists(vm.liveKernel):
     info("Installing to base kernel")
