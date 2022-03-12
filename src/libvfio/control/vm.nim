@@ -113,7 +113,7 @@ proc cleanupVm*(vm: VM) =
   realCleanup(vm)
 
 proc startVm*(c: Config, uuid: string, newInstall: bool,
-              noCopy: bool, save: bool): VM =
+              noCopy: bool, save: bool, daemonize: bool): VM =
   ## startVm - Starts a VM.
   ##
   ## Inputs
@@ -122,6 +122,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   ## @newInstall - Do we need to install into a kernel?
   ## @noCopy - Avoid unnecessary copying when we do not need it.
   ## @save - Do we save the result?
+  ## @daemonize - Do we daemonize the vm?
   ##
   ## Side effects - Creates an Arc Container.
   var cfg = c
@@ -237,17 +238,19 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     result.child = false
     return
 
+  if daemonize:
+    # Fork process and let vm run as daemon
+    let forkRet = fork()
+    result.child = forkRet == 0
+    if forkRet > 0:
+      return
+    elif forkRet < 0:
+      error("Could not fork")
+      return
+  else:
+    result.child = true
+
   # Spawn up qemu image
-  let forkRet = fork()
-
-  result.child = forkRet == 0
-
-  if forkRet > 0:
-    return
-  elif forkRet < 0:
-    error("Could not fork")
-    return
-
   var qemuPid = startCommand(rootMonad, qemuArgs)
 
   lock.pidNum = processID(qemuPid)
@@ -290,7 +293,6 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   elif cfg.startapp:
     discard startRealApp(result.monad, cfg.app_commands, result.uuid,
                          result.sshPort)
-
 
 proc cleanVm*(vm: VM) =
   ## cleanVm - Cleans the VM/waits for VM to finish.
