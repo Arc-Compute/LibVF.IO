@@ -17,7 +17,7 @@ proc getLocks*(root: string): seq[wLock] =
   ## getLocks - Gets locks
   ## 
   ## Inputs
-  ## @cfg: Config - Config object to get arcRoot
+  ## @root: string - String to get arcRoot
   ## 
   ## Returns
   ## result - List of wrapped locks 
@@ -62,7 +62,7 @@ proc findLocksByPid*(root: string, pid: int): seq[wLock] =
   ## findLocksByPid - Finds locks by matching PID
   ## 
   ## Inputs
-  ## @cfg: Config - Config object to get arcRoot
+  ## @root: string - String to get arcRoot
   ## @pid: int - PID to match
   ## 
   ## Returns

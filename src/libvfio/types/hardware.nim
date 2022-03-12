@@ -14,8 +14,8 @@ type
     vtGPU = (0x03, "GPU")                     ## 0x03 is the class for display devices.
 
   Cpu* = object                               ## CPU configuration object.
-    cores*: int                               ## How many cores each virtual CPU has.
     sockets*: int                             ## How many virtual CPUs we put in the VM.
+    cores*: int                               ## How many cores each virtual CPU has.
     threads*: int                             ## How many threads each core has.
     ramAlloc*: int                            ## Megabytes of RAM required for the VM.
 
