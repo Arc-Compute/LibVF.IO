@@ -266,7 +266,7 @@ func qemuLaunch*(cfg: Config, uuid: string,
       result.args &= "-device"
       result.args &= "ivshmem-plain,id=shmem0,memdev=ivshmem_kvmfr"
 
-      # Create looking glass object
+      # Create Looking Glass IVSHMEM object
       result.args &= "-object"
       result.args &=
        &"memory-backend-file,id=ivshmem_kvmfr,mem-path=/dev/shm/kvmfr-{uuid},size=128M,share=yes"

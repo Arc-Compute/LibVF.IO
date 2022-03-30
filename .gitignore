@@ -15,6 +15,7 @@ $RECYCLE.BIN/
 .DS_Store
 .Spotlight-V100
 .Trashes
+*.swp
 
 # Ignoring binary files produced by debugger.
 nimcache/

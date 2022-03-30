@@ -381,6 +381,8 @@ function get_introspection() {
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win-guest-tools.exe
   wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
+  # Copy optional guest files for packaging in the introspection ROM.
+  cp $current_path/optional/guest/* ./
   cp $current_path/scripts/win-guest-install/install.ps1 ./
   cp $current_path/scripts/win-guest-install/scheduledinstall.bat ./
   cp $current_path/scripts/win-guest-install/start-install.bat ./

@@ -285,6 +285,7 @@ proc getMdevs*(cfg: Config, monad: CommandMonad): seq[Mdev] =
           gpuUUID = getUUID()
           startArgs = commandWriteFile(gpuUUID, createFile)
 
+        echo framebuffer, " ", dir
         if not (i.mdevType in lastPathPart(dir)):
           continue
 

@@ -88,6 +88,7 @@ type
     kernel*: Option[string]          ## Kernel image to use.
     shareddir*: Option[string]       ## Shared directory.
     preinstall*: bool                ## If the user is in a preinstall state.
+    disablegpu*: bool                    ## If the user wants to detach the GPU on boot.
     safemode*: bool                  ## If the user is in a safemode state.
     case command*: CommandEnum       ## Different commands have different
                                      ##  variables, so we need to only allow
@@ -254,8 +255,10 @@ proc getCommandLine*(): CommandLineArguments =
       of "advanced-help":
         echo("HELP ME I AM STUCK IN YOUR CPU")
         quit(1)
-      of "safemode":
+      of "safe-mode":
         result.safemode = true
+      of "disable-gpu":
+        result.disablegpu = true
       else: discard
     else: discard
   if result.command in @[ceStart, ceCreate, ceIntrospect] and isNone(result.config):
@@ -333,6 +336,8 @@ proc getConfigFile*(args: CommandLineArguments): Config =
       result.nographics = false
       result.spice = false
       result.container.iso = some(result.root / "introspection-installations.rom")
+    if args.disablegpu:
+      result.gpus = @[]
     if len(args.additionalStates) != 0:
       result.container.state &= args.additionalStates
   else: discard
