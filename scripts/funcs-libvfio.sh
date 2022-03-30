@@ -383,9 +383,7 @@ function get_introspection() {
   wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
   # Copy optional guest files for packaging in the introspection ROM.
   cp $current_path/optional/guest/* ./
-  cp $current_path/scripts/win-guest-install/install.ps1 ./
-  cp $current_path/scripts/win-guest-install/scheduledinstall.bat ./
-  cp $current_path/scripts/win-guest-install/start-install.bat ./
+  cp $current_path/scripts/win-guest-install/* ./
   cp $HOME/.ssh/id_rsa.pub ./authorized_keys
   cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
