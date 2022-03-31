@@ -61,9 +61,30 @@ proc createSocket*(sockPath: string): Option[AsyncSocket] =
   ##                 channel into the file.
   result = none(AsyncSocket)
 
-  var sock = newAsyncSocket(AF_UNIX, SOCK_STREAM, IPPROTO_IP)
-  info("Connecting to the socket")
-  waitFor(connectUnix(sock, sockPath))
+  var
+    sock = newAsyncSocket(AF_UNIX, SOCK_STREAM, IPPROTO_IP)
+    count = 0
+
+  while count < 120:
+  # proc will proceed once connection to vm's socket established
+  #  or until timeout reached
+    try:
+      count = count + 1
+      waitFor(connectUnix(sock, sockPath))        ## Connecting to the socket
+      break                                       ## Breaks loop if exeption not
+                                                  ##  previously reached on connect attempt
+    except:
+      debug("Exception reached while connecting to socket.")
+      sleep(500)
+
+  debug(fmt"socket connection attempted {count} times.")
+
+  #Timeout. Exit the proc
+  if count >= 120:
+    error("Waited for socket connection to be established but was unsuccesful")
+    return
+  else:
+    info("Connected to socket")
 
   let
     line = waitFor(recvLine(sock))
