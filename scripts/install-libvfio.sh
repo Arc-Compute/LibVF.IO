@@ -62,8 +62,6 @@ install_libvfio
 dl_lookingglass
 install_lookingglass
 
-# Download and install scream sources
-get_scream
 # Install and configure introspection files
 get_introspection
 # Cleanup unnecesary/conflicting files
