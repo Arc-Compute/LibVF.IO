@@ -325,11 +325,11 @@ function dl_lookingglass() {
     return
   fi
   set_sandbox_dir
-  # Download Looking Glass beta 4 sources
+  # Download Looking Glass bleeding-edge sources
   rm -rf LookingGlass
-  curl -o lg.tar.gz https://looking-glass.io/artifact/B4/source
+  curl -o lg.tar.gz https://looking-glass.io/artifact/bleeding/source
   tar -xvf lg.tar.gz
-  mv looking-glass-B4 LookingGlass
+  mv looking-glass-B* LookingGlass
 }
 
 function install_lookingglass() {
