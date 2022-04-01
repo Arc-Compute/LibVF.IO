@@ -257,6 +257,15 @@ func qemuLaunch*(cfg: Config, uuid: string,
     result.args &= "-device"
     result.args &= "usb-redir,chardev=charredir1,id=redir1"
 
+    # SPICE Audio - Needed for Looking Glass audio support
+    result.args &= "-audiodev"
+    result.args &= "spice,id=audio1"
+    result.args &= "-device"
+    result.args &= "ich9-intel-hda,id=sound0,bus=pcie.0,addr=0x1b"
+    result.args &= "-device"
+    result.args &= "hda-duplex,id=sound0-codec0,bus=sound0.0,cad=0,audiodev=audio1"
+
+
   # Introspection related commands.
   # NOTE: All introspection devices cannot be used on install
   if not install:
