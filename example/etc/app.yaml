@@ -4,6 +4,7 @@
 name: "LibVF.IO VM"
 startintro: false
 startapp: false
+lgKey: 58
 installOs: "none"
 nographics: false
 spice: false
