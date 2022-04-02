@@ -56,6 +56,7 @@ type
     name*: string                        ## VM name identifier
     startapp*: bool                      ## If we start the application by
                                          ##  default.
+    lgKey*: int                          ## Key for Looking Glass capture
     installOs*: OsInstallEnum            ## Installs the given operating system
                                          ##  in a create command.
     nographics*: bool                    ## If we have the no graphics flag set.
@@ -113,6 +114,7 @@ const
                                      ##  is already found.
     startintro: false,
     startapp: false,
+    lgKey: 58,
     installOs: osNone,
     nographics: false,
     spice: false,
