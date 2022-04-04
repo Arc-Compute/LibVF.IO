@@ -17,7 +17,7 @@ func separateVfios*(lock: Lock): (seq[Vfio], seq[Vfio]) =
     gpus: seq[Vfio]
     nets: seq[Vfio]
 
-  for vfio in lock.vfios:
+  for vfio in lock.vm.vfios:
     if isGpu(vfio):
       gpus &= vfio
     elif isNet(vfio):

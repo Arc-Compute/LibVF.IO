@@ -4,8 +4,10 @@
 #
 import os
 import std/strformat
+import logging
 
 import ../types
+import ../control/vm
 
 
 type
@@ -14,7 +16,7 @@ type
     path*: string
 
 proc getLocks*(root: string): seq[wLock] =
-  ## getLocks - Gets locks
+  ## getLocks - Gets locks and cleans after dead vms
   ## 
   ## Inputs
   ## @root: string - String to get arcRoot
@@ -22,7 +24,7 @@ proc getLocks*(root: string): seq[wLock] =
   ## Returns
   ## result - List of wrapped locks 
   ## 
-  ## Side effects - reading files on system
+  ## Side effects - reading and deleting files on system
   let pattern = root / "lock" / "*.json"
 
   for filePath in walkPattern(pattern):
@@ -31,7 +33,9 @@ proc getLocks*(root: string): seq[wLock] =
       path: filePath
     )
     if not dirExists(&"/proc/{l.lock.pidNum}"):
-      removeFile(filePath)
+      notice(fmt"PID of vm {splitFile(l.path).name} not running. Cleaning up")
+      cleanVm(l.lock.vm)                      ## Clean dead VM
+      removeFile(filePath)                    ## Remove dead VM's lock file
     else:
       result &= l
 

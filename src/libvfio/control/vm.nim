@@ -21,7 +21,6 @@ import introspection
 import iommu
 import root
 
-import ../comms/qmp
 import ../types
 
 proc realCleanup(vm: VM) =
@@ -183,10 +182,9 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   var
     lock = Lock(
       config: cfg,
-      vfios: vfios,
-      mdevs: mdevs,
       pidNum: 0,
-      save: save
+      save: save,
+      vm: result
     )
 
   # Either moves the file or creates a new file
@@ -219,8 +217,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     qemuArgs = qemuLaunch(
       cfg=cfg,
       uuid=uuid,
-      vfios=lock.vfios,
-      mdevs=lock.mdevs,
+      vfios=vfios,
+      mdevs=mdevs,
       kernel=liveKernel,
       install=newInstall,
       logDir=qemuLogs,
@@ -254,8 +252,6 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   var qemuPid = startCommand(rootMonad, qemuArgs)
 
   lock.pidNum = processID(qemuPid)
-
-  writeLockFile(lockFile, lock)
 
   sleep(3000) # Sleeping to avoid trying to open the file too soon.
 
@@ -293,6 +289,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   elif cfg.startapp:
     discard startRealApp(result.monad, cfg.app_commands, result.uuid,
                          result.sshPort)
+  writeLockFile(lockFile, lock)
+  sleep(1000)
 
 proc cleanVm*(vm: VM) =
   ## cleanVm - Cleans the VM/waits for VM to finish.

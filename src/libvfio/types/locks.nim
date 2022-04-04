@@ -5,15 +5,20 @@
 import json
 import uuids
 
-import config, hardware
+import config, hardware, environment
 
 type
   Lock* = object      ## Lock object.
     config*: Config   ## Hardware configuration.
-    vfios*: seq[Vfio] ## List of VFIOs.
-    mdevs*: seq[Mdev] ## List of MDEV devices
     pidNum*: int      ## PID number controlling the lock file.
     save*: bool       ## Do we save the VM changes or not?
+    vm*: VM           ## VM Object
+
+proc toLock*(js: JsonNode): Lock =
+  result.config = to(js["config"], Config)
+  result.pidNum = js["pidNum"].getInt
+  result.save = js["save"].getBool
+  result.vm = toVm(js["vm"])
 
 proc writeLockFile*(lockFile: string, lock: Lock) =
   ## writeLockFile - Writes a lock into a file named lockFile.
@@ -35,6 +40,6 @@ proc getLockFile*(lockFile: string): Lock =
   ## result - Lock file for the particular system.
   ##
   ## Side effects - Reads a file on the disk
-  to(parseJson(readFile(lockFile)), Lock)
+  result = toLock(parseJson(readFile(lockFile)))
 
 proc getUUID*(): string = $genUUID() ## Helper to get UUIDs.
