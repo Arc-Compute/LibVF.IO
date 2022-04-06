@@ -49,34 +49,39 @@ type
   RequestedNet* = object             ## Object to request a network NIC.
     mac*: string                     ## MAC address for the requested NIC.
 
-  Config* = object                       ## Configuration object for spawning a
-                                         ##  VM.
-    startintro*: bool                    ## If we start the introspection by
-                                         ##  default.
-    name*: string                        ## VM name identifier
-    startapp*: bool                      ## If we start the application by
-                                         ##  default.
-    installOs*: OsInstallEnum            ## Installs the given operating system
-                                         ##  in a create command.
-    nographics*: bool                    ## If we have the no graphics flag set.
-    spice*: bool                         ## If we want to use a spice server.
-    introspect*: IntrospectEnum          ## What type of introspection we use.
-    shareddir*: Option[string]           ## Shared directory between os and host.
-    spicePort*: int                      ## Spice port number.
-    sshPort*: int                        ## SSH port number.
-    connectivity*: Connectivity          ## Code to connect to the machine.
-    container*: ArcContainer             ## The specifics for how to spawn the
-                                         ##  container.
-    cpus*: Cpu                           ## CPU parameters.
-    gpus*: seq[RequestedGpu]             ## Structure for requesting GPUs.
-    nics*: seq[RequestedNet]             ## Structure for requestion network nics.
-    root*: string                        ## Current root for the system.
-    sudo*: bool                          ## Do we run this vm as sudo?
-    commands*: seq[QemuArgs]             ## Additional commands to pass into qemu.
-    startupCommands*: seq[CommandList]  ## Startup command list.
-    teardownCommands*: seq[CommandList] ## Teardown command list.
-    installCommands*: seq[CommandList]  ## Installation command list.
-    appCommands*: seq[CommandList]      ## Application command list.
+  Config* = object                                                    ## Configuration object for spawning a
+                                                                      ##  VM.
+    startintro*       {.defaultVal: false.}: bool                     ## If we start the introspection by
+                                                                      ##  default.
+    name*             {.defaultVal: "".}: string                      ## VM name identifier
+    startapp*         {.defaultVal: false.}: bool                     ## If we start the application by
+                                                                      ##  default.
+    installOs*        {.defaultVal: osNone.}: OsInstallEnum           ## Installs the given operating system
+                                                                      ##  in a create command.
+    nographics*       {.defaultVal: false.}: bool                     ## If we have the no graphics flag set.
+    spice*            {.defaultVal: false.}: bool                      ## If we want to use a spice server.
+    introspect*       {.defaultVal: isLookingGlass.}: IntrospectEnum  ## What type of introspection we use.
+    shareddir*        {.defaultVal: none(string).}: Option[string]    ## Shared directory between os and host.
+    spicePort*        {.defaultVal: 5900.}: int                       ## Spice port number.
+    sshPort*          {.defaultVal: 2222.}: int                       ## SSH port number.
+    connectivity*     {.defaultVal: Connectivity(
+                        exposedPorts: @[]).}: Connectivity            ## Code to connect to the machine.
+    container*: ArcContainer                                          ## The specifics for how to spawn the
+                                                                      ##  container.
+    cpus*             {.defaultVal: Cpu(
+                        cores: 4,
+                        sockets: 1,
+                        threads: 1,
+                        ramAlloc: 8192).}: Cpu                        ## CPU parameters.
+    gpus*             {.defaultVal: @[].}:  seq[RequestedGpu]         ## Structure for requesting GPUs.
+    nics*             {.defaultVal: @[].}:  seq[RequestedNet]         ## Structure for requestion network nics.
+    root*: string                                                     ## Current root for the system.
+    sudo*             {.defaultVal: false.}: bool                     ## Do we run this vm as sudo?
+    commands*         {.defaultVal: @[].}: seq[QemuArgs]              ## Additional commands to pass into qemu.
+    startupCommands*  {.defaultVal: @[].}: seq[CommandList]           ## Startup command list.
+    teardownCommands* {.defaultVal: @[].}: seq[CommandList]           ## Teardown command list.
+    installCommands*  {.defaultVal: @[].}: seq[CommandList]           ## Installation command list.
+    appCommands*      {.defaultVal: @[].}: seq[CommandList]           ## Application command list.
 
   CommandLineArguments* = object     ## Arguments passed into the system.
     config*: Option[string]          ## Path for the configuration file.
@@ -125,7 +130,7 @@ const
     container: ArcContainer(
       kernel: "windows.arc",
       state: @[],
-      initialSize: 20,
+      initialSize: 40,
       iso: none(string)
     ),
     cpus: Cpu(
@@ -289,6 +294,10 @@ proc getConfigFile*(args: CommandLineArguments): Config =
              else: newFileStream(root / "shells" / s)
       load(fs, result)
       close(fs)
+    except YamlConstructionError as e:
+      log(lvlError, e.msg)
+      #echo "Error while reading config: ", e.msg
+      quit(1)
     except:
       echo("Error reading config ", s, " or ", prevRoot, ": ", getCurrentExceptionMsg())
       quit(1)
