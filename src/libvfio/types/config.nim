@@ -53,28 +53,25 @@ type
                                                                       ##  VM.
     startintro*       {.defaultVal: false.}: bool                     ## If we start the introspection by
                                                                       ##  default.
-    name*: string                                                     ## VM name identifier
+    name*             {.defaultVal: "".}: string                      ## VM name identifier
     startapp*         {.defaultVal: false.}: bool                     ## If we start the application by
                                                                       ##  default.
     installOs*        {.defaultVal: osNone.}: OsInstallEnum           ## Installs the given operating system
                                                                       ##  in a create command.
     nographics*       {.defaultVal: false.}: bool                     ## If we have the no graphics flag set.
-    spice*            {.defaultVal: false.}: bool                     ## If we want to use a spice server.
+    spice*            {.defaultVal: false.}: bool                      ## If we want to use a spice server.
     introspect*       {.defaultVal: isLookingGlass.}: IntrospectEnum  ## What type of introspection we use.
     shareddir*        {.defaultVal: none(string).}: Option[string]    ## Shared directory between os and host.
-    spicePort*        {.defaultVal: -1.}: int                         ## Spice port number.
+    spicePort*        {.defaultVal: 5900.}: int                       ## Spice port number.
     sshPort*          {.defaultVal: 2222.}: int                       ## SSH port number.
     connectivity*     {.defaultVal: Connectivity(
                         exposedPorts: @[]).}: Connectivity            ## Code to connect to the machine.
-    container*        {.defaultVal: ArcContainer(
-                        kernel: "windows.arc",
-                        state: @[],
-                        initialSize: 20).}: ArcContainer              ## The specifics for how to spawn the
+    container*: ArcContainer                                          ## The specifics for how to spawn the
                                                                       ##  container.
     cpus*             {.defaultVal: Cpu(
-                        cores: 8,
+                        cores: 4,
                         sockets: 1,
-                        threads: 2,
+                        threads: 1,
                         ramAlloc: 8192).}: Cpu                        ## CPU parameters.
     gpus*             {.defaultVal: @[].}:  seq[RequestedGpu]         ## Structure for requesting GPUs.
     nics*             {.defaultVal: @[].}:  seq[RequestedNet]         ## Structure for requestion network nics.
@@ -133,7 +130,7 @@ const
     container: ArcContainer(
       kernel: "windows.arc",
       state: @[],
-      initialSize: 20,
+      initialSize: 40,
       iso: none(string)
     ),
     cpus: Cpu(
@@ -298,7 +295,8 @@ proc getConfigFile*(args: CommandLineArguments): Config =
       load(fs, result)
       close(fs)
     except YamlConstructionError as e:
-      echo "Error while reading config: ", e.msg
+      log(lvlError, e.msg)
+      #echo "Error while reading config: ", e.msg
       quit(1)
     except:
       echo("Error reading config ", s, " or ", prevRoot, ": ", getCurrentExceptionMsg())
