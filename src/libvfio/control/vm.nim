@@ -183,7 +183,6 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     lock = Lock(
       config: cfg,
       pidNum: 0,
-      save: save,
       vm: result
     )
 
@@ -299,7 +298,7 @@ proc cleanVm*(vm: VM) =
   ## @vm - VM object for the created VM.
   cleanupVm(vm)
 
-  let save = getLockFile(vm.lockFile).save
+  let save = getLockFile(vm.lockFile).vm.save
   removeFile(vm.lockFile)
 
   if (vm.newInstall or save) and fileExists(vm.liveKernel):

@@ -11,13 +11,11 @@ type
   Lock* = object      ## Lock object.
     config*: Config   ## Hardware configuration.
     pidNum*: int      ## PID number controlling the lock file.
-    save*: bool       ## Do we save the VM changes or not?
     vm*: VM           ## VM Object
 
 proc toLock*(js: JsonNode): Lock =
   result.config = to(js["config"], Config)
   result.pidNum = js["pidNum"].getInt
-  result.save = js["save"].getBool
   result.vm = toVm(js["vm"])
 
 proc writeLockFile*(lockFile: string, lock: Lock) =
