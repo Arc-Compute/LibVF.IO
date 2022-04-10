@@ -79,7 +79,7 @@ proc `%`*(vm: VM): JsonNode =
     "newInstall": %vm.newInstall,
     "sshPort": %vm.sshPort,
     "save": %vm.save,
-    "noCopy": %vm.sshPort,
+    "noCopy": %vm.noCopy,
     "teardownCommands": %vm.teardownCommands
   }
 

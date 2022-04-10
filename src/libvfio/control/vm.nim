@@ -169,10 +169,14 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   result.liveKernel = liveKernel
   result.baseKernel = baseKernel
   result.newInstall = newInstall
-  result.save = save
   result.noCopy = noCopy
   result.sshPort = cfg.sshPort
   result.teardownCommands = cfg.teardownCommands
+  case noCopy
+  of true:
+    result.save = true
+  of false:
+    result.save = save
 
   # If we do not have the necessary directories, create them
   for dir in dirs:
@@ -298,10 +302,13 @@ proc cleanVm*(vm: VM) =
   ## @vm - VM object for the created VM.
   cleanupVm(vm)
 
-  let save = getLockFile(vm.lockFile).vm.save
+  let
+    lockFile = vm.lockFile                  ## Get VM's lock file path
+    vm = getLockFile(lockFile).vm           ## Update VM obj in case modified
+  info(fmt"Save {vm.uuid} VM: {vm.save}")
   removeFile(vm.lockFile)
 
-  if (vm.newInstall or save) and fileExists(vm.liveKernel):
+  if (vm.newInstall or vm.save) and fileExists(vm.liveKernel):
     info("Installing to base kernel")
     moveFile(vm.liveKernel, vm.baseKernel)
   elif not vm.noCopy and fileExists(vm.liveKernel):

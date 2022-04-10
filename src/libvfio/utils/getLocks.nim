@@ -39,7 +39,7 @@ proc getLocks*(root: string): seq[wLock] =
     else:
       result &= l
 
-proc findLocksByUuid*(root: string, uuid: string): seq[wLock] =
+proc findLocksByUuid*(root, uuid: string): seq[wLock] =
   ## findLocksByUuid - Finds locks by matching UUID
   ## 
   ## Inputs
@@ -86,3 +86,22 @@ proc findLocksByPid*(root: string, pid: int): seq[wLock] =
         removeFile(filePath)
       else:
         result &= l
+
+proc changeLockSave*(root, uuid: string, save: bool) =
+  ## changeLockSave - Get lock corresponding to uuid and change
+  ##  save field of lock's vm object
+  ##
+  ## Inputs
+  ## @root: string - String to get arcRoot
+  ## @uuid: string - UUID to match
+  ## @save: bool - Value to set as VM object's save field
+  ##
+  ## Side effects - read and write of files on system
+  var lock : Lock
+  for l in findLocksByUuid(root, uuid) :
+    lock = getLockFile(l.path)
+    lock.vm.save = save
+    debug(fmt"VM {uuid} container save set to {lock.vm.save}")
+    writeLockFile(l.path, lock)
+    echo l.path
+  sleep(2000) # Sleeping to avoid trying to open the file too soon.

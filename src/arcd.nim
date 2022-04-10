@@ -7,6 +7,7 @@ import std/os
 import std/posix
 
 import libvfio/[control, logger, types, comms]
+import libvfio/utils/getLocks
 
 proc continueVm(vm: VM) =
   ## continueVm - Code for continuing a VM's sequence after it is started.
@@ -63,7 +64,9 @@ when isMainModule:                                              ## Checks if pro
   of ceStart:                                                         ## Start VM.
     continueVm(startVm(cfg, uid, false, cmd.nocopy, cmd.save, true))
   of ceStop:                                                          ## Stop VM via QEMU Machine Protocol (QMP) signal.
-    stopVm(cmd.uuid)
+      if cmd.save == true :
+        changeLockSave(cfg.root, cmd.uuid, true)
+      stopVm(cmd.uuid)
   of ceIntrospect:                                                    ## Introspect a VM.
     introspectVm(cfg, cmd.uuid)
   of ceLs:                                                            ## List available kernels, states, and apps.
