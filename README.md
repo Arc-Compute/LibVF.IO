@@ -2,6 +2,8 @@
 
 LibVF.IO is a vendor neutral GPU multiplexing tool driven by YAML & VFIO.
 
+![](https://arccompute.com/blog/libvfio-commodity-gpu-multiplexing/index_files/cover.gif)
+
 # Features
 
 1. Virtualization of Intel, AMD, & Nvidia GPUs.
