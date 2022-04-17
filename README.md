@@ -15,8 +15,8 @@ https://arccompute.com/blog/libvfio-commodity-gpu-multiplexing/
 
 The following pages provide a basic introduction to LibVF.IO:
 
-1. [Usage](https://openmdev.io/index.php/LibVF.IO#Using)
-2. [YAML](https://openmdev.io/index.php/LibVF.IO#Example)
+1. [Usage](https://openmdev.io/index.php/LibVF.IO#Usage)
+2. [YAML API](https://openmdev.io/index.php/LibVF.IO#YAML_API)
 
 # Community
 
