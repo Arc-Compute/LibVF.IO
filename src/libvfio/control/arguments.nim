@@ -335,7 +335,7 @@ func qemuLaunch*(cfg: Config, uuid: string,
   # Port forward for all exposed ports
   if len(cfg.connectivity.exposedPorts) > 0:
     let hostfwds = map(cfg.connectivity.exposedPorts,
-                      (port: Port) => &"hostfwd=tcp::{port.host}-:{port.guest}")
+                      (port: Port) => &"hostfwd={port.protocol}::{port.host}-:{port.guest}")
     result.args &= "-device"
     result.args &= "rtl8139,netdev=net1"
     result.args &= "-netdev"
