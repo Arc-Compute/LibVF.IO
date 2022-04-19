@@ -38,7 +38,7 @@ const
       "xsaveopt=on",
       "pdpe1gb=on",
       "ibpb=on",
-      "ibrs=on",
+      #"ibrs=on",
       "amd-stibp=on",
       "amd-ssbd=on",
       "skip-l1dfl-vmentry=on",

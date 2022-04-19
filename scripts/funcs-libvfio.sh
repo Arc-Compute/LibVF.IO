@@ -76,11 +76,12 @@ function check_distro() {
     # if detected distro is not recognized
     case $uname_a_upper in
       *"FEDORA"*)	distro="Fedora";;
+      *"DEBIAN"*)	distro="Debian";;
       *"UBUNTU"*)	distro="Ubuntu";;
       *"POP_OS"*)	distro="Pop";;
       *"ARCH"*)	distro="Arch";;
       *)		echo What linux distribution are you running?
-      			echo -e "Type '1' or 'Fedora'\nType '2' or 'Ubuntu'\nType '3' or 'Arch'\nType '4' or 'Pop_OS' \nType '5' or 'OTHER' "
+      			echo -e "Type '1' or 'Fedora'\nType '2' or 'Debian'\nType '3' or 'Ubuntu'\nType '4' or 'Arch'\nType '5' or 'Pop_OS' \nType '6' or 'OTHER' "
       		read -p "Response: " a1_distro
 
       			a_distro=$(echo $a1_distro | tr '[:lower:]' '[:upper:]')
@@ -88,16 +89,19 @@ function check_distro() {
       			if [ $a_distro == "1" ] || [ $a_distro == "FEDORA" ];then
       			  distro="Fedora"
       			  other_distro="n/a"
-      			elif [ $a_distro == "2" ] || [ $a_distro == "UBUNTU" ];then
+      			elif [ $a_distro == "2" ] || [ $a_distro == "DEBIAN" ];then
+      			  distro="Debian"
+      			  other_distro="n/a"
+      			elif [ $a_distro == "3" ] || [ $a_distro == "UBUNTU" ];then
       			  distro="Ubuntu"
       			  other_distro="n/a"
-      			elif [ $a_distro == "3" ] || [ $a_distro == "ARCH" ];then
+      			elif [ $a_distro == "4" ] || [ $a_distro == "ARCH" ];then
       			  distro="Arch"
       			  other_distro="n/a"
-      			elif [ $a_distro == "4" ] || [ $a_distro == "POP_OS" ];then
+      			elif [ $a_distro == "5" ] || [ $a_distro == "POP_OS" ];then
       			  distro="Pop"
       			  other_distro="n/a"
-      			elif [ $a_distro == "5" ] || [ $a_distro == "OTHER" ];then
+      			elif [ $a_distro == "6" ] || [ $a_distro == "OTHER" ];then
       			  echo
       			  echo "Note: your distribution likely isnt supported yet."
       			  echo "Some feautures may not work properly."
@@ -110,7 +114,7 @@ function check_distro() {
     esac
   fi
   # message displayed in case when distro unsupported
-  case_dist_msg="Your distro, $distro, is not one that is supported (Fedora, Ubuntu, Arch, PopOS). Unsure how to proceed."
+  case_dist_msg="Your distro, $distro, is not one that is supported (Fedora, Debian, Ubuntu, Arch, PopOS). Unsure how to proceed."
 }
 
 function set_sandbox_dir {
@@ -127,7 +131,7 @@ function distro_update() {
   check_distro
   case $distro in
     "Fedora")	sudo dnf upgrade -y;;
-    "Ubuntu"|"Pop")	sudo apt update -y; sudo apt upgrade -y;;
+    "Ubuntu"|"Pop"|"Debian")	sudo apt update -y; sudo apt upgrade -y;;
     "Arch")     echo
                 echo "Arch users will require yay to update Arch and install libvf.io dependencies."
                 read -p "Press 'Enter' key to acknowledge and proceed..."
@@ -152,11 +156,12 @@ function add_depen() {
   check_distro
   ls_depen
   case $distro in
-    "Fedora") 	sudo dnf install -y samba nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
-    "Ubuntu")	sudo apt install -y samba packer mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev genisoimage;;
-    "Arch")	yay -S "nsis" samba mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
+    "Fedora") 	sudo dnf install -y unzip samba nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
+    "Debian")	sudo apt install -y unzip wget xterm xinit samba packer mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev genisoimage;;
+    "Ubuntu")	sudo apt install -y unzip samba packer mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev genisoimage;;
+    "Arch")	yay -S "nsis" samba unzip mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
     # Only difference from Ubuntu is the addition of "genisoimage" which provides mkisofs
-    "Pop")	sudo apt install -y samba packer genisoimage mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
+    "Pop")	sudo apt install -y unzip samba packer genisoimage mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
      *)		echo $case_dist_msg;;
   esac
 }
@@ -191,6 +196,7 @@ function add_boot_param() {
   # GRUB
   case $distro in
     "Fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
+    "Debian")	sudo update-grub;;
     "Ubuntu")	sudo update-grub;;
     "Arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
     # Updating initramfs is needed in order to update the current boot entry
@@ -204,7 +210,7 @@ function add_policies() {
   if [ $lookingglass_install == false ]; then
     return
   fi
-  if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ] || [ $distro == "Pop" ];then
+  if [ $distro == "Debian" ] || [ $distro == "Ubuntu" ] || [ $distro == "Arch" ] || [ $distro == "Pop" ];then
   # Configure AppArmor policies, shared memory file permissions, and blacklisting non-mediated device drivers.
     echo "Updating AppArmor policies."
     sudo su root -c "mkdir -p /etc/apparmor.d/local/abstractions/ && echo '/dev/shm/kvmfr-* rw,' >> /etc/apparmor.d/local/abstractions/libvirt-qemu"
@@ -233,7 +239,7 @@ function restart_apparmor() {
   if [ $lookingglass_install == false ]; then
     return
   fi
-  if [ $distro == "Ubuntu" ] || [ $distro == "Arch" ] || [ $distro == "Pop" ];then
+  if [ $distro == "Debian" ] || [ $distro == "Ubuntu" ] || [ $distro == "Arch" ] || [ $distro == "Pop" ];then
     sudo systemctl restart apparmor
   fi
 }
@@ -245,7 +251,7 @@ function update_initramfs() {
   fi
   case $distro in
     "Fedora")	sudo dracut -fv --regenerate-all;;
-    "Ubuntu"|"Pop")	sudo update-initramfs -u -k all;;
+    "Ubuntu"|"Pop"|"Debian")	sudo update-initramfs -u -k all;;
     "Arch")	sudo mkinitcpio -P;;
     *)		echo $case_dist_msg;;
   esac
@@ -385,7 +391,10 @@ function get_introspection() {
   cp $current_path/optional/guest/* ./
   cp $current_path/scripts/win-guest-install/* ./
   cp $HOME/.ssh/id_rsa.pub ./authorized_keys
-  cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
+  #cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
+  # Use the Looking Glass Host bin rather than the one we compile ourselves.
+  wget -O looking-glass-host.zip https://looking-glass.io/artifact/B4/host
+  unzip looking-glass-host.zip
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
   wget -O adksetup.exe "https://go.microsoft.com/fwlink/?linkid=2120254"
   cp $current_path/scripts/win-guest-install/*.ps1 .
@@ -538,7 +547,7 @@ function rm_kvm_group() {
   check_distro
   case $distro in
     "Fedora")	sudo gpasswd -d $USER kvm;;
-    "Ubuntu"|"Pop")	sudo deluser $USER kvm;;
+    "Ubuntu"|"Pop"|"Debian")	sudo deluser $USER kvm;;
     "Arch")	sudo gpasswd -d $USER kvm;;
   esac
 }
@@ -548,6 +557,7 @@ function rm_depen() {
   ls_depen
   case $distro in
     "Fedora")	sudo dnf remove nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
+    "Debian")	sudo apt remove dkms libglvnd-dev curl gcc cmake libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl libpulse-dev libasound2-dev;;
     "Ubuntu")	sudo apt remove dkms libglvnd-dev curl gcc cmake libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl libpulse-dev libasound2-dev;;
     #ubuntu present before libvfio install: mokutil fonts-freefont-ttf pkg-config python3
     "Arch")	yay -R "nsis" mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
@@ -608,6 +618,7 @@ function def_driver() {
   check_distro
   case $distro in
     "Fedora")	sudo grub2-mkconfig -o /boot/grub2/grub.cfg;;
+    "Debian")	sudo update-grub;;
     "Ubuntu")	sudo update-grub;;
     "Arch")	sudo grub-mkconfig -o /boot/grub/grub.cfg;;
     # Updating initramfs is needed in order to update the current boot entry
