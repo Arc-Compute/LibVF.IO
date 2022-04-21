@@ -1,3 +1,7 @@
+# 1.0.6
+
+- Add Debian, PopOS, Fedora, and Arch support
+
 # 1.0.5
 
 - Sudo bug fix

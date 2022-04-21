@@ -2,11 +2,13 @@
 
 LibVF.IO is a vendor neutral GPU multiplexing tool driven by YAML & VFIO.
 
-# Community
+![](https://arccompute.com/blog/libvfio-commodity-gpu-multiplexing/index_files/cover.gif)
 
-Join the LibVF.IO community here, we'd love to hear your suggestions or help you troubleshoot if you need help!
+# Features
 
-Discord: https://discord.gg/Rb9K9DYxKK
+1. Virtualization of Intel, AMD, & Nvidia GPUs.
+2. Simple declarative YAML API.
+3. Automated installation.
 
 # Documentation
 
@@ -15,29 +17,14 @@ https://arccompute.com/blog/libvfio-commodity-gpu-multiplexing/
 
 The following pages provide a basic introduction to LibVF.IO:
 
-1. [Using](docs/using.md)
-2. [Example](docs/example.md)
+1. [Usage](https://openmdev.io/index.php/LibVF.IO#Usage)
+2. [YAML API](https://openmdev.io/index.php/LibVF.IO#YAML_API)
 
-# Release Features
+# Community
 
-1. Automated installation
-2. Intel mediated device support
-3. Nvidia mediated device support
-4. AMDGPU mediated device support
-5. YAML Configuration files
-6. Create VM
-7. Start VM
-8. Stop VM
-9. List available kernels
-10. List available states
-11. List running kernels
-12. Deploy script
-13. Undeploy script
+Join the LibVF.IO community here, we'd love to hear your suggestions or help you troubleshoot if you need help!
 
-# Future Features
-
-1. Snapshot + Block diff copy
-2. Runtime hot-plugging/hot-unplugging
+Discord: https://discord.gg/Rb9K9DYxKK
 
 # License
 

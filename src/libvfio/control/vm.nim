@@ -21,7 +21,6 @@ import introspection
 import iommu
 import root
 
-import ../comms/qmp
 import ../types
 
 proc realCleanup(vm: VM) =
@@ -170,10 +169,14 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   result.liveKernel = liveKernel
   result.baseKernel = baseKernel
   result.newInstall = newInstall
-  result.save = save
   result.noCopy = noCopy
   result.sshPort = cfg.sshPort
   result.teardownCommands = cfg.teardownCommands
+  case noCopy
+  of true:
+    result.save = true
+  of false:
+    result.save = save
 
   # If we do not have the necessary directories, create them
   for dir in dirs:
@@ -183,10 +186,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   var
     lock = Lock(
       config: cfg,
-      vfios: vfios,
-      mdevs: mdevs,
       pidNum: 0,
-      save: save
+      vm: result
     )
 
   # Either moves the file or creates a new file
@@ -219,8 +220,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     qemuArgs = qemuLaunch(
       cfg=cfg,
       uuid=uuid,
-      vfios=lock.vfios,
-      mdevs=lock.mdevs,
+      vfios=vfios,
+      mdevs=mdevs,
       kernel=liveKernel,
       install=newInstall,
       logDir=qemuLogs,
@@ -254,8 +255,6 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   var qemuPid = startCommand(rootMonad, qemuArgs)
 
   lock.pidNum = processID(qemuPid)
-
-  writeLockFile(lockFile, lock)
 
   sleep(3000) # Sleeping to avoid trying to open the file too soon.
 
@@ -293,6 +292,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   elif cfg.startapp:
     discard startRealApp(result.monad, cfg.app_commands, result.uuid,
                          result.sshPort)
+  writeLockFile(lockFile, lock)
+  sleep(1000)
 
 proc cleanVm*(vm: VM) =
   ## cleanVm - Cleans the VM/waits for VM to finish.
@@ -301,10 +302,13 @@ proc cleanVm*(vm: VM) =
   ## @vm - VM object for the created VM.
   cleanupVm(vm)
 
-  let save = getLockFile(vm.lockFile).save
+  let
+    lockFile = vm.lockFile                  ## Get VM's lock file path
+    vm = getLockFile(lockFile).vm           ## Update VM obj in case modified
+  info(fmt"Save {vm.uuid} VM: {vm.save}")
   removeFile(vm.lockFile)
 
-  if (vm.newInstall or save) and fileExists(vm.liveKernel):
+  if (vm.newInstall or vm.save) and fileExists(vm.liveKernel):
     info("Installing to base kernel")
     moveFile(vm.liveKernel, vm.baseKernel)
   elif not vm.noCopy and fileExists(vm.liveKernel):

@@ -6,6 +6,7 @@ import std/asyncnet
 import std/options
 import std/posix
 import std/osproc
+import std/json
 
 import hardware, process
 
@@ -59,3 +60,44 @@ type
     noCopy*: bool                        ## Do we copy the VM.
     sshPort*: int                        ## SSH Port to use.
     teardownCommands*: seq[CommandList]  ## Tearing down commands.
+
+
+proc `%`*(vm: VM): JsonNode =
+  ## Overload for converting VM to JSON.
+  ##  excludes vm.socket and vm.qemuPid values from serialization
+  result = %{
+    "child": %vm.child,
+    "lockFile": %vm.lockFile,
+    "socketDir": %vm.socketDir,
+    "uuid": %vm.uuid,
+    "vfios": %vm.vfios,
+    "mdevs": %vm.mdevs,
+    "introspections": %vm.introspections,
+    "monad": %vm.monad,
+    "liveKernel": %vm.liveKernel,
+    "baseKernel": %vm.baseKernel,
+    "newInstall": %vm.newInstall,
+    "sshPort": %vm.sshPort,
+    "save": %vm.save,
+    "noCopy": %vm.noCopy,
+    "teardownCommands": %vm.teardownCommands
+  }
+
+
+proc toVm*(js: JsonNode): VM =
+  result.child = js["child"].getBool
+  result.lockFile = js["lockFile"].getStr
+  result.socketDir = js["socketDir"].getStr
+  result.uuid = js["uuid"].getStr
+  result.vfios = to(js["vfios"], seq[Vfio])
+  result.mdevs = to(js["mdevs"], seq[Mdev])
+  result.introspections = to(js["introspections"], seq[string])
+  result.monad = to(js["monad"], CommandMonad)
+  result.liveKernel = js["liveKernel"].getStr
+  result.baseKernel = js["baseKernel"].getStr
+  result.newInstall = js["newInstall"].getBool
+  result.save = js["save"].getBool
+  result.noCopy = js["noCopy"].getBool
+  result.sshPort = js["sshPort"].getInt
+  result.teardownCommands = to(js["teardownCommands"], seq[CommandList])
+  # result.socket = createSocket(fmt"/tmp/sockets/{result.uuid}/master.sock")

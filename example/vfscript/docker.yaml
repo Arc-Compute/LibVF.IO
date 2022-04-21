@@ -1,0 +1,46 @@
+%YAML 1.2
+%TAG !n! tag:nimyaml.org,2016:
+--- !n!custom:Config
+name: "LibVF.IO VM"
+startintro: false
+startapp: false
+installOs: "none"
+nographics: false
+spice: false
+introspect: "looking-glass"
+shareddir: !!null ~
+spicePort: 5900
+sshPort: 2222
+connectivity: 
+  exposedPorts: []
+container: 
+  kernel: windows.arc
+  state: []
+  initialSize: 20
+  iso: !!null ~
+cpus: 
+  cores: 8
+  sockets: 1
+  threads: 2
+  ramAlloc: 4000
+gpus: []
+nics: []
+root: ~/.local/libvf.io
+sudo: false
+commands: []
+startupCommands: []
+teardownCommands: []
+installCommands:
+  - 
+    is_root: false
+    list: 
+      - 
+        exec: /usr/bin/wget
+        args: ["-P", "~/Docker/", "https://my-server.com/docker/appliance.yml"]
+  - 
+    is_root: true
+    list: 
+      - 
+        exec: /usr/bin/docker-compose
+        args: ["-f", "~/Docker/appliance.yml", "up", "-d"]
+appCommands: []
