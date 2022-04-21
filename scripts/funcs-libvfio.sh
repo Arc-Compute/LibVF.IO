@@ -145,6 +145,7 @@ function ls_depen() {
     lookingglass_dep_fedora=" binutils-devel cmake texlive-gnu-freefont fontconfig-devel SDL2-devel SDL2_ttf-devel spice-protocol libX11-devel nettle-devel wayland-protocols-devel libXScrnSaver-devel libXfixes-devel libXi-devel wayland-devel libXinerama-devel "
   else
     lookingglass_dep_fedora="  "
+    lookingglass_dep_debian="  "
     lookingglass_dep_ubuntu="  "
     lookingglass_dep_arch="  "
     lookingglass_dep_pop="  "
@@ -331,11 +332,11 @@ function dl_lookingglass() {
     return
   fi
   set_sandbox_dir
-  # Download Looking Glass beta 4 sources
+  # Download Looking Glass beta 5 sources
   rm -rf LookingGlass
-  curl -o lg.tar.gz https://looking-glass.io/artifact/B4/source
+  curl -o lg.tar.gz https://looking-glass.io/artifact/B5/source
   tar -xvf lg.tar.gz
-  mv looking-glass-B4 LookingGlass
+  mv looking-glass-B5 LookingGlass
 }
 
 function install_lookingglass() {
@@ -391,9 +392,7 @@ function get_introspection() {
   cp $current_path/optional/guest/* ./
   cp $current_path/scripts/win-guest-install/* ./
   cp $HOME/.ssh/id_rsa.pub ./authorized_keys
-  #cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
-  # Use the Looking Glass Host bin rather than the one we compile ourselves.
-  wget -O looking-glass-host.zip https://looking-glass.io/artifact/B4/host
+  wget -O looking-glass-host.zip https://looking-glass.io/artifact/B5/host
   unzip looking-glass-host.zip
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
   wget -O adksetup.exe "https://go.microsoft.com/fwlink/?linkid=2120254"
