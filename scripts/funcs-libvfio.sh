@@ -451,7 +451,14 @@ function check_optional_driver() {
   if [ ! -f $current_path/optional/*.run ]; then
     echo "Optional drivers not found."
     exit 0
+  fi
+  optional_drivers+=($current_path/optional/*.run)
+  if [ ${#optional_drivers[@]} -gt 1 ]; then
+    # Quit if Multiple optional drivers exist
+    echo "More than one optional driver found. Quitting"
+    exit 0
   else
+    # Make optional driver runnable
     chmod 755 $current_path/optional/*.run
   fi
 }
@@ -466,13 +473,32 @@ function check_k_version() {
   echo "MINOR: $minor"
 }
 
+
+function patch_variant() {
+  #Check for possible known variants and patch accordingly
+  if [ -f $current_path/optional/*510*.run ]; then
+    d_type="510"
+    echo "Variant Driver found: Driver 510"
+    echo "No patches to apply to 510 Driver"
+    cd $current_path
+  fi
+}
+
 function patch_nv() {
   # Patch NV driver according to kernel version
   check_k_version
   check_optional_driver
   cd $current_path
-  cd ./optional #in order for uodated driver to be placed in 'optional' folder
+  cd ./optional #in order for updated driver to be placed in 'optional' folder
   custom=""
+  d_type="ordinary"
+  # Check if unordinary driver exists
+  patch_variant
+  if [[ $d_type != "ordinary" ]]; then
+    cd $current_path
+    return
+  fi
+  # Patch ordinary driver
   if [[ ($major -eq 5) && ($minor -ge 14) ]];then
     echo "Modifying the driver to have the version 5.14/15 patches."
     custom="-custom"
@@ -499,7 +525,14 @@ function install_nv() {
   openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
   echo "The following password will need to be used in enroll MOK on your next startup."
   sudo mokutil --import ~/.ssh/module-public.key
-  sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
+  # Apply driver
+  case $d_type in
+    "ordinary") sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
+                echo "Deleting Patched Driver"
+                rm $current_path/optional/*custom.run;;
+    "510")      sudo $current_path/optional/*510*$custom.run -q --no-x-check --dkms;;
+  esac
+
 }
 
 # Check if nouveau is unloaded (pc rebooted)
