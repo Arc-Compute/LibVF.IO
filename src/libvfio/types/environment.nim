@@ -48,6 +48,7 @@ type
     lockFile*: string                    ## Lock file path.
     socketDir*: string                   ## Socket directory path.
     uuid*: string                        ## UUID for the VM.
+    cid*: int                            ## CID of VM
     vfios*: seq[Vfio]                    ## Normal VFIO devices.
     mdevs*: seq[Mdev]                    ## VFIO-MDEV devices.
     introspections*: seq[string]         ## Introspections list.
@@ -70,6 +71,7 @@ proc `%`*(vm: VM): JsonNode =
     "lockFile": %vm.lockFile,
     "socketDir": %vm.socketDir,
     "uuid": %vm.uuid,
+    "cid": %vm.cid,
     "vfios": %vm.vfios,
     "mdevs": %vm.mdevs,
     "introspections": %vm.introspections,
@@ -89,6 +91,7 @@ proc toVm*(js: JsonNode): VM =
   result.lockFile = js["lockFile"].getStr
   result.socketDir = js["socketDir"].getStr
   result.uuid = js["uuid"].getStr
+  result.cid = js["cid"].getInt
   result.vfios = to(js["vfios"], seq[Vfio])
   result.mdevs = to(js["mdevs"], seq[Mdev])
   result.introspections = to(js["introspections"], seq[string])

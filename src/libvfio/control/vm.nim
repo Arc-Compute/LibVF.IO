@@ -11,6 +11,7 @@ import posix
 import options
 import strformat
 import sequtils
+import random
 import sugar
 import logging
 
@@ -146,6 +147,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     )
     introspections = getIntrospections(cfg, uuid, newInstall)
 
+  let cid = rand(99999)
+
   # If we are passing a vfio, we need to run the command as sudo
   if len(cfg.gpus) > 0 or len(cfg.nics) > 0:
     cfg.sudo = true
@@ -165,6 +168,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   result.lockFile = lockFile
   result.socketDir = socketDir
   result.uuid = uuid
+  result.cid = cid
   result.introspections = introspections & limeDir
   result.liveKernel = liveKernel
   result.baseKernel = baseKernel
@@ -225,7 +229,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
       kernel=liveKernel,
       install=newInstall,
       logDir=qemuLogs,
-      sockets=sockets
+      sockets=sockets,
+      cid=cid
     )
 
   # Runs startup commands.

@@ -168,7 +168,7 @@ func additionalArgs*(args: QemuArgs): seq[string] =
 func qemuLaunch*(cfg: Config, uuid: string,
                  vfios: seq[Vfio], mdevs: seq[Mdev],
                  kernel: string, install: bool,
-                 logDir: string, sockets: seq[string]): Args =
+                 logDir: string, sockets: seq[string], cid: int): Args =
   ## qemuLaunch - Generates a qemu command to be executed.
   ##
   ## Inputs
@@ -346,6 +346,9 @@ func qemuLaunch*(cfg: Config, uuid: string,
   result.args &= "user"
   result.args &= "-net"
   result.args &= "nic,model=virtio"
+
+  result.args &= "-device"
+  result.args &= &"vhost-vsock-pci,guest-cid={cid}"
 
   if isSome(cfg.shareddir) and not install:
     result.args &= "-hdb"
