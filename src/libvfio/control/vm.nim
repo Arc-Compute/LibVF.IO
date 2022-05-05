@@ -11,7 +11,6 @@ import posix
 import options
 import strformat
 import sequtils
-import random
 import sugar
 import logging
 
@@ -147,7 +146,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     )
     introspections = getIntrospections(cfg, uuid, newInstall)
 
-  let cid = rand(99999)
+  let cid = randFromUuid(uuid)
 
   # If we are passing a vfio, we need to run the command as sudo
   if len(cfg.gpus) > 0 or len(cfg.nics) > 0:
