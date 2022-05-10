@@ -22,6 +22,7 @@ import iommu
 import root
 
 import ../types
+import ../utils/rand
 
 proc realCleanup(vm: VM) =
   ## realCleanup - Real cleanup function.
@@ -146,7 +147,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     )
     introspections = getIntrospections(cfg, uuid, newInstall)
 
-  let cid = randFromUuid(uuid)
+  let cid = int(randNum(99999))
 
   # If we are passing a vfio, we need to run the command as sudo
   if len(cfg.gpus) > 0 or len(cfg.nics) > 0:

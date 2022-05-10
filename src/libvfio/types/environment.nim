@@ -107,17 +107,3 @@ proc toVm*(js: JsonNode): VM =
   result.sshPort = js["sshPort"].getInt
   result.teardownCommands = to(js["teardownCommands"], seq[CommandList])
   # result.socket = createSocket(fmt"/tmp/sockets/{result.uuid}/master.sock")
-
-proc randFromUuid*(uuid: string): int =
-    var nStr = multiReplace(uuid, ("a",""), ("b",""), ("c",""),
-        ("d",""), ("e",""), ("f",""), ("g",""), ("h",""), ("i",""),
-        ("j",""), ("k",""), ("l",""), ("m",""), ("n",""), ("o",""),
-        ("p",""), ("q",""), ("r",""), ("s",""), ("t",""), ("u",""),
-        ("v",""), ("w",""), ("x",""), ("y",""), ("z",""), ("-",""))
-
-    if nStr.len >= 19:
-      nStr.delete(18..(nStr.len)-1)
-
-    let n = parseInt(nStr)
-    var r = initRand(n)
-    result = r.rand(99999)
