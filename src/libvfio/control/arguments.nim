@@ -193,6 +193,11 @@ func qemuLaunch*(cfg: Config, uuid: string,
   result.args &= "-D"
   result.args &= qemuLogFile
 
+  # REVIEW productionize
+  if cfg.vncPort < 100 and cfg.vncPort > -1:
+    result.args &= "-display"
+    result.args &= fmt"vnc=0.0.0.0:{cfg.vncPort}"
+
   # Causes issues with mdev devices.
   result.args &= "-no-hpet"
 

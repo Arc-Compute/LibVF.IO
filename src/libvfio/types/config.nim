@@ -64,6 +64,7 @@ type
     shareddir*        {.defaultVal: none(string).}: Option[string]    ## Shared directory between os and host.
     spicePort*        {.defaultVal: 5900.}: int                       ## Spice port number.
     sshPort*          {.defaultVal: 2222.}: int                       ## SSH port number.
+    vncPort*          {.defaultVal: 100.}: int                        ## VNC port number.
     connectivity*     {.defaultVal: Connectivity(
                         exposedPorts: @[]).}: Connectivity            ## Code to connect to the machine.
     container*: ArcContainer                                          ## The specifics for how to spawn the
