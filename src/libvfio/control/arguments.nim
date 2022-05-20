@@ -94,6 +94,8 @@ func createKernel*(name: string, size: int): Args =
   result.args &= "create"
   result.args &= "-f"
   result.args &= "qcow2"
+  result.args &= "-o"
+  result.args &= "preallocation=metadata"
   result.args &= name
   result.args &= &"{size}G"
 
