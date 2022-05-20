@@ -103,5 +103,4 @@ proc changeLockSave*(root, uuid: string, save: bool) =
     lock.vm.save = save
     debug(fmt"VM {uuid} container save set to {lock.vm.save}")
     writeLockFile(l.path, lock)
-    echo l.path
   sleep(2000) # Sleeping to avoid trying to open the file too soon.

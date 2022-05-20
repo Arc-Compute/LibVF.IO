@@ -267,6 +267,7 @@ proc getMdevs*(cfg: Config, monad: CommandMonad): seq[Mdev] =
           createFile = dir / "create"
           description = dir / "description"
           name = dir / "name"
+          available = dir / "available_instances"
           desc = readFile(description)
           isGVTg = "GVTg" in dir
           framebufferStart = find(
@@ -285,15 +286,18 @@ proc getMdevs*(cfg: Config, monad: CommandMonad): seq[Mdev] =
           gpuUUID = getUUID()
           startArgs = commandWriteFile(gpuUUID, createFile)
 
-        echo framebuffer, " ", dir
-        if not (i.mdevType in lastPathPart(dir)):
+        if fileExists(available) and parseInt(readFile(available)) == 0:
           continue
 
-        if i.minVRam > framebuffer or i.maxVRam < framebuffer:
-          continue
+        if i.mdevType != "":
+          if i.mdevType != lastPathPart(dir):
+            continue
+        else:
+          if i.minVRam > framebuffer or i.maxVRam < framebuffer:
+            continue
 
-        if fileExists(name) and not endsWith(strip(readFile(name)), i.suffix):
-          continue
+          if fileExists(name) and not endsWith(strip(readFile(name)), i.suffix):
+            continue
 
         # BUG: Merged driver does not support multiple vGPU types on a card.
         discard sendCommand(monad, startArgs)
