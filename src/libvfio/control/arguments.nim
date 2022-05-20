@@ -350,7 +350,7 @@ func qemuLaunch*(cfg: Config, uuid: string,
   result.args &= "-net"
   result.args &= "user"
   result.args &= "-net"
-  result.args &= "nic,model=virtio"
+  result.args &= "nic" # NOTE: DO NOT USE VIRTIO IT IS BROKE
 
   result.args &= "-device"
   result.args &= &"vhost-vsock-pci,guest-cid={cid}"
