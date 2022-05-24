@@ -286,7 +286,7 @@ proc getMdevs*(cfg: Config, monad: CommandMonad): seq[Mdev] =
           gpuUUID = getUUID()
           startArgs = commandWriteFile(gpuUUID, createFile)
 
-        if fileExists(available) and parseInt(readFile(available)) == 0:
+        if fileExists(available) and parseInt(strip(readFile(available))) == 0:
           continue
 
         if i.mdevType != "":
