@@ -52,6 +52,37 @@ const
     ],
     ","
   )
+  CpuConfigHypervisor* = join(
+    @["host",
+      "ss=on",
+      "vmx=on",
+      "pcid=on",
+      "hypervisor=on",
+      "arat=on",
+      "tsc-adjust=on",
+      "umip=on",
+      "md-clear=on",
+      "stibp=on",
+      "arch-capabilities=on",
+      "ssbd=on",
+      "xsaveopt=on",
+      "pdpe1gb=on",
+      "ibpb=on",
+      #"ibrs=on",
+      "amd-stibp=on",
+      "amd-ssbd=on",
+      "skip-l1dfl-vmentry=on",
+      "pschange-mc-no=on",
+      "hv-vapic",
+      "hv_time",
+      "hv-spinlocks=0x1fff",
+      "hv-vendor-id=null",
+      "kvm=off",
+      "topoext=on"
+    ],
+    ","
+  )
+
 
 func removeFiles*(files: seq[string]): Args =
   ## removeFiles - Mass removes a set of files.
@@ -196,7 +227,7 @@ func qemuLaunch*(cfg: Config, uuid: string,
   result.args &= qemuLogFile
 
   # REVIEW productionize
-  if cfg.vncPort < 100 and cfg.vncPort > -1:
+  if cfg.vncPort < 100 and cfg.vncPort > -1 and not install:
     result.args &= "-display"
     result.args &= fmt"vnc=0.0.0.0:{cfg.vncPort}"
 
@@ -298,7 +329,10 @@ func qemuLaunch*(cfg: Config, uuid: string,
 
   # Cpu settings needed for NVidia MDEV support
   result.args &= "-cpu"
-  result.args &= CpuConfig
+  if cfg.showhypervisor:
+    result.args &= CpuConfigHypervisor
+  else:
+    result.args &= CpuConfig
 
   # clock settings
   result.args &= "-rtc"

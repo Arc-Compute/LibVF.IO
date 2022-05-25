@@ -59,12 +59,13 @@ type
     installOs*        {.defaultVal: osNone.}: OsInstallEnum           ## Installs the given operating system
                                                                       ##  in a create command.
     nographics*       {.defaultVal: false.}: bool                     ## If we have the no graphics flag set.
-    spice*            {.defaultVal: false.}: bool                      ## If we want to use a spice server.
+    showhypervisor*   {.defaultVal: true.}: bool                      ## If we show hypervisor indication in vm
+    spice*            {.defaultVal: false.}: bool                     ## If we want to use a spice server.
     introspect*       {.defaultVal: isLookingGlass.}: IntrospectEnum  ## What type of introspection we use.
     shareddir*        {.defaultVal: none(string).}: Option[string]    ## Shared directory between os and host.
     spicePort*        {.defaultVal: 5900.}: int                       ## Spice port number.
     sshPort*          {.defaultVal: 2222.}: int                       ## SSH port number.
-    vncPort*          {.defaultVal: 100.}: int                        ## VNC port number.
+    vncPort*          {.defaultVal: -1.}: int                         ## VNC port number.
     connectivity*     {.defaultVal: Connectivity(
                         exposedPorts: @[]).}: Connectivity            ## Code to connect to the machine.
     container*: ArcContainer                                          ## The specifics for how to spawn the

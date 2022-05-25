@@ -63,6 +63,7 @@ type
     save*: bool                          ## Do we save the VM.
     noCopy*: bool                        ## Do we copy the VM.
     sshPort*: int                        ## SSH Port to use.
+    vncPort*: int                        ## VNC Port to use.
     teardownCommands*: seq[CommandList]  ## Tearing down commands.
 
 
@@ -83,6 +84,7 @@ proc `%`*(vm: VM): JsonNode =
     "baseKernel": %vm.baseKernel,
     "newInstall": %vm.newInstall,
     "sshPort": %vm.sshPort,
+    "vncPort": %vm.vncPort,
     "save": %vm.save,
     "noCopy": %vm.noCopy,
     "teardownCommands": %vm.teardownCommands
@@ -105,5 +107,6 @@ proc toVm*(js: JsonNode): VM =
   result.save = js["save"].getBool
   result.noCopy = js["noCopy"].getBool
   result.sshPort = js["sshPort"].getInt
+  result.vncPort = js["vncPort"].getInt
   result.teardownCommands = to(js["teardownCommands"], seq[CommandList])
   # result.socket = createSocket(fmt"/tmp/sockets/{result.uuid}/master.sock")
