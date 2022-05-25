@@ -175,6 +175,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   result.newInstall = newInstall
   result.noCopy = noCopy
   result.sshPort = cfg.sshPort
+  result.vncPort = cfg.vncPort
   result.teardownCommands = cfg.teardownCommands
   case noCopy
   of true:
@@ -287,6 +288,8 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   result.socket = socketMaybe
 
   if newInstall:
+    result.vncPort = -1
+    lock.config.vncPort = -1
     commands = startRealApp(result.monad, cfg.install_commands, result.uuid,
                             result.sshPort)
     if not commands:
