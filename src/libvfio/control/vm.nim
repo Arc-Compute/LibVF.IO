@@ -288,8 +288,6 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   result.socket = socketMaybe
 
   if newInstall:
-    result.vncPort = -1
-    lock.config.vncPort = -1
     commands = startRealApp(result.monad, cfg.install_commands, result.uuid,
                             result.sshPort)
     if not commands:
