@@ -230,7 +230,8 @@ func qemuLaunch*(cfg: Config, uuid: string,
   const
     vncPortStart = 5900
     vncPortEnd = 5999
-  if cfg.vncPort <= vncPortEnd and cfg.vncPort >= vncPortStart:
+    vncPortRange = vncPortStart..vncPortEnd
+  if cfg.vncPort in vncPortRange:
     result.args &= "-display"
     result.args &= fmt"vnc=0.0.0.0:{(cfg.vncPort)-vncPortStart}"
 
@@ -371,11 +372,17 @@ func qemuLaunch*(cfg: Config, uuid: string,
   result.args &= "-device"
   result.args &= "rtl8139,netdev=net0"
   result.args &= "-netdev"
+
+  let netconfig =
+    if cfg.sshPort >= 0: @[&"hostfwd=tcp::{cfg.sshPort}-:22"]
+    else: @[]
+
   result.args &= join(
     @["user", "id=net0"] &
-    @[&"hostfwd=tcp::{cfg.sshPort}-:22"],
+    netconfig,
     ","
   )
+
   # Port forward for all exposed ports
   if len(cfg.connectivity.exposedPorts) > 0:
     let hostfwds = map(cfg.connectivity.exposedPorts,
