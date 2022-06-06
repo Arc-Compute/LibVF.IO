@@ -113,7 +113,7 @@ proc cleanupVm*(vm: VM) =
   realCleanup(vm)
 
 proc startVm*(c: Config, uuid: string, newInstall: bool,
-              noCopy: bool, save: bool, daemonize: bool): VM =
+              noCopy: bool, save: bool, daemonize: bool, cid_prime: int = -1): VM =
   ## startVm - Starts a VM.
   ##
   ## Inputs
@@ -122,10 +122,13 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   ## @newInstall - Do we need to install into a kernel?
   ## @noCopy - Avoid unnecessary copying when we do not need it.
   ## @save - Do we save the result?
-  ## @daemonize - Do we daemonize the vm?
+  ## @daemonize - Do we daemonize the VM?
+  ## @cid - CID of the VM
   ##
   ## Side effects - Creates an Arc Container.
-  var cfg = c
+  var
+    cfg = c
+    cid: int
 
   let
     kernelPath = cfg.root / "kernel"
@@ -147,7 +150,10 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
     )
     introspections = getIntrospections(cfg, uuid, newInstall)
 
-  let cid = int(randNum(99999))
+  if cid_prime == -1:
+    cid = int(randNum(99999))
+  else:
+    cid = cid_prime
 
   # If we are passing a vfio, we need to run the command as sudo
   if len(cfg.gpus) > 0 or len(cfg.nics) > 0:
