@@ -28,6 +28,9 @@ type
     of vtGPU:
       vgpus: seq[Vfio]      ## The list of vGPUs.
       gpuType: string       ## Type of the physical GPU that was split.
+    of vtNET:
+      nets: seq[string]     ## Network devices.
+      vfs: seq[string]      ## Virtual functions.
     else: discard
 
 proc lockVf(f: string, vfio: string, uuid: string, lock: bool = true,
@@ -158,12 +161,17 @@ proc getVfios*(cfg: Config, uuid: string, monad: CommandMonad): seq[Vfio] =
 
   var
     gpus = newOrderedTable[string, seq[Physical]]() # Stored GPUs.
+    networks: seq[Vfio] = @[]
 
   # Walk through all known IOMMU groups.
   for dir in walkDirs("/sys/kernel/iommu_groups/*/devices/*/"):
     let
+      pciAddress = lastPathPart(dir)
       deviceClassFile = dir / "class"
       sriovNumFile = dir / "sriov_numvfs"
+
+    if pciAddress in cfg.blacklistedPci:
+      continue
 
     if not fileExists(deviceClassFile) or not fileExists(sriovNumFile):
       continue
@@ -180,7 +188,7 @@ proc getVfios*(cfg: Config, uuid: string, monad: CommandMonad): seq[Vfio] =
     let
       vfs = parseInt(strip(readFile(sriovNumFile))) # Number of VFs.
       cpulist = readFile(dir / "local_cpulist") # How we determine which
-                                                #  discrete device the gpu
+                                                #  discrete device the pci
                                                 #  is on.
 
     # If the SRIOV is enabled but no VFs where generated, assume it is not
@@ -214,17 +222,45 @@ proc getVfios*(cfg: Config, uuid: string, monad: CommandMonad): seq[Vfio] =
           vgpus: gimGpus
         )
       ]
+    of vtNET:
+      var net_devices: seq[string] = @[]
+      for netdir in walkDirs(dir / "net"):
+        net_devices &= lastPathPart(netdir)
+
+      if len(net_devices) == 0: continue
+
+      for i in 0..vfs:
+        let deviceName = lastPathPart(expandSymlink(dir / &"virtfn{i}"))
+        let l = @[deviceName, "", strip(readFile(dir / &"virtfn{i}" / "device")), $i, net_devices[0]]
+        networks &= get(getVfio(deviceClass, l, dir))
     else: discard
 
   var
     requestedGpus = cfg.gpus
+    requestedNics = cfg.nics
 
   # We use this in order to ensure if an individual requests multiple GPUs
   #  they are able to optimize the compute speed by providing them CPUs which
   #  are located closest to the specific GPU.
   sort(gpus, lowCpuLoadSort, order=SortOrder.Descending)
 
-  # TODO: Add code for NICs.
+  for i in requestedNics:
+    var remove = -1
+    for x, j in networks:
+      let
+        lockBase = "/tmp" / "locks" / "networking"
+        lockPath = lockBase / "lock"
+
+      createDir(lockBase)
+
+      if bindVf(lockPath, uuid, j, true, monad):
+        discard sendCommand(monad, setMac(j.net, i.mac, j.virtNum))
+        var newj = j
+        remove = x
+        newj.mac = i.mac
+        result &= newj
+        break
+
 
   # How we select the correct GPUs.
   for i in requestedGpus:
@@ -264,6 +300,7 @@ proc getMdevs*(cfg: Config, monad: CommandMonad): seq[Mdev] =
                    &"/sys/class/mdev_bus/{get(i.parentPort)}/mdev_supported_types/*"
       for dir in walkDirs(mdev):
         let
+          pciAddress = lastPathPart(parentDir(dir))
           createFile = dir / "create"
           description = dir / "description"
           name = dir / "name"
@@ -285,6 +322,9 @@ proc getMdevs*(cfg: Config, monad: CommandMonad): seq[Mdev] =
           framebuffer = parseInt(framebufferStr)
           gpuUUID = getUUID()
           startArgs = commandWriteFile(gpuUUID, createFile)
+
+        if pciAddress in cfg.blacklistedPci:
+          continue
 
         if fileExists(available) and parseInt(strip(readFile(available))) == 0:
           continue

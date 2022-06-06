@@ -84,6 +84,7 @@ type
     teardownCommands* {.defaultVal: @[].}: seq[CommandList]           ## Teardown command list.
     installCommands*  {.defaultVal: @[].}: seq[CommandList]           ## Installation command list.
     appCommands*      {.defaultVal: @[].}: seq[CommandList]           ## Application command list.
+    blacklistedPci*   {.defaultVal: @[].}: seq[string]                ## Blacklisted PCI devices to avoid.
 
   CommandLineArguments* = object     ## Arguments passed into the system.
     config*: Option[string]          ## Path for the configuration file.
@@ -149,7 +150,8 @@ const
     startupCommands: @[],
     teardownCommands: @[],
     installCommands: @[],
-    appCommands: @[]
+    appCommands: @[],
+    blacklistedPci: @[]
   )
 
 proc getCommandLine*(): CommandLineArguments =

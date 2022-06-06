@@ -22,12 +22,14 @@ type
   Vfio* = object                              ## VFIO structure for handling different VFIOs.
     deviceName*: string                       ## PCI device address
     base*: string                             ## Driver override address
+    virtNum*: int                             ## What virtual function is this mapped to.
     case kind: VfioTypes                      ## Private enumeration value stating which
                                               ##  version to use.
     of vtNET:
       mac*: string                            ## MAC Address to pass into VM.
+      device*: string                         ## Device id for spoofing.
+      net*: string                            ## Network device.
     of vtGPU:
-      virtNum*: int                           ## What virtual function is this mapped to.
       gpuType*: string                        ## Type of the GPU.
       vRam*: int                              ## vRAM available to the GPU.
     else: nil
@@ -69,12 +71,17 @@ func getVfio*(k: int, l: seq[string], dir: string): Option[Vfio] =
   var vfio: Vfio
   case k
   of ord(vtNET):
-    # NOTE: We require the device name and the MAC address.
-    if len(l) == 2:
+    # NOTE: We require the device name and the MAC address and original device id, and virt num,
+    #       and network interface.
+    if len(l) == 5:
 
       vfio = Vfio(kind: vtNET)
       vfio.deviceName = l[0]
       vfio.mac = l[1]
+      vfio.device = l[2]
+      vfio.virtNum = parseInt(l[3])
+      vfio.net = l[4]
+      vfio.base = dir / &"virtfn{vfio.virtNum}"
 
       result = some(vfio)
     else:

@@ -112,6 +112,27 @@ func commandWriteFile*(data: string, path: string): Args =
   result.args &= ">"
   result.args &= path
 
+func setMac*(net: string, mac: string, vf: int): Args =
+  ## setMac - Sets a MAC value for a network device on VF vf.
+  ##
+  ## Inputs
+  ## @net - Network device to use.
+  ## @mac - MAC address to set.
+  ## @vf - Virtual Function number to use.
+  ##
+  ## Returns
+  ## result - Creates a mac address for a vf.
+  ##
+  ## NOTE: Can only be run as sudo
+  result.exec &= "ip"
+  result.args &= "link"
+  result.args &= "set"
+  result.args &= net
+  result.args &= "vf"
+  result.args &= $vf
+  result.args &= "mac"
+  result.args &= mac
+
 func createKernel*(name: string, size: int): Args =
   ## createKernel - Creates a kernel image for the Arc Container.
   ##
