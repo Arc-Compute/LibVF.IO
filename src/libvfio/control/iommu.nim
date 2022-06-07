@@ -229,7 +229,7 @@ proc getVfios*(cfg: Config, uuid: string, monad: CommandMonad): seq[Vfio] =
 
       if len(net_devices) == 0: continue
 
-      for i in 0..vfs:
+      for i in 0..<vfs:
         let deviceName = lastPathPart(expandSymlink(dir / &"virtfn{i}"))
         let l = @[deviceName, "", strip(readFile(dir / &"virtfn{i}" / "device")), $i, net_devices[0]]
         networks &= get(getVfio(deviceClass, l, dir))

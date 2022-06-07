@@ -81,7 +81,7 @@ func getVfio*(k: int, l: seq[string], dir: string): Option[Vfio] =
       vfio.device = l[2]
       vfio.virtNum = parseInt(l[3])
       vfio.net = l[4]
-      vfio.base = dir / &"virtfn{vfio.virtNum}"
+      vfio.base = dir / &"virtfn{vfio.virtNum}" / "driver_override"
 
       result = some(vfio)
     else:
