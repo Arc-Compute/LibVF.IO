@@ -196,7 +196,7 @@ func vfioArgs*(device: Vfio): seq[string] =
     result &= &"vfio-pci,host={device},multifunction=on,display=off"
   if isNet(device):
     result &= "-device"
-    result &= &"vfio-pci,x-pci-device-id={device.device},host={device.base}"
+    result &= &"vfio-pci,x-pci-device-id={device.device},host={device.deviceName}"
 
 func mdevArgs*(device: Mdev): seq[string] =
   ## mdevArgs - Qemu arguments for adding MDEV device.

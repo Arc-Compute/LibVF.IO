@@ -2,8 +2,9 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Provide function to get locks
 #
-import os
+import std/os
 import std/strformat
+import std/strutils
 import logging
 
 import ../types
@@ -14,6 +15,45 @@ type
   wLock* = object  ## Wrapper for lock so it can contain path
     lock*: Lock
     path*: string
+
+proc checkZProc(dir: string): bool =
+  ## checkZProc - Checks if VM is a zombie process.
+  ##
+  ## Inputs
+  ## @dir: string - path of the process's dir
+  ##
+  ## Returns
+  ## result - bool. returns true if a zombie process
+  ##
+  ## Side effects - reading files on system
+  if not dirExists(dir): return false
+  let info = readFile(dir / "status")
+  echo "Checking if zombie"
+  if "zombie" in info:
+    return true
+
+proc cleanFromLock*(l: wLock): bool =
+  ## cleanFromLock - Cleans up a VM if dead, from Lock
+  ##
+  ## Inputs
+  ## @l: wLock - Lock of vm that will be cleaned if necessary
+  ##
+  ## Returns
+  ## result - bool. returns true if vm was cleaned.
+  ##
+  ## Side effects - reading and deleting files on system
+  if not dirExists(&"/proc/{l.lock.pidNum}"):
+    notice(fmt"PID of VM {splitFile(l.path).name} not running. Cleaning up")
+    cleanVm(l.lock.vm)                      ## Clean dead VM
+    removeFile(l.path)                      ## Remove dead VM's lock file
+    result = true
+  elif checkZProc(&"/proc/{l.lock.pidNum}"):
+    notice(fmt"VM {splitFile(l.path).name} PID {l.lock.pidNum} is Zombie process. Cleaning up")
+    cleanVm(l.lock.vm)                      ## Clean dead VM
+    removeFile(l.path)                      ## Remove dead VM's lock file
+    result = true
+  else:
+    return false                            ## VM was not dead. No need to clean
 
 proc getLocks*(root: string): seq[wLock] =
   ## getLocks - Gets locks and cleans after dead vms
@@ -32,11 +72,7 @@ proc getLocks*(root: string): seq[wLock] =
       lock: getLockFile(filePath),
       path: filePath
     )
-    if not dirExists(&"/proc/{l.lock.pidNum}"):
-      notice(fmt"PID of vm {splitFile(l.path).name} not running. Cleaning up")
-      cleanVm(l.lock.vm)                      ## Clean dead VM
-      removeFile(filePath)                    ## Remove dead VM's lock file
-    else:
+    if not cleanFromLock(l):
       result &= l
 
 proc findLocksByUuid*(root, uuid: string): seq[wLock] =

@@ -224,7 +224,7 @@ proc getVfios*(cfg: Config, uuid: string, monad: CommandMonad): seq[Vfio] =
       ]
     of vtNET:
       var net_devices: seq[string] = @[]
-      for netdir in walkDirs(dir / "net"):
+      for netdir in walkDirs(dir / "net" / "*"):
         net_devices &= lastPathPart(netdir)
 
       if len(net_devices) == 0: continue
