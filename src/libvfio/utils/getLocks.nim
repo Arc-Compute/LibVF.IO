@@ -28,7 +28,6 @@ proc checkZProc(dir: string): bool =
   ## Side effects - reading files on system
   if not dirExists(dir): return false
   let info = readFile(dir / "status")
-  echo "Checking if zombie"
   if "zombie" in info:
     return true
 

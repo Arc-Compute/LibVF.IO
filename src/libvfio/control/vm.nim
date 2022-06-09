@@ -2,17 +2,18 @@
 # Copyright: 2666680 Ontario Inc.
 # Reason: Code to interact with VMs.
 #
-import asyncnet
-import asyncdispatch
-import asyncfutures
-import os
-import osproc
-import posix
-import options
-import strformat
-import sequtils
-import sugar
-import logging
+import std/asyncnet
+import std/asyncdispatch
+import std/asyncfutures
+import std/os
+import std/osproc
+import std/posix
+import std/options
+import std/strformat
+import std/sequtils
+import std/sugar
+import std/logging
+import std/times
 
 import app
 import arguments
@@ -183,6 +184,7 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
   result.sshPort = cfg.sshPort
   result.vncPort = cfg.vncPort
   result.teardownCommands = cfg.teardownCommands
+  result.startTime = toUnix(getTime())
   case noCopy
   of true:
     result.save = true

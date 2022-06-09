@@ -10,6 +10,7 @@ import std/json
 import std/strutils
 import std/strformat
 import std/random
+import std/times
 
 import hardware, process
 
@@ -65,6 +66,7 @@ type
     sshPort*: int                        ## SSH Port to use.
     vncPort*: int                        ## VNC Port to use.
     teardownCommands*: seq[CommandList]  ## Tearing down commands.
+    startTime*: int64                    ## Time the VM was started
 
 
 proc `%`*(vm: VM): JsonNode =
@@ -87,7 +89,8 @@ proc `%`*(vm: VM): JsonNode =
     "vncPort": %vm.vncPort,
     "save": %vm.save,
     "noCopy": %vm.noCopy,
-    "teardownCommands": %vm.teardownCommands
+    "teardownCommands": %vm.teardownCommands,
+    "startTime": %vm.startTime
   }
 
 
@@ -109,4 +112,5 @@ proc toVm*(js: JsonNode): VM =
   result.sshPort = js["sshPort"].getInt
   result.vncPort = js["vncPort"].getInt
   result.teardownCommands = to(js["teardownCommands"], seq[CommandList])
+  result.startTime = to(js["startTime"], int64)
   # result.socket = createSocket(fmt"/tmp/sockets/{result.uuid}/master.sock")
