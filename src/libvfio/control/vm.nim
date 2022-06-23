@@ -205,7 +205,14 @@ proc startVm*(c: Config, uuid: string, newInstall: bool,
 
   # Either moves the file or creates a new file
   if fileExists(baseKernel) and not newInstall and not noCopy:
-    copyFile(baseKernel, liveKernel)
+    let copyArgs = Args(
+      exec: "/usr/bin/cp",
+      args: @[
+        &"'{baseKernel}'",
+        &"'{liveKernel}'"
+      ]
+    )
+    discard sendCommand(rootMonad, copyArgs)
   elif newInstall and isSome(cfg.container.iso):
     if cfg.installOs != osNone:
       var t = getInstallationParams(limeDir, cfg.installOs)
