@@ -453,6 +453,7 @@ function check_optional_driver() {
     exit 0
   else
     chmod 755 $current_path/optional/*.run
+    optional_driver_version=`ls *.run | awk '{split($0, a, "x86_64-"); print a[2]}' | awk '{split($0, a, "-"); print a[1]}'`
   fi
 }
 
@@ -473,18 +474,38 @@ function patch_nv() {
   cd $current_path
   cd ./optional #in order for uodated driver to be placed in 'optional' folder
   custom=""
-  if [[ ($major -eq 5) && ($minor -ge 14) ]];then
-    echo "Modifying the driver to have the version 5.14/15 patches."
-    custom="-custom"
-    $current_path/optional/*.run --apply-patch $current_path/patches/fourteen.patch
-  elif [[ ($major -eq 5) && ($minor -eq 13) ]];then
-    echo "Modifying the driver to have the version 5.13 patches."
-    custom="-custom"
-    $current_path/optional/*.run --apply-patch $current_path/patches/thirteen.patch 
-  elif [[ ($major -eq 5) && ($minor -ge 12) ]];then
-    echo "Modifying the driver to have the version 5.12 patches."
-    custom="-custom"
-    $current_path/optional/*.run --apply-patch $current_path/patches/twelve.patch
+  # Checking if the optional driver is version 460
+  if [[ ($optional_driver_version == 460.*.*) ]];then
+    if [[ ($major -eq 5) && ($minor -ge 14) ]];then
+      echo "Applying 460 support patches for kernel version 5.14/5.15."
+      custom="-custom"
+      $current_path/optional/*.run --apply-patch $current_path/patches/460/fourteen.patch
+    elif [[ ($major -eq 5) && ($minor -eq 13) ]];then
+      echo "Applying 460 support patches for kernel version 5.13."
+      custom="-custom"
+      $current_path/optional/*.run --apply-patch $current_path/patches/460/thirteen.patch 
+    elif [[ ($major -eq 5) && ($minor -ge 12) ]];then
+      echo "Applying 460 support patches for kernel version 5.12."
+      custom="-custom"
+      $current_path/optional/*.run --apply-patch $current_path/patches/460/twelve.patch
+    fi
+  # Checking if the optional driver is version 510
+  elif [[ ($optional_driver_version == 510.*.*) ]];then
+    echo "A kernel support patch isn't currently needed for this driver version."
+    echo "Would you like to auto-merge optional drivers?"
+    read -p "(y/n)?" automerge_prompt_response
+    if [[ ($automerge_prompt_response == "y") ]];then
+      echo "Cloning @Snowman auto-merge script."
+      cd $current_path/optional/
+      git clone --recursive https://github.com/VGPU-Community-Drivers/vGPU-Unlock-patcher
+      mv *-patcher/* ./
+      rm -rf *-patcher/
+      ./patch.sh --repack general-merge
+      # Cleaning up auto-generated directories
+      rm -rf $current_path/optional/*-Linux-x86_64-*/
+      # Cleaning up old files
+      rm $current_path/optional/!(*merged*)
+    fi
   fi
   cd $current_path
 }
@@ -499,7 +520,13 @@ function install_nv() {
   openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
   echo "The following password will need to be used in enroll MOK on your next startup."
   sudo mokutil --import ~/.ssh/module-public.key
-  sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
+  if [[ ($optional_driver_version == 460.*.*) ]];then
+    echo "Installing 460."
+    sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
+  elif [[ ($optional_driver_version == 510.*.*) ]];then
+    echo "Installing 510 via DKMS."
+    sudo $current_path/optional/*$custom.run --dkms -q --no-x-check
+  fi
 }
 
 # Check if nouveau is unloaded (pc rebooted)

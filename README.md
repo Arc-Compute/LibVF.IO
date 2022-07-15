@@ -26,6 +26,22 @@ Join the LibVF.IO community here, we'd love to hear your suggestions or help you
 
 Discord: https://discord.gg/Rb9K9DYxKK
 
+# Related Projects & Tools
+
+[GPU Virtual Machine (GVM)](https://docs.linux-gvm.org/)
+
+[Looking Glass](https://github.com/gnif/LookingGlass)
+
+[Intel i915 GVT-g](https://github.com/torvalds/linux/tree/master/drivers/gpu/drm/i915) 
+
+[Intel i915 SR-IOV](https://github.com/intel/linux-intel-lts/commit/41ef979f0894326c202473807a56b599a2f3d04e)
+
+[Nvidia OpenRM](https://github.com/NVIDIA/open-gpu-kernel-modules) 
+
+[vGPU-Unlock](https://github.com/VGPU-Community-Drivers/vGPU-Unlock-patcher)
+
+[AMD GPU-IOV Module](https://github.com/GPUOpen-LibrariesAndSDKs/MxGPU-Virtualization)
+
 # License
 
 Copyright (C) 2021 2666680 Ontario Inc.
