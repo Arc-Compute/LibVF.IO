@@ -448,12 +448,18 @@ function arcd_deploy() {
 }
 
 function check_optional_driver() {
+  cd $current_path
+  echo "Checking for optional drivers."
+  ls $current_path/optional/*.run
+  # Checking if the optional driver(s) exists
   if [ ! -f $current_path/optional/*.run ]; then
     echo "Optional drivers not found."
     exit 0
   else
+    echo "Optional drivers found."
     chmod 755 $current_path/optional/*.run
     optional_driver_version=`ls *.run | awk '{split($0, a, "x86_64-"); print a[2]}' | awk '{split($0, a, "-"); print a[1]}'`
+    echo "optional driver version: " $optional_driver_version
   fi
 }
 
@@ -498,13 +504,14 @@ function patch_nv() {
       echo "Cloning @Snowman auto-merge script."
       cd $current_path/optional/
       git clone --recursive https://github.com/VGPU-Community-Drivers/vGPU-Unlock-patcher
-      mv *-patcher/* ./
-      rm -rf *-patcher/
+      mv *.run *-patcher/
+      cd * *-patcher/
       ./patch.sh --repack general-merge
       # Cleaning up auto-generated directories
-      rm -rf $current_path/optional/*-Linux-x86_64-*/
-      # Cleaning up old files
-      rm $current_path/optional/!(*merged*)
+      rm -rf $current_path/optional/*-patcher/*-Linux-x86_64-*/
+      cd ..
+      mv *-patcher/*merged-patched.run ./
+      rm -rf *-patcher/
     fi
   fi
   cd $current_path
