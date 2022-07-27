@@ -458,7 +458,7 @@ function check_optional_driver() {
   else
     echo "Optional drivers found."
     chmod 755 $current_path/optional/*.run
-    optional_driver_version=`ls *.run | awk '{split($0, a, "x86_64-"); print a[2]}' | awk '{split($0, a, "."); print a[1]}' | awk 'NR==1 {print; exit}'`
+    optional_driver_version=`ls $current_path/optional/*.run | awk '{split($0, a, "x86_64-"); print a[2]}' | awk '{split($0, a, "."); print a[1]}' | awk 'NR==1 {print; exit}'`
     echo "optional driver version: " $optional_driver_version
   fi
 }
@@ -527,10 +527,10 @@ function install_nv() {
   openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
   echo "The following password will need to be used in enroll MOK on your next startup."
   sudo mokutil --import ~/.ssh/module-public.key
-  if [[ ($optional_driver_version == 460.*.*) ]];then
+  if [[ ($optional_driver_version -eq 460) ]];then
     echo "Installing 460."
     sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
-  elif [[ ($optional_driver_version == 510.*.*) ]];then
+  elif [[ ($optional_driver_version -eq 510) ]];then
     echo "Installing 510 via DKMS."
     sudo $current_path/optional/*$custom.run --dkms -q --no-x-check
   fi
