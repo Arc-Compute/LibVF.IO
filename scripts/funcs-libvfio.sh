@@ -458,7 +458,7 @@ function check_optional_driver() {
   else
     echo "Optional drivers found."
     chmod 755 $current_path/optional/*.run
-    optional_driver_version=`ls *.run | awk '{split($0, a, "x86_64-"); print a[2]}' | awk '{split($0, a, "-"); print a[1]}'`
+    optional_driver_version=`ls *.run | awk '{split($0, a, "x86_64-"); print a[2]}' | awk '{split($0, a, "."); print a[1]}' | awk 'NR==1 {print; exit}'`
     echo "optional driver version: " $optional_driver_version
   fi
 }
@@ -481,7 +481,7 @@ function patch_nv() {
   cd ./optional #in order for uodated driver to be placed in 'optional' folder
   custom=""
   # Checking if the optional driver is version 460
-  if [[ ($optional_driver_version == 460.*.*) ]];then
+  if [[ ($optional_driver_version -eq 460) ]];then
     if [[ ($major -eq 5) && ($minor -ge 14) ]];then
       echo "Applying 460 support patches for kernel version 5.14/5.15."
       custom="-custom"
@@ -496,7 +496,7 @@ function patch_nv() {
       $current_path/optional/*.run --apply-patch $current_path/patches/460/twelve.patch
     fi
   # Checking if the optional driver is version 510
-  elif [[ ($optional_driver_version == 510.*.*) ]];then
+  elif [[ ($optional_driver_version -eq 510) ]];then
     echo "A kernel support patch isn't currently needed for this driver version."
     echo "Would you like to auto-merge optional drivers?"
     read -p "(y/n)?" automerge_prompt_response
