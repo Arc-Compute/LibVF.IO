@@ -505,7 +505,7 @@ function patch_nv() {
       cd $current_path/optional/
       git clone --recursive https://github.com/VGPU-Community-Drivers/vGPU-Unlock-patcher
       mv *.run *-patcher/
-      cd * *-patcher/
+      cd *-patcher/
       ./patch.sh --repack general-merge
       # Cleaning up auto-generated directories
       rm -rf $current_path/optional/*-patcher/*-Linux-x86_64-*/
