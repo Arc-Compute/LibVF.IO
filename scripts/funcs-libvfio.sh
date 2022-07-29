@@ -545,9 +545,8 @@ function install_gvm() {
     # If you'd like to compile this from source you can do so using the repo below (compilation takes around 10 minutes).
     sudo mv mdev-cli /usr/bin/
     git clone https://github.com/Arc-Compute/Mdev-GPU
-    # Moving GVM/Mdev-GPU configuration files and systemd service to /etc/
+    # Copying GVM/Mdev-GPU configuration files and systemd service to /etc/
     cp -r $current_path/Mdev-GPU/etc/ /etc/
-    vendor=`lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
     if [[ (vendor == "Tenstorrent") ]];then
       # Vendor specific setup for Tenstorrent.
     elif [[ (vendor == "Intel") ]];then
@@ -574,16 +573,20 @@ function pt1_end() {
   fi
   sudo modprobe vfio
   sudo modprobe mdev
-  if ! lsmod | grep "nouveau";then
-    install_nv
-    install_gvm
-    echo "Install of Libvfio has been finalized!"
-    echo "Reboot now to enroll MOK."
-    if [ -f "$HOME/preinstall" ];then rm $HOME/preinstall;fi
+  vendor=`lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
+  if [[ (vendor == "NVIDIA") ]];then
+    if ! lsmod | grep "nouveau";then
+      install_nv
+      install_gvm
+      echo "Install of LibVF.IO has been finalized!"
+      echo "Reboot now to enroll MOK."
+      if [ -f "$HOME/preinstall" ];then rm $HOME/preinstall;fi
+    else
+      touch $HOME/preinstall
+      echo "Nouveau was found, please reboot and run ./install-libvfio.sh again, it will start from this point."
   else
-    touch $HOME/preinstall
-    echo "Nouveau was found, please reboot and run ./install-libvfio.sh again, it will start from this point."
-  fi
+    install_gvm
+    echo "Install of LibVF.IO has been finalized!"
 }
 
 function pt2_check() {
