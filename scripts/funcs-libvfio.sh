@@ -522,12 +522,12 @@ function install_nv() {
   arch_ignore_abi
   sudo modprobe vfio
   sudo modprobe mdev
-  # Generate a driver signing key
-  mkdir -p ~/.ssh/
-  openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
-  echo "The following password will need to be used in enroll MOK on your next startup."
-  sudo mokutil --import ~/.ssh/module-public.key
   if [[ ($optional_driver_version -eq 460) ]];then
+    # Generate a driver signing key
+    mkdir -p ~/.ssh/
+    openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
+    echo "The following password will need to be used in enroll MOK on your next startup."
+    sudo mokutil --import ~/.ssh/module-public.key
     echo "Installing 460."
     sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
   elif [[ ($optional_driver_version -eq 510) ]];then
@@ -563,6 +563,8 @@ function install_gvm() {
     echo "Creating mdev-post systemd service."
     systemctl enable mdev-post.service
     systemctl start mdev-post.service
+  else
+    echo "GVM/Mdev-GPU not installed."
   fi
 }
 
@@ -578,8 +580,11 @@ function pt1_end() {
   sudo modprobe mdev
   gfx_vendor=`lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
   if [[ ($gfx_vendor == "NVIDIA") ]];then
+    echo "gfx_vendor "$gfx_vendor" detected."
     if ! lsmod | grep "nouveau";then
+      echo "Installing Nvidia."
       install_nv
+      echo "Installing GVM."
       install_gvm
       echo "Install of LibVF.IO has been finalized!"
       echo "Reboot now to enroll MOK."
