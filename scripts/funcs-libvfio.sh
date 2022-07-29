@@ -536,6 +536,34 @@ function install_nv() {
   fi
 }
 
+function install_gvm() {
+  echo "Would you like to install GPU Virtual Machine (GVM) components?"
+  read -p "(y/n)?" gvm_prompt_response
+  if [[ ($gvm_prompt_response == "y") ]];then
+    wget https://github.com/Arc-Compute/Mdev-GPU/releases/download/0.1.0.0/mdev-cli
+    # Moving the mdev-cli binary into /usr/bin/
+    # If you'd like to compile this from source you can do so using the repo below (compilation takes around 10 minutes).
+    sudo mv mdev-cli /usr/bin/
+    git clone https://github.com/Arc-Compute/Mdev-GPU
+    # Moving GVM/Mdev-GPU configuration files and systemd service to /etc/
+    cp -r $current_path/Mdev-GPU/etc/ /etc/
+    vendor=`lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
+    if [[ (vendor == "Tenstorrent") ]];then
+      # Vendor specific setup for Tenstorrent.
+    elif [[ (vendor == "Intel") ]];then
+      # Vendor specific setup for Intel.
+    elif [[ (vendor == "NVIDIA") ]];then
+      # Vendor specific setup for Nvidia.
+      echo "Disabling proprietary blobs."
+      systemctl disable nvidia-vgpud.service
+      systemctl stop nvidia-vgpud.service
+    fi
+    echo "Creating mdev-post systemd service."
+    systemctl enable mdev-post.service
+    systemctl start mdev-post.service
+  fi
+}
+
 # Check if nouveau is unloaded (pc rebooted)
 # Install nvidia if nouveau is isn't loaded
 function pt1_end() {
@@ -548,6 +576,7 @@ function pt1_end() {
   sudo modprobe mdev
   if ! lsmod | grep "nouveau";then
     install_nv
+    install_gvm
     echo "Install of Libvfio has been finalized!"
     echo "Reboot now to enroll MOK."
     if [ -f "$HOME/preinstall" ];then rm $HOME/preinstall;fi
