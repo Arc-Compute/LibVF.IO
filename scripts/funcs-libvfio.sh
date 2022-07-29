@@ -450,7 +450,6 @@ function arcd_deploy() {
 function check_optional_driver() {
   cd $current_path
   echo "Checking for optional drivers."
-  ls $current_path/optional/*.run
   # Checking if the optional driver(s) exists
   if [ ! -f $current_path/optional/*.run ]; then
     echo "Optional drivers not found."
@@ -471,6 +470,11 @@ function check_k_version() {
   minor=`awk '{split($0, a, "."); print a[2]}' <<< $kernel_release`
   echo "MAJOR: $major"
   echo "MINOR: $minor"
+}
+
+function check_gfx_vendor() { 
+  # Checking GPU vendor
+  gfx_vendor=`sudo lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
 }
 
 function patch_nv() {
@@ -498,7 +502,7 @@ function patch_nv() {
   # Checking if the optional driver is version 510
   elif [[ ($optional_driver_version -eq 510) ]];then
     echo "A kernel support patch isn't currently needed for this driver version."
-    echo "Would you like to auto-merge optional drivers?"
+    echo "Would you like to auto-merge optional drivers using vGPU-Unlock-Patcher?"
     read -p "(y/n)?" automerge_prompt_response
     if [[ ($automerge_prompt_response == "y") ]];then
       echo "Cloning @Snowman auto-merge script."
@@ -534,6 +538,8 @@ function install_nv() {
     echo "Installing 510 via DKMS."
     sudo $current_path/optional/*$custom.run --dkms -q --no-x-check
   fi
+  # Cleanup
+  rm $current_path/optional/*$custom.run
 }
 
 function install_gvm() {
@@ -541,13 +547,16 @@ function install_gvm() {
   echo "Would you like to install GPU Virtual Machine (GVM) components?"
   read -p "(y/n)?" gvm_prompt_response
   if [[ ($gvm_prompt_response == "y") ]];then
+    cd $current_path
     wget "https://github.com/Arc-Compute/Mdev-GPU/releases/download/"$gvm_version_target"/mdev-cli"
+    chmod +x mdev-cli
     # Moving the mdev-cli binary into /usr/bin/
     # If you'd like to compile this from source you can do so using the repo below (compilation takes around 10 minutes).
-    sudo mv mdev-cli /usr/bin/
+    sudo mv $current_path/mdev-cli /usr/bin/mdev-cli
     git clone https://github.com/Arc-Compute/Mdev-GPU
     # Copying GVM/Mdev-GPU configuration files and systemd service to /etc/
-    cp -r $current_path/Mdev-GPU/etc/ /etc/
+    sudo cp -r $current_path/Mdev-GPU/etc/* /etc/
+    check_gfx_vendor
     echo "Graphics vendor: " $gfx_vendor
     if [[ ($gfx_vendor == "Tenstorrent") ]];then
       echo "Running vendor specific setup for Tenstorrent."
@@ -556,13 +565,13 @@ function install_gvm() {
     elif [[ ($gfx_vendor == "NVIDIA") ]];then
       echo "Running vendor specific setup for Nvidia."
       echo "Disabling proprietary blobs."
-      systemctl disable nvidia-vgpud.service
-      systemctl stop nvidia-vgpud.service
+      sudo systemctl disable nvidia-vgpud.service
+      sudo systemctl stop nvidia-vgpud.service
     fi
     echo "You can make configuration changes to GVM in /etc/gvm/"
     echo "Creating mdev-post systemd service."
-    systemctl enable mdev-post.service
-    systemctl start mdev-post.service
+    sudo systemctl enable mdev-post.service
+    rm -rf $current_path/Mdev-GPU
   else
     echo "GVM/Mdev-GPU not installed."
   fi
@@ -578,7 +587,7 @@ function pt1_end() {
   fi
   sudo modprobe vfio
   sudo modprobe mdev
-  gfx_vendor=`lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
+  check_gfx_vendor
   if [[ ($gfx_vendor == "NVIDIA") ]];then
     echo "gfx_vendor "$gfx_vendor" detected."
     if ! lsmod | grep "nouveau";then
@@ -609,7 +618,12 @@ function pt2_check() {
     rm $HOME/preinstall
     exit
   elif [ -f "$HOME/preinstall" ]; then
-    install_nv
+    check_gfx_vendor
+    echo "gfx_vendor: "$gfx_vendor
+    if [[ ($gfx_vendor == "NVIDIA") ]];then
+      install_nv
+    fi
+    install_gvm
     echo "Install of Libvfio has been finalized! Reboot is necessary to enroll MOK."
     rm $HOME/preinstall
     exit
