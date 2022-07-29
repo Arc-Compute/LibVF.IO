@@ -70,7 +70,7 @@ get_introspection
 sandbox_and_old_driver_cleanup
 
 # Create SMB resources
-create_smb
+#create_smb
 
 # Deploying arcd (libvfio component)
 arcd_deploy
