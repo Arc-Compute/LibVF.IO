@@ -52,14 +52,6 @@ PNPUtil.exe /add-driver $env:USERPROFILE\temp-install\Win10\amd64\ivshmem.inf /i
 cd $env:USERPROFILE\temp-install\
 start-process .\virtio-win-guest-tools.exe -ArgumentList "/install /passive"
 
-# Install Scream registry tweak.
-cd $env:USERPROFILE\temp-install\
-start-process .\scream-ivshmem-reg.bat
-
-# Install Scream.
-cd $env:USERPROFILE\temp-install\Install\
-start-process .\Install-x64.bat
-
 # Install Looking Glass.
 cd $env:USERPROFILE\temp-install\
 start-process .\looking-glass-host-setup.exe /S
