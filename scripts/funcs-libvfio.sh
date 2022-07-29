@@ -537,10 +537,11 @@ function install_nv() {
 }
 
 function install_gvm() {
+  gvm_version_target="0.1.0.0"
   echo "Would you like to install GPU Virtual Machine (GVM) components?"
   read -p "(y/n)?" gvm_prompt_response
   if [[ ($gvm_prompt_response == "y") ]];then
-    wget https://github.com/Arc-Compute/Mdev-GPU/releases/download/0.1.0.0/mdev-cli
+    wget "https://github.com/Arc-Compute/Mdev-GPU/releases/download/"$gvm_version_target"/mdev-cli"
     # Moving the mdev-cli binary into /usr/bin/
     # If you'd like to compile this from source you can do so using the repo below (compilation takes around 10 minutes).
     sudo mv mdev-cli /usr/bin/
@@ -558,10 +559,10 @@ function install_gvm() {
       systemctl disable nvidia-vgpud.service
       systemctl stop nvidia-vgpud.service
     fi
+    echo "You can make configuration changes to GVM in /etc/gvm/"
     echo "Creating mdev-post systemd service."
     systemctl enable mdev-post.service
     systemctl start mdev-post.service
-    echo "You can make configuration changes to GVM in /etc/gvm/"
   fi
 }
 
