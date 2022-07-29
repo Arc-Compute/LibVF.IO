@@ -547,12 +547,13 @@ function install_gvm() {
     git clone https://github.com/Arc-Compute/Mdev-GPU
     # Copying GVM/Mdev-GPU configuration files and systemd service to /etc/
     cp -r $current_path/Mdev-GPU/etc/ /etc/
-    if [[ (vendor == "Tenstorrent") ]];then
-      # Vendor specific setup for Tenstorrent.
-    elif [[ (vendor == "Intel") ]];then
-      # Vendor specific setup for Intel.
-    elif [[ (vendor == "NVIDIA") ]];then
-      # Vendor specific setup for Nvidia.
+    echo "Graphics vendor: " $gfx_vendor
+    if [[ ($gfx_vendor == "Tenstorrent") ]];then
+      echo "Running vendor specific setup for Tenstorrent."
+    elif [[ ($gfx_vendor == "Intel") ]];then
+      echo "Running vendor specific setup for Intel."
+    elif [[ ($gfx_vendor == "NVIDIA") ]];then
+      echo "Running vendor specific setup for Nvidia."
       echo "Disabling proprietary blobs."
       systemctl disable nvidia-vgpud.service
       systemctl stop nvidia-vgpud.service
@@ -560,6 +561,7 @@ function install_gvm() {
     echo "Creating mdev-post systemd service."
     systemctl enable mdev-post.service
     systemctl start mdev-post.service
+    echo "You can make configuration changes to GVM in /etc/gvm/"
   fi
 }
 
@@ -573,8 +575,8 @@ function pt1_end() {
   fi
   sudo modprobe vfio
   sudo modprobe mdev
-  vendor=`lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
-  if [[ (vendor == "NVIDIA") ]];then
+  gfx_vendor=`lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
+  if [[ ($gfx_vendor == "NVIDIA") ]];then
     if ! lsmod | grep "nouveau";then
       install_nv
       install_gvm
@@ -584,9 +586,10 @@ function pt1_end() {
     else
       touch $HOME/preinstall
       echo "Nouveau was found, please reboot and run ./install-libvfio.sh again, it will start from this point."
+    fi
   else
     install_gvm
-    echo "Install of LibVF.IO has been finalized!"
+  fi
 }
 
 function pt2_check() {
