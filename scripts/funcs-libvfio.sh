@@ -448,11 +448,17 @@ function arcd_deploy() {
 }
 
 function check_optional_driver() {
+  cd $current_path
+  echo "Checking for optional drivers."
+  # Checking if the optional driver(s) exists
   if [ ! -f $current_path/optional/*.run ]; then
     echo "Optional drivers not found."
     exit 0
   else
+    echo "Optional drivers found."
     chmod 755 $current_path/optional/*.run
+    optional_driver_version=`ls $current_path/optional/*.run | awk '{split($0, a, "x86_64-"); print a[2]}' | awk '{split($0, a, "."); print a[1]}' | awk 'NR==1 {print; exit}'`
+    echo "optional driver version: " $optional_driver_version
   fi
 }
 
@@ -466,6 +472,11 @@ function check_k_version() {
   echo "MINOR: $minor"
 }
 
+function check_gfx_vendor() { 
+  # Checking GPU vendor
+  gfx_vendor=`sudo lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
+}
+
 function patch_nv() {
   # Patch NV driver according to kernel version
   check_k_version
@@ -473,18 +484,39 @@ function patch_nv() {
   cd $current_path
   cd ./optional #in order for uodated driver to be placed in 'optional' folder
   custom=""
-  if [[ ($major -eq 5) && ($minor -ge 14) ]];then
-    echo "Modifying the driver to have the version 5.14/15 patches."
-    custom="-custom"
-    $current_path/optional/*.run --apply-patch $current_path/patches/fourteen.patch
-  elif [[ ($major -eq 5) && ($minor -eq 13) ]];then
-    echo "Modifying the driver to have the version 5.13 patches."
-    custom="-custom"
-    $current_path/optional/*.run --apply-patch $current_path/patches/thirteen.patch 
-  elif [[ ($major -eq 5) && ($minor -ge 12) ]];then
-    echo "Modifying the driver to have the version 5.12 patches."
-    custom="-custom"
-    $current_path/optional/*.run --apply-patch $current_path/patches/twelve.patch
+  # Checking if the optional driver is version 460
+  if [[ ($optional_driver_version -eq 460) ]];then
+    if [[ ($major -eq 5) && ($minor -ge 14) ]];then
+      echo "Applying 460 support patches for kernel version 5.14/5.15."
+      custom="-custom"
+      $current_path/optional/*.run --apply-patch $current_path/patches/460/fourteen.patch
+    elif [[ ($major -eq 5) && ($minor -eq 13) ]];then
+      echo "Applying 460 support patches for kernel version 5.13."
+      custom="-custom"
+      $current_path/optional/*.run --apply-patch $current_path/patches/460/thirteen.patch 
+    elif [[ ($major -eq 5) && ($minor -ge 12) ]];then
+      echo "Applying 460 support patches for kernel version 5.12."
+      custom="-custom"
+      $current_path/optional/*.run --apply-patch $current_path/patches/460/twelve.patch
+    fi
+  # Checking if the optional driver is version 510
+  elif [[ ($optional_driver_version -eq 510) ]];then
+    echo "A kernel support patch isn't currently needed for this driver version."
+    echo "Would you like to auto-merge optional drivers using vGPU-Unlock-Patcher?"
+    read -p "(y/n)?" automerge_prompt_response
+    if [[ ($automerge_prompt_response == "y") ]];then
+      echo "Cloning @Snowman auto-merge script."
+      cd $current_path/optional/
+      git clone --recursive https://github.com/VGPU-Community-Drivers/vGPU-Unlock-patcher
+      mv *.run *-patcher/
+      cd *-patcher/
+      ./patch.sh --repack general-merge
+      # Cleaning up auto-generated directories
+      rm -rf $current_path/optional/*-patcher/*-Linux-x86_64-*/
+      cd ..
+      mv *-patcher/*merged-patched.run ./
+      rm -rf *-patcher/
+    fi
   fi
   cd $current_path
 }
@@ -494,12 +526,55 @@ function install_nv() {
   arch_ignore_abi
   sudo modprobe vfio
   sudo modprobe mdev
-  # Generate a driver signing key
-  mkdir -p ~/.ssh/
-  openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
-  echo "The following password will need to be used in enroll MOK on your next startup."
-  sudo mokutil --import ~/.ssh/module-public.key
-  sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
+  if [[ ($optional_driver_version -eq 460) ]];then
+    # Generate a driver signing key
+    mkdir -p ~/.ssh/
+    openssl req -new -x509 -newkey rsa:4096 -keyout ~/.ssh/module-private.key -outform DER -out ~/.ssh/module-public.key -nodes -days 3650 -subj "/CN=kernel-module"
+    echo "The following password will need to be used in enroll MOK on your next startup."
+    sudo mokutil --import ~/.ssh/module-public.key
+    echo "Installing 460."
+    sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
+  elif [[ ($optional_driver_version -eq 510) ]];then
+    echo "Installing 510 via DKMS."
+    sudo $current_path/optional/*$custom.run --dkms -q --no-x-check
+  fi
+  # Cleanup
+  rm $current_path/optional/*$custom.run
+}
+
+function install_gvm() {
+  gvm_version_target="0.1.0.0"
+  echo "Would you like to install GPU Virtual Machine (GVM) components?"
+  read -p "(y/n)?" gvm_prompt_response
+  if [[ ($gvm_prompt_response == "y") ]];then
+    cd $current_path
+    wget "https://github.com/Arc-Compute/Mdev-GPU/releases/download/"$gvm_version_target"/mdev-cli"
+    chmod +x mdev-cli
+    # Moving the mdev-cli binary into /usr/bin/
+    # If you'd like to compile this from source you can do so using the repo below (compilation takes around 10 minutes).
+    sudo mv $current_path/mdev-cli /usr/bin/mdev-cli
+    git clone https://github.com/Arc-Compute/Mdev-GPU
+    # Copying GVM/Mdev-GPU configuration files and systemd service to /etc/
+    sudo cp -r $current_path/Mdev-GPU/etc/* /etc/
+    check_gfx_vendor
+    echo "Graphics vendor: " $gfx_vendor
+    if [[ ($gfx_vendor == "Tenstorrent") ]];then
+      echo "Running vendor specific setup for Tenstorrent."
+    elif [[ ($gfx_vendor == "Intel") ]];then
+      echo "Running vendor specific setup for Intel."
+    elif [[ ($gfx_vendor == "NVIDIA") ]];then
+      echo "Running vendor specific setup for Nvidia."
+      echo "Disabling proprietary blobs."
+      sudo systemctl disable nvidia-vgpud.service
+      sudo systemctl stop nvidia-vgpud.service
+    fi
+    echo "You can make configuration changes to GVM in /etc/gvm/"
+    echo "Creating mdev-post systemd service."
+    sudo systemctl enable mdev-post.service
+    rm -rf $current_path/Mdev-GPU
+  else
+    echo "GVM/Mdev-GPU not installed."
+  fi
 }
 
 # Check if nouveau is unloaded (pc rebooted)
@@ -512,14 +587,23 @@ function pt1_end() {
   fi
   sudo modprobe vfio
   sudo modprobe mdev
-  if ! lsmod | grep "nouveau";then
-    install_nv
-    echo "Install of Libvfio has been finalized!"
-    echo "Reboot now to enroll MOK."
-    if [ -f "$HOME/preinstall" ];then rm $HOME/preinstall;fi
+  check_gfx_vendor
+  if [[ ($gfx_vendor == "NVIDIA") ]];then
+    echo "gfx_vendor "$gfx_vendor" detected."
+    if ! lsmod | grep "nouveau";then
+      echo "Installing Nvidia."
+      install_nv
+      echo "Installing GVM."
+      install_gvm
+      echo "Install of LibVF.IO has been finalized!"
+      echo "Reboot now to enroll MOK."
+      if [ -f "$HOME/preinstall" ];then rm $HOME/preinstall;fi
+    else
+      touch $HOME/preinstall
+      echo "Nouveau was found, please reboot and run ./install-libvfio.sh again, it will start from this point."
+    fi
   else
-    touch $HOME/preinstall
-    echo "Nouveau was found, please reboot and run ./install-libvfio.sh again, it will start from this point."
+    install_gvm
   fi
 }
 
@@ -534,7 +618,12 @@ function pt2_check() {
     rm $HOME/preinstall
     exit
   elif [ -f "$HOME/preinstall" ]; then
-    install_nv
+    check_gfx_vendor
+    echo "gfx_vendor: "$gfx_vendor
+    if [[ ($gfx_vendor == "NVIDIA") ]];then
+      install_nv
+    fi
+    install_gvm
     echo "Install of Libvfio has been finalized! Reboot is necessary to enroll MOK."
     rm $HOME/preinstall
     exit
