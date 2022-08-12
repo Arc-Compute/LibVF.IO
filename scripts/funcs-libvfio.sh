@@ -567,6 +567,7 @@ function install_gvm() {
       echo "Disabling proprietary blobs."
       sudo systemctl disable nvidia-vgpud.service
       sudo systemctl stop nvidia-vgpud.service
+      sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vGeneric.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
     fi
     echo "You can make configuration changes to GVM in /etc/gvm/"
     echo "Creating mdev-post systemd service."
