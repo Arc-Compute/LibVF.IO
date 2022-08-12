@@ -28,8 +28,11 @@ user_flags "$@"
 check_distro
 
 echo
-echo "Running LibVF.IO install script for $distro distribution"
+echo "Installing standalone GVM components for $distro distribution"
 echo
+
+# Checks if first stage of install script is complete
+pt2_check
 
 # Updates packages
 distro_update
