@@ -510,11 +510,12 @@ function patch_nv() {
       git clone --recursive https://github.com/VGPU-Community-Drivers/vGPU-Unlock-patcher
       mv *.run *-patcher/
       cd *-patcher/
-      ./patch.sh --repack general-merge
+      ./patch.sh general-merge
+      # Move resulting merged driver up a directory
+      mv *-patched* ../
+      cd ..
       # Cleaning up auto-generated directories
       rm -rf $current_path/optional/*-patcher/*-Linux-x86_64-*/
-      cd ..
-      mv *-patcher/*merged-patched.run ./
       rm -rf *-patcher/
     fi
   fi
@@ -536,10 +537,13 @@ function install_nv() {
     sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
   elif [[ ($optional_driver_version -eq 510) ]];then
     echo "Installing 510 via DKMS."
-    sudo $current_path/optional/*$custom.run --dkms -q --no-x-check
+    sudo $current_path/optional/*patched*/nvidia-installer --dkms -q --no-x-check
   fi
   # Cleanup
+  echo "Cleaning .run files generated during merge/install if they exist."
   rm $current_path/optional/*$custom.run
+  echo "Cleaning directories generated during merge/install if they exist."
+  rm -rf $current_path/optional/*patched*/
 }
 
 function install_gvm() {
