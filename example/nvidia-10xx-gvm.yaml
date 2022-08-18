@@ -43,10 +43,7 @@ gpus:
 nics: []
 root: ~/.local/libvf.io
 sudo: false
-commands: 
-  - 
-    arg: "-set"
-    values: ["device.hostdev0.x-pci-device-id=0x1B30"]
+commands: []
 startupCommands: []
 teardownCommands: []
 installCommands: []
