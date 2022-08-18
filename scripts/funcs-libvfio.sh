@@ -475,6 +475,7 @@ function check_k_version() {
 function check_gfx_vendor() { 
   # Checking GPU vendor
   gfx_vendor=`sudo lshw -C display | grep 'vendor' | awk '{split($0, a, " "); print a[2]}'`
+  gfx_sku=`sudo lshw -C display | grep 'product' | awk '{split($0, a, " "); print a[2]}' | sed 's/EFI//'`
 }
 
 function patch_nv() {
@@ -571,7 +572,25 @@ function install_gvm() {
       echo "Disabling proprietary blobs."
       sudo systemctl disable nvidia-vgpud.service
       sudo systemctl stop nvidia-vgpud.service
-      sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vGeneric.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
+      # Checking if an architecture specific profile is available
+      echo "SKU: " $gfx_sku
+      if [[ ($gfx_sku == *"GP"*) ]];then
+        # Pascal
+        echo "Installing " $gfx_sku " Pascal architecture configuration in GVM."
+        sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vPascal.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
+      elif [[ ($gfx_sku == *"TU"*) ]];then
+        # Turing (This is a generic profile as Turing vDevIDs haven't yet been tested)
+        echo "Installing " $gfx_sku " Turing architecture configuration in GVM."
+        sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vTuring.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
+      elif [[ ($gfx_sku == *"GA"*) ]];then
+        # Ampere
+        echo "Installing " $gfx_sku " Ampere architecture configuration in GVM."
+        sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vAmpere.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
+      else
+        # Generic (used if the GPU architecture has not been detected)
+        echo "Installing Generic architecture configuration in GVM."
+        sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vGeneric.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
+      fi
     fi
     echo "You can make configuration changes to GVM in /etc/gvm/"
     echo "Creating mdev-post systemd service."
