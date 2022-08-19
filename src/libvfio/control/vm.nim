@@ -40,13 +40,20 @@ proc realCleanup(vm: VM) =
     let
       lockBase = "/tmp" / "locks" / parentDir(parentDir(vfio.base))
       lockPath = lockBase / "lock"
+    var unbound: bool
 
     createDir(lockBase)
 
-    while not bindVf(lockPath, vm.uuid, vfio, false, vm.monad):
-      discard
+    for c in countup(0,20):
+      if bindVf(lockPath, vm.uuid, vfio, false, vm.monad):
+        unbound = true
+        break
+      else:
+        sleep(1000)
 
-    info(&"Unlocked: {vfio.deviceName}")
+    if unbound: info(&"Unlocked: {vfio.deviceName}")
+    else: warn(&"TIMEOUT unlocking: {vfio.deviceName}. ",
+                "May already be unbound")
 
   # Unlock all locked MDevs
   for mdev in vm.mdevs:
