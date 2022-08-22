@@ -567,7 +567,7 @@ function install_gvm() {
       echo "Running vendor specific setup for Tenstorrent."
     elif [[ ($gfx_vendor == "Intel") ]];then
       echo "Running vendor specific setup for Intel."
-    elif [[ ($gfx_vendor == "NVIDIA") ]];then
+    elif [[ ($gfx_vendor == *"NVIDIA"*) ]];then
       echo "Running vendor specific setup for Nvidia."
       echo "Disabling proprietary blobs."
       sudo systemctl disable nvidia-vgpud.service
@@ -612,7 +612,7 @@ function pt1_end() {
   sudo modprobe vfio
   sudo modprobe mdev
   check_gfx_vendor
-  if [[ ($gfx_vendor == "NVIDIA") ]];then
+  if [[ ($gfx_vendor == *"NVIDIA"*) ]];then
     echo "gfx_vendor "$gfx_vendor" detected."
     if ! lsmod | grep "nouveau";then
       echo "Installing Nvidia."
@@ -644,7 +644,7 @@ function pt2_check() {
   elif [ -f "$HOME/preinstall" ]; then
     check_gfx_vendor
     echo "gfx_vendor: "$gfx_vendor
-    if [[ ($gfx_vendor == "NVIDIA") ]];then
+    if [[ ($gfx_vendor == *"NVIDIA"*) ]];then
       install_nv
     fi
     install_gvm
