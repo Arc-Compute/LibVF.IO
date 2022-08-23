@@ -139,7 +139,19 @@ proc createSocket*(sockPath: string): Option[AsyncSocket] =
 
   var sock = newAsyncSocket(AF_UNIX, SOCK_STREAM, IPPROTO_IP)
   info("Connecting to the socket")
-  waitFor(connectUnix(sock, sockPath))
+
+  ## Try to connect to socket until timeout
+  let limit = 40
+  for i in countup(0, limit):
+    try:
+      waitFor(connectUnix(sock, sockPath))
+      break
+    except:
+      sleep(375)
+      debug("Issue with socket. Retrying")
+      if i == limit:
+        warn("Issue with creating socket. Abort.")
+        return
 
   let
     line = waitFor(recvLine(sock))
