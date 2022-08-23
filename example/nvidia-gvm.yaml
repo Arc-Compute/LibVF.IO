@@ -38,8 +38,6 @@ gpus:
       parentPort: !!null ~
     - 
       devId: hostdev0
-    - 
-      suffix: Q
 nics: []
 root: ~/.local/libvf.io
 sudo: false

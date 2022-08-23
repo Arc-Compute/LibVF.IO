@@ -27,7 +27,7 @@ cpus:
 gpus: 
   - 
     -
-      gpuType: "sriovdev"
+      gpuType: sriovdev
     - 
       acceptableTypes: [S7150]
     - 

@@ -31,15 +31,13 @@ gpus:
     -
       minVRam: 8000
     -
-      gpuType: "sysfsdev"
+      gpuType: sysfsdev
     - 
       parentPort: !!null ~
     - 
       mdevType: "i915-GVTg_V4_1"
     - 
-      devId: "hostdev0"
-    -
-      suffix: "Q"
+      devId: hostdev0
 nics: []
 root: ~/.local/libvf.io
 sudo: false

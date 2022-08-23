@@ -34,17 +34,17 @@ type
     rgMdevGpu = "sysfsdev"           ## VFIO-Mdev based mediated device functionality.
 
   RequestedGpu* = object             ## Object to request a GPU.
-    maxVRam*: int                    ## Maximum acceptable vRAM.
-    minVRam*: int                    ## Minimal acceptable vRAM.
+    maxVRam*          {.defaultVal: 2000.}: int                       ## Maximum acceptable vRAM.
+    minVRam*          {.defaultVal: 1000.}: int                       ## Minimal acceptable vRAM.
     case gpuType*: RequestedGpuType
     of rgSRIOVGpu:
       acceptableTypes*: seq[string]  ## Possible types of GPUs we accept
     of rgMdevGpu:
       mdevType*: string              ## Wildcard that needs to appear in the type.
       parentPort*: Option[string]    ## Optional parent port override.
-      devId*: string                 ## Name of the device for additional commands
+      devId*          {.defaultVal: "hostdev0".}: string              ## Name of the device for additional commands
                                      ##  in the command argument.
-      suffix*: string                ## Suffix for end of the name.
+      suffix*         {.defaultVal: "".}: string                      ## Suffix for end of the name.
 
   RequestedNet* = object             ## Object to request a network NIC.
     mac*: string                     ## MAC address for the requested NIC.
