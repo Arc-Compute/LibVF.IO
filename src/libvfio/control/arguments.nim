@@ -209,7 +209,7 @@ func mdevArgs*(device: Mdev): seq[string] =
   const mdevBase = "/sys/bus/mdev/devices"
   result &= "-device"
   result &=
-        &"vfio-pci,id={device.devId},sysfsdev={mdevBase}/{device.uuid},display=off"
+        &"vfio-pci,id={device.devId},sysfsdev={mdevBase}/{device.uuid},display=off,x-enable-migration=on"
 
 func additionalArgs*(args: QemuArgs): seq[string] =
   ## additionalArgs - Qemu arguments for additional commands.
