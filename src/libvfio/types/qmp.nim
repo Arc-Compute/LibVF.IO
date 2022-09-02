@@ -18,7 +18,14 @@ type
   QmpCommandEnum* = enum                      ## Enumeration for QMP Commands.
     qcQueryCapabilities = "qmp_capabilities", ## Query the capabilities.
     qcShutdown = "system_powerdown",          ## Issues a shutdown command.
-    qcSendKey = "send-key"                    ## Sends a key to QMP.
+    qcSendKey = "send-key",                   ## Sends a key to QMP.
+    qcSaveVM = "savevm",                      ## Issues a save VM command.
+    qcLoadVM = "loadvm",                      ## Issues a load VM command.
+    qcDelVM = "delvm",                        ## Issues a del VM command.
+    qcSystemWakeup = "system_wakeup",         ## Issues a system wakeup command.
+    qcStop = "stop",                          ## Issues a stop command.
+    qcCont = "cont",                          ## Issues a cont command.
+    qcSystemReset = "system_reset"            ## Issues a system reset command.
 
   QmpResponseEnum* = enum                     ## Different response from QMP.
     qrInvalid = "INVALID",                    ## Not a real response.
