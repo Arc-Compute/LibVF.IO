@@ -548,19 +548,24 @@ function install_nv() {
 }
 
 function install_gvm() {
-  gvm_version_target="0.1.0.0"
-  echo "Would you like to install GPU Virtual Machine (GVM) components?"
+  echo "Would you like to install GPU Virtual Machine (GVM) user components?"
   read -p "(y/n)?" gvm_prompt_response
   if [[ ($gvm_prompt_response == "y") ]];then
     cd $current_path
-    wget "https://github.com/Arc-Compute/Mdev-GPU/releases/download/"$gvm_version_target"/mdev-cli"
-    chmod +x mdev-cli
-    # Moving the mdev-cli binary into /usr/bin/
-    # If you'd like to compile this from source you can do so using the repo below (compilation takes around 10 minutes).
-    sudo mv $current_path/mdev-cli /usr/bin/mdev-cli
-    git clone https://github.com/Arc-Compute/Mdev-GPU
+    git clone https://github.com/OpenMdev/GVM-user
+    cd GVM-user
+    # Compiling GVM-user
+    make
+    cd ..
+    # Setting Unix execution permissions on gvm-cli and gvm-mgr
+    sudo chmod +x $current_path/GVM-user/bin/gvm-cli
+    sudo chmod +x $current_path/GVM-user/bin/gvm-mgr
+    # Moving the GVM-user bins into /usr/bin/
+    sudo mv $current_path/GVM-user/bin/gvm-cli /usr/bin/gvm-cli
+    sudo mv $current_path/GVM-user/bin/gvm-mgr /usr/bin/gvm-mgr
+
     # Copying GVM/Mdev-GPU configuration files and systemd service to /etc/
-    sudo cp -r $current_path/Mdev-GPU/etc/* /etc/
+    sudo cp -r $current_path/GVM-user/etc/* /etc/
     check_gfx_vendor
     echo "Graphics vendor: " $gfx_vendor
     if [[ ($gfx_vendor == "Tenstorrent") ]];then
@@ -577,27 +582,27 @@ function install_gvm() {
       if [[ ($gfx_sku == *"GP"*) ]];then
         # Pascal
         echo "Installing " $gfx_sku " Pascal architecture configuration in GVM."
-        sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vPascal.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
+        sudo cp /etc/gvm/user/Nvidia/Open_vPascal.toml /etc/gvm/user/generate-vgpu-types.toml
       elif [[ ($gfx_sku == *"TU"*) ]];then
         # Turing (This is a generic profile as Turing vDevIDs haven't yet been tested)
         echo "Installing " $gfx_sku " Turing architecture configuration in GVM."
-        sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vTuring.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
+        sudo cp /etc/gvm/user/Nvidia/Open_vTuring.toml /etc/gvm/user/generate-vgpu-types.toml
       elif [[ ($gfx_sku == *"GA"*) ]];then
         # Ampere
         echo "Installing " $gfx_sku " Ampere architecture configuration in GVM."
-        sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vAmpere.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
+        sudo cp /etc/gvm/user/Nvidia/Open_vAmpere.toml /etc/gvm/user/generate-vgpu-types.toml
       else
         # Generic (used if the GPU architecture has not been detected)
         echo "Installing Generic architecture configuration in GVM."
-        sudo cp /etc/gvm/mdev-gpu/Nvidia/Open_vGeneric.yaml /etc/gvm/mdev-gpu/generate-vgpu-types.yaml
+        sudo cp /etc/gvm/user/Nvidia/Open_vGeneric.toml /etc/gvm/user/generate-vgpu-types.toml
       fi
     fi
     echo "You can make configuration changes to GVM in /etc/gvm/"
     echo "Creating mdev-post systemd service."
-    sudo systemctl enable mdev-post.service
-    rm -rf $current_path/Mdev-GPU
+    sudo systemctl enable gvm-post.service
+    rm -rf $current_path/GVM-user
   else
-    echo "GVM/Mdev-GPU not installed."
+    echo "GVM-user not installed."
   fi
 }
 
