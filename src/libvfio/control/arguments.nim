@@ -209,7 +209,8 @@ func mdevArgs*(device: Mdev): seq[string] =
   const mdevBase = "/sys/bus/mdev/devices"
   result &= "-device"
   result &=
-        &"vfio-pci,id={device.devId},sysfsdev={mdevBase}/{device.uuid},display=off,x-enable-migration=on"
+        &"vfio-pci,id={device.devId},sysfsdev={mdevBase}/{device.uuid},display=off" #,x-enable-migration=on"
+        # x,enable-migration=on is disabled due to breakage on older QEMU versions.
 
 func additionalArgs*(args: QemuArgs): seq[string] =
   ## additionalArgs - Qemu arguments for additional commands.
