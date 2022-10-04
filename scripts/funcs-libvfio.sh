@@ -414,7 +414,9 @@ function sandbox_and_old_driver_cleanup() {
   set_sandbox_dir
   cd $current_path
   rm -rf $compile_sandbox
-  rm ./optional/*custom.run
+  if [ -f "./optional/*custom.run" ]; then
+    rm ./optional/*custom.run
+  fi
 
 }
 
@@ -505,7 +507,7 @@ function patch_nv() {
     echo "A kernel support patch isn't currently needed for this driver version."
     echo "Would you like to auto-merge optional drivers using vGPU-Unlock-Patcher?"
     read -p "(y/n)?" automerge_prompt_response
-    if [[ ($automerge_prompt_response == "y") ]];then
+    if [ $automerge_prompt_response == "y" ] || [ $automerge_prompt_response == "Y" ];then
       echo "Cloning @Snowman auto-merge script."
       cd $current_path/optional/
       git clone --recursive https://github.com/VGPU-Community-Drivers/vGPU-Unlock-patcher
@@ -550,7 +552,7 @@ function install_nv() {
 function install_gvm() {
   echo "Would you like to install GPU Virtual Machine (GVM) user components?"
   read -p "(y/n)?" gvm_prompt_response
-  if [[ ($gvm_prompt_response == "y") ]];then
+  if [ $gvm_prompt_response == "y" ] || [ $gvm_prompt_response == "Y" ];then
     cd $current_path
     git clone https://github.com/OpenMdev/GVM-user
     cd GVM-user
@@ -577,14 +579,34 @@ function install_gvm() {
       echo "Disabling proprietary blobs."
       sudo systemctl disable nvidia-vgpud.service
       sudo systemctl stop nvidia-vgpud.service
-      # Checking if an architecture specific profile is available
+      # Checking if an architecture specific profile is available.
       echo "SKU: " $gfx_sku
+
+      # If a GPU architecture is not automatically detected ask the user to select one manually.
+      if [ $gfx_sku == *"GP"* ] || [ $gfx_sku == *"TU"* ] || [ $gfx_sku == *"GA"* ];then
+        echo "A GPU architecture could not be detected during installation."
+        echo "Please choose a GPU architecture:"
+        echo "1) Pascal"
+        echo "2) Turing"
+        echo "3) Ampere"
+        read -p "Architecture choice: " gvm_prompt_architecture
+        if [ $gvm_prompt_architecture == "1" ]; then
+          $gfx_sku = "GP"
+        elif [ $gvm_prompt_architecture == "2" ]; then
+          $gfx_sku = "TU"
+        elif [ $gvm_prompt_architecture == "3" ]; then
+          $gfx_sku = "GA"
+        else
+          echo "No architecture was chosen."
+        fi
+      fi
+      # Selecting an architecture specific profile.
       if [[ ($gfx_sku == *"GP"*) ]];then
         # Pascal
         echo "Installing " $gfx_sku " Pascal architecture configuration in GVM."
         sudo cp /etc/gvm/user/Nvidia/Open_vPascal.toml /etc/gvm/user/generate-vgpu-types.toml
       elif [[ ($gfx_sku == *"TU"*) ]];then
-        # Turing (This is a generic profile as Turing vDevIDs haven't yet been tested)
+        # Turing
         echo "Installing " $gfx_sku " Turing architecture configuration in GVM."
         sudo cp /etc/gvm/user/Nvidia/Open_vTuring.toml /etc/gvm/user/generate-vgpu-types.toml
       elif [[ ($gfx_sku == *"GA"*) ]];then
@@ -592,8 +614,9 @@ function install_gvm() {
         echo "Installing " $gfx_sku " Ampere architecture configuration in GVM."
         sudo cp /etc/gvm/user/Nvidia/Open_vAmpere.toml /etc/gvm/user/generate-vgpu-types.toml
       else
-        # Generic (used if the GPU architecture has not been detected)
-        echo "Installing Generic architecture configuration in GVM."
+        # Generic (used if the GPU architecture has not been detected automatically and the user did not manually select one)
+        echo "No architecture specific profile was selected for your device. Please configure v_dev_id values in /etc/gvm/user/generate-vgpu-types.toml."
+        echo "Reference v_dev_id values can be found in /etc/gvm/user/vendor/Open_vArchitecture.toml."
         sudo cp /etc/gvm/user/Nvidia/Open_vGeneric.toml /etc/gvm/user/generate-vgpu-types.toml
       fi
     fi
@@ -604,6 +627,17 @@ function install_gvm() {
   else
     echo "GVM-user not installed."
   fi
+}
+
+# Remove GVM components from the computer
+function rm_gvm(){
+  # Remove GVM-user bins
+  sudo rm /usr/bin/gvm-cli
+  sudo rm /usr/bin/gvm-mgr
+  # Remove GVM configs
+  sudo rm -rf /etc/gvm/
+  # Remove GVM systemd services
+  sudo rm /etc/systemd/system/gvm-post.service
 }
 
 # Check if nouveau is unloaded (pc rebooted)
