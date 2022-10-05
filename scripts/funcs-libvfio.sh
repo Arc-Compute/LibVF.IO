@@ -453,7 +453,7 @@ function check_optional_driver() {
   cd $current_path
   echo "Checking for optional drivers."
   # Checking if the optional driver(s) exists
-  if [ ! -f $current_path/optional/*.run ]; then
+  if [ ! -f $current_path/optional/*.run ]; then # Bug here (bash complains - [: too many arguments)
     echo "Optional drivers not found."
     exit 0
   else
@@ -552,7 +552,7 @@ function install_nv() {
 function install_gvm() {
   echo "Would you like to install GPU Virtual Machine (GVM) user components?"
   read -p "(y/n)?" gvm_prompt_response
-  if [ $gvm_prompt_response == "y" ] || [ $gvm_prompt_response == "Y" ];then
+  if [ $gvm_prompt_response == "y"  ] || [ $gvm_prompt_response == "Y" ];then
     cd $current_path
     git clone https://github.com/OpenMdev/GVM-user
     cd GVM-user
@@ -581,9 +581,8 @@ function install_gvm() {
       sudo systemctl stop nvidia-vgpud.service
       # Checking if an architecture specific profile is available.
       echo "SKU: " $gfx_sku
-
       # If a GPU architecture is not automatically detected ask the user to select one manually.
-      if [ $gfx_sku == *"GP"* ] || [ $gfx_sku == *"TU"* ] || [ $gfx_sku == *"GA"* ];then
+      if [[ $gfx_sku != *"GP"* && $gfx_sku != *"TU"* && $gfx_sku != *"GA"* ]];then
         echo "A GPU architecture could not be detected during installation."
         echo "Please choose a GPU architecture:"
         echo "1) Pascal"
@@ -591,11 +590,11 @@ function install_gvm() {
         echo "3) Ampere"
         read -p "Architecture choice: " gvm_prompt_architecture
         if [ $gvm_prompt_architecture == "1" ]; then
-          $gfx_sku = "GP"
+          gfx_sku='GP'
         elif [ $gvm_prompt_architecture == "2" ]; then
-          $gfx_sku = "TU"
+          gfx_sku='TU'
         elif [ $gvm_prompt_architecture == "3" ]; then
-          $gfx_sku = "GA"
+          gfx_sku='GA'
         else
           echo "No architecture was chosen."
         fi
