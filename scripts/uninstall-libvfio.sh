@@ -21,7 +21,7 @@ echo Running uninstall script for $distro distribution.
 echo
 
 #KVM Group
-read -p "Remove $USER from kvm group? (y or n): " a_kvm
+read -p "Remove $USER from KVM group? (y or n): " a_kvm
 if [[ $a_kvm == "y" ]];then
   rm_kvm_group
   echo done
@@ -31,16 +31,28 @@ else
   echo
 fi
 
-#SMB Removal
-read -p "Remove Samba share? (y or n): " a_smb
-if [[ $a_smb == "y" ]];then
-  rm_smb
+#KVM Group
+read -p "Remove GVM-user components? (y or n): " a_gvm
+if [[ $a_gvm == "y" ]];then
+  rm_gvm
   echo done
   echo
 else
   echo "ok, so no."
   echo
 fi
+
+
+#SMB Removal
+#read -p "Remove Samba share? (y or n): " a_smb
+#if [[ $a_smb == "y" ]];then
+#  rm_smb
+#  echo done
+#  echo
+#else
+#  echo "ok, so no."
+#  echo
+#fi
 
 #Dependency Packages
 # read -p "Remove installed libvfio $distro dependencies? (y or n): " a_depen
