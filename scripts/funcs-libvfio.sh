@@ -354,22 +354,6 @@ function install_lookingglass() {
   cd $current_path
 }
 
-function get_scream() {
-  if [ $lookingglass_install == false ]; then
-    return
-  fi
-  set_sandbox_dir
-  # Download Scream sources
-  git clone https://github.com/duncanthrax/scream/
-  cd scream/Receivers/unix
-  # Compile & install scream sources
-  mkdir build && cd build
-  cmake ..
-  make
-  sudo make install
-  cd $current_path
-}
-
 function get_introspection() {
   if [ $lookingglass_install == false ]; then
     return
@@ -380,7 +364,6 @@ function get_introspection() {
   mkdir -p $HOME/.local/libvf.io/introspection-installations
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/upstream-virtio/virtio-win10-prewhql-0.1-161.zip
   wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win-guest-tools.exe
-  wget https://github.com/duncanthrax/scream/releases/download/3.8/Scream3.8.zip
   # Copy optional guest files for packaging in the introspection ROM.
   cp $current_path/optional/guest/* ./
   cp $current_path/scripts/win-guest-install/* ./
@@ -388,7 +371,6 @@ function get_introspection() {
   # Use the Looking Glass Host bin rather than the one we compile ourselves.
   wget -O looking-glass-host.zip https://looking-glass.io/artifact/B6-rc1/host
   unzip looking-glass-host.zip
-  echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
   wget -O adksetup.exe "https://go.microsoft.com/fwlink/?linkid=2120254"
   cp $current_path/scripts/win-guest-install/*.ps1 .
   cp $current_path/scripts/win-guest-install/*.bat .
@@ -397,7 +379,6 @@ function get_introspection() {
   mkisofs -A introspection-installations.rom -l -allow-leading-dots -allow-lowercase -allow-multidot -relaxed-filenames -d -D -o ./introspection-installations.rom introspection-installations
   mkdir -p ~/.config/arc/
   cp introspection-installations.rom ~/.config/arc/
-  rm -rf $HOME/.local/libvf.io/introspection-installations/scream/.git/
   cp -r $HOME/.local/libvf.io/introspection-installations/ ~/.config/arc/
   cp $current_path/conf/smb.conf ~/.config/arc/
   cd $current_path

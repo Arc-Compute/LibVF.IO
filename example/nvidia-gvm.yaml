@@ -27,10 +27,6 @@ cpus:
 gpus: 
   - 
     - 
-      maxVRam: 2000
-    - 
-      minVRam: 1000
-    - 
       gpuType: sysfsdev
     - 
       mdevType: "nvidia-1"

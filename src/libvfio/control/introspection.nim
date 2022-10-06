@@ -24,7 +24,7 @@ func getIntrospections*(cfg: Config, uuid: string,
   if not install:
     case cfg.introspect
     of isLookingGlass:
-      result = @["/dev/shm/kvmfr-" & uuid, "/dev/shm/kvmsr-" & uuid]
+      result = @["/dev/shm/kvmfr-" & uuid]
     else: discard
 
 proc lookingGlassIntrospect(spicePort: int, introspections: seq[string], uuid: string) =
@@ -41,16 +41,9 @@ proc lookingGlassIntrospect(spicePort: int, introspections: seq[string], uuid: s
       args: @[
         "-f", introspections[0], "-a", "yes", "egl:scale", "1", "-m", "58", "-p", $spicePort,
         "input:rawMouse", "yes", "input:captureOnly", "yes", "spice:captureOnStart", "yes",
-        "win:title=" & "Looking Glass + LibVF.IO (CapsLock toggles input | Hold CapsLock for menu) UUID: " & uuid
+        "win:title=" & "Looking Glass & LibVF.IO (CapsLock toggles input | Hold CapsLock for menu) VM UUID: " & uuid
       ]
     )
-    screamArgs = Args(
-      exec: "/usr/local/bin/scream",
-      args: @[
-        "-m", introspections[1]
-      ]
-    )
-
 
   # Fork to spawn up the introspection client.
   let forkRet = fork()
@@ -67,15 +60,9 @@ proc lookingGlassIntrospect(spicePort: int, introspections: seq[string], uuid: s
       args=lookingGlassArgs.args,
       options={poEchoCmd, poParentStreams}
     )
-    screamPid = startProcess(
-      screamArgs.exec,
-      args=screamArgs.args,
-      options={poEchoCmd, poParentStreams}
-    )
 
   # This allows us to potentially expend this introspection.
   discard waitForExit(lookingGlassPid)
-  terminate(screamPid)
   quit(0)
 
 proc realIntrospect*(cfg: Config, intro: IntrospectEnum, introspections: seq[string],

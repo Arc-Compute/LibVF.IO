@@ -338,14 +338,6 @@ func qemuLaunch*(cfg: Config, uuid: string,
       result.args &=
        &"memory-backend-file,id=ivshmem_kvmfr,mem-path=/dev/shm/kvmfr-{uuid},size=128M,share=yes"
 
-      # Create device for Scream
-      result.args &= "-device"
-      result.args &= "ivshmem-plain,id=shmem1,memdev=ivshmem_kvmsr"
-
-      # Create Scream IVSHMEM object
-      result.args &= "-object"
-      result.args &=
-        &"memory-backend-file,id=ivshmem_kvmsr,mem-path=/dev/shm/kvmsr-{uuid},size=2M,share=yes"
     else: discard
 
   # UUID - Necessary for NVidia MDEV support
