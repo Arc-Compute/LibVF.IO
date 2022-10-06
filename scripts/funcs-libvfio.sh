@@ -158,7 +158,7 @@ function add_depen() {
   case $distro in
     "Fedora") 	sudo dnf install -y lshw unzip samba nsis plasma-wayland-protocols dkms mingw64-gcc $lookingglass_dep_fedora qemu patch kernel-devel openssl;;
     "Debian")	sudo apt install -y lshw unzip wget xterm xinit samba packer mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev genisoimage;;
-    "Ubuntu")	sudo apt install -y lshw unzip samba packer mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev genisoimage;;
+    "Ubuntu")	sudo apt install -y libsamplerate0-dev libpipewire-0.3-dev libxcursor-dev libxpresent-dev libxkbcommon-dev lshw unzip samba packer mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev genisoimage;;
     "Arch")	yay -S "nsis" lshw samba unzip mdevctl base-devel libxss libglvnd mingw-w64-gcc curl spice-protocol wayland-protocols cdrkit mokutil dkms make cmake gcc nettle python3 qemu alsa-lib libpulse wget;;
     # Only difference from Ubuntu is the addition of "genisoimage" which provides mkisofs
     "Pop")	sudo apt install -y lshw unzip samba packer genisoimage mokutil dkms libglvnd-dev curl gcc cmake fonts-freefont-ttf libegl-dev libgl-dev libfontconfig1-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config python3 python3-pip binutils-dev qemu qemu-utils qemu-kvm libx11-dev libxfixes-dev libxi-dev libxinerama-dev libxss-dev libwayland-bin libwayland-dev wayland-protocols gcc-mingw-w64-x86-64 nsis mdevctl git libpulse-dev libasound2-dev;;
@@ -331,11 +331,11 @@ function dl_lookingglass() {
     return
   fi
   set_sandbox_dir
-  # Download Looking Glass beta 4 sources
+  # Download Looking Glass sources
   rm -rf LookingGlass
-  curl -o lg.tar.gz https://looking-glass.io/artifact/B4/source
+  curl -o lg.tar.gz https://looking-glass.io/artifact/B6-rc1/source
   tar -xvf lg.tar.gz
-  mv looking-glass-B4 LookingGlass
+  mv looking-glass-B6-rc1 LookingGlass
 }
 
 function install_lookingglass() {
@@ -351,12 +351,6 @@ function install_lookingglass() {
   cmake ../
   make
   sudo make install
-  # Cause we cannot use looking glass host binary
-  cd ../../host/build
-  cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw64.cmake ..
-  make
-  cd platform/Windows
-  makensis installer.nsi
   cd $current_path
 }
 
@@ -391,9 +385,8 @@ function get_introspection() {
   cp $current_path/optional/guest/* ./
   cp $current_path/scripts/win-guest-install/* ./
   cp $HOME/.ssh/id_rsa.pub ./authorized_keys
-  #cp $HOME/.cache/libvf.io/compile/LookingGlass/host/build/platform/Windows/looking-glass-host-setup.exe ./
   # Use the Looking Glass Host bin rather than the one we compile ourselves.
-  wget -O looking-glass-host.zip https://looking-glass.io/artifact/B4/host
+  wget -O looking-glass-host.zip https://looking-glass.io/artifact/B6-rc1/host
   unzip looking-glass-host.zip
   echo "REG ADD HKLM\SYSTEM\CurrentControlSet\Services\Scream\Options /v UseIVSHMEM /t REG_DWORD /d 2" >> scream-ivshmem-reg.bat
   wget -O adksetup.exe "https://go.microsoft.com/fwlink/?linkid=2120254"
@@ -585,9 +578,9 @@ function install_gvm() {
       if [[ $gfx_sku != *"GP"* && $gfx_sku != *"TU"* && $gfx_sku != *"GA"* ]];then
         echo "A GPU architecture could not be detected during installation."
         echo "Please choose a GPU architecture:"
-        echo "1) Pascal"
-        echo "2) Turing"
-        echo "3) Ampere"
+        echo "1) Pascal (GTX 10XX)"
+        echo "2) Turing (RTX 20XX)"
+        echo "3) Ampere (RTX 30XX)"
         read -p "Architecture choice: " gvm_prompt_architecture
         if [ $gvm_prompt_architecture == "1" ]; then
           gfx_sku='GP'
