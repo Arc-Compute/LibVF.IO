@@ -554,7 +554,7 @@ function install_gvm() {
   read -p "(y/n)?" gvm_prompt_response
   if [ $gvm_prompt_response == "y"  ] || [ $gvm_prompt_response == "Y" ];then
     cd $current_path
-    git clone https://github.com/OpenMdev/GVM-user
+    git clone https://github.com/Open-IOV/GVM-user
     cd GVM-user
     # Compiling GVM-user
     make
