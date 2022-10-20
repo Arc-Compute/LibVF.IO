@@ -558,13 +558,21 @@ function install_gvm() {
     cd GVM-user
     # Compiling GVM-user
     make
+    # Compiling GVM-user tests
+    make tests
     cd ..
-    # Setting Unix execution permissions on gvm-cli and gvm-mgr
+    # Setting Unix execution permissions on compiled bins
     sudo chmod +x $current_path/GVM-user/bin/gvm-cli
     sudo chmod +x $current_path/GVM-user/bin/gvm-mgr
+    sudo chmod +x $current_path/GVM-user/bin/test-device
+    sudo chmod +x $current_path/GVM-user/bin/test-nvidia-api
+    sudo chmod +x $current_path/GVM-user/bin/test-nvidia-manager
     # Moving the GVM-user bins into /usr/bin/
     sudo mv $current_path/GVM-user/bin/gvm-cli /usr/bin/gvm-cli
     sudo mv $current_path/GVM-user/bin/gvm-mgr /usr/bin/gvm-mgr
+    sudo mv $current_path/GVM-user/bin/test-device /usr/bin/test-device
+    sudo mv $current_path/GVM-user/bin/test-nvidia-api /usr/bin/test-nvidia-api
+    sudo mv $current_path/GVM-user/bin/test-nvidia-manager /usr/bin/test-nvidia-manager
 
     # Copying GVM/Mdev-GPU configuration files and systemd service to /etc/
     sudo cp -r $current_path/GVM-user/etc/* /etc/
@@ -633,6 +641,9 @@ function rm_gvm(){
   # Remove GVM-user bins
   sudo rm /usr/bin/gvm-cli
   sudo rm /usr/bin/gvm-mgr
+  sudo rm /usr/bin/test-device
+  sudo rm /usr/bin/test-nvidia-api
+  sudo rm /usr/bin/test-nvidia-manager
   # Remove GVM configs
   sudo rm -rf /etc/gvm/
   # Remove GVM systemd services
