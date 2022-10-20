@@ -284,9 +284,13 @@ func qemuLaunch*(cfg: Config, uuid: string,
     result.args &= "-parallel"
     result.args &= "none"
 
-    # Additional mouse for USB redirects from spice
+    # Additional mouse for USB redirects from SPICE
     result.args &= "-device"
     result.args &= "qemu-xhci,p2=15,p3=15,id=usb"
+
+    # SPICE audio support
+    result.args &= "-device"
+    result.args &= "ich9-intel-hda,type=spice"
 
     # VirtIO Serial PCI Device
     result.args &= "-device"
