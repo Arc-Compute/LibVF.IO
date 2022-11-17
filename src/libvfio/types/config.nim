@@ -32,22 +32,26 @@ type
   RequestedGpuType* = enum           ## Types of GPUs we support.
     rgSRIOVGpu = "sriovdev",         ## PCI address based mediated device functionality.
     rgMdevGpu = "sysfsdev"           ## VFIO-Mdev based mediated device functionality.
+    rgPassthroughGpu = "passthrough" ## Passthrough GPU using VFIO PCI.
 
-  RequestedGpu* = object             ## Object to request a GPU.
+  RequestedGpu* = object                ## Object to request a GPU.
     maxVRam*          {.defaultVal: 2000.}: int                       ## Maximum acceptable vRAM.
     minVRam*          {.defaultVal: 1000.}: int                       ## Minimal acceptable vRAM.
     case gpuType*: RequestedGpuType
     of rgSRIOVGpu:
-      acceptableTypes*: seq[string]  ## Possible types of GPUs we accept
+      acceptableTypes*: seq[string]     ## Possible types of GPUs we accept
     of rgMdevGpu:
-      mdevType*: string              ## Wildcard that needs to appear in the type.
-      parentPort*: Option[string]    ## Optional parent port override.
+      mdevType*: string                 ## Wildcard that needs to appear in the type.
+      parentPort*: Option[string]       ## Optional parent port override.
       devId*          {.defaultVal: "hostdev0".}: string              ## Name of the device for additional commands
-                                     ##  in the command argument.
+                                                                      ##  in the command argument.
       suffix*         {.defaultVal: "".}: string                      ## Suffix for end of the name.
+    of rgPassthroughGpu:
+      bdf*: string                      ## Bus slot function for the GPU to pass.
+      passthroughType*: Option[string]  ## Identifier for GPU on this Bus slot function
 
-  RequestedNet* = object             ## Object to request a network NIC.
-    mac*: string                     ## MAC address for the requested NIC.
+  RequestedNet* = object                ## Object to request a network NIC.
+    mac*: string                        ## MAC address for the requested NIC.
 
   Config* = object                                                    ## Configuration object for spawning a
                                                                       ##  VM.

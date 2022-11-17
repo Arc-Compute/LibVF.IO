@@ -393,6 +393,12 @@ func qemuLaunch*(cfg: Config, uuid: string,
   # Set mdev arguments
   for mdev in mdevs:
     result.args &= mdevArgs(mdev)
+
+  for gpu in cfg.gpus:
+    if gpu.gpuType == rgPassthroughGpu:
+      result.args &= "-device"
+      result.args &= &"vfio-pci,host={gpu.bdf}"
+
   # Port forward ssh port
   result.args &= "-device"
   result.args &= "rtl8139,netdev=net0"
