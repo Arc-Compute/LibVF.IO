@@ -511,8 +511,9 @@ function patch_nv() {
       echo "Cloning @Snowman auto-merge script."
       cd $current_path/optional/
       git clone --recursive https://github.com/VGPU-Community-Drivers/vGPU-Unlock-patcher
-      mv *.run *-patcher/
       cd *-patcher/
+      git checkout 510.85
+      mv ../*.run ./
       ./patch.sh general-merge
       # Move resulting merged driver up a directory
       mv *-patched* ../
