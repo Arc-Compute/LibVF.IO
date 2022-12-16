@@ -11,9 +11,11 @@ ls /usr/bin/ >> $logFile
 echo "# /usr/bin/ BINARIES END" >> $logFile
 
 # Logging ~/.local/nimble/bin/ binaries
-echo "# ~/.local/nimble/bin/ BINARIES START" >> $logFile
-ls ~/.local/nimble/bin/ >> $logFile
-echo "# ~/.local/nimble/bin/ BINARIES END" >> $logFile
+echo "nimble BINARIES START" >> $logFile
+DIR=`which nimble | xargs dirname`
+echo "Directory: $DIR" >> $logFile
+ls $DIR >> $logFile
+echo "nimble BINARIES END" >> $logFile
 
 # Logging ~/.local/libvf.io/
 echo "# ~/.local/libvf.io/ START" >> $logFile
