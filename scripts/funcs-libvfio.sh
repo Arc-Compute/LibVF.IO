@@ -526,6 +526,14 @@ function patch_nv() {
   cd $current_path
 }
 
+_get_cpu_count() {
+  cat /proc/cpuinfo |grep -c "processor"
+}
+
+_get_driver_version() {
+  sed -r 's/.*-([0-9]{3}\.[0-9]{2,3}\.[0-9]{2,3})-.*/\1/' <<< $1
+}
+
 function install_nv() {
   patch_nv
   arch_ignore_abi
@@ -541,7 +549,23 @@ function install_nv() {
     sudo $current_path/optional/*$custom.run --module-signing-secret-key=$HOME/.ssh/module-private.key --module-signing-public-key=$HOME/.ssh/module-public.key -q --no-x-check
   elif [[ ($optional_driver_version -eq 510) ]];then
     echo "Installing 510 via DKMS."
-    sudo $current_path/optional/*patched*/nvidia-installer --dkms -q --no-x-check
+    # -- install patched kernel modules manually to set IGNORE_CC_MISMATCH=1 --
+    installer_path=$(ls -d $current_path/optional/*patched*)
+    local installer_path=$(ls -d $current_path/optional/*patched*)
+    local nv_driver_version=$(_get_driver_version installer_path)
+    local cpu_count=$(_get_cpu_count)
+    local dkms_conf=/usr/src/nvidia-$nv_driver_version/dkms.conf
+
+    sudo mkdir $(dirname $dkms_conf)
+    sudo cp -r $installer_path/kernel/* /usr/src/nvidia-$nv_driver_version
+    sudo cp $current_path/conf/dkms_nvidia.conf $dkms_conf
+    sudo sed -i "s/__CPU_COUNT__/$cpu_count/;s/__DRIVER_VERSION__/$nv_driver_version/" $dkms_conf
+
+    sudo dkms add -m nvidia -v $nv_driver_version
+    sudo dkms build -m nvidia -v $nv_driver_version && \
+    sudo dkms install -m nvidia -v $nv_driver_version
+    # -- end kernel modules --
+    sudo $installer_path/nvidia-installer --no-kernel-module -q --no-x-check --ui=none
   fi
   # Cleanup
   echo "Cleaning .run files generated during merge/install if they exist."
