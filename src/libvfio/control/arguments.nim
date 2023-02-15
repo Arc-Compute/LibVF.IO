@@ -38,7 +38,6 @@ const
       "xsaveopt=on",
       "pdpe1gb=on",
       "ibpb=on",
-      #"ibrs=on",
       "amd-stibp=on",
       "amd-ssbd=on",
       "skip-l1dfl-vmentry=on",
@@ -68,7 +67,6 @@ const
       "xsaveopt=on",
       "pdpe1gb=on",
       "ibpb=on",
-      #"ibrs=on",
       "amd-stibp=on",
       "amd-ssbd=on",
       "skip-l1dfl-vmentry=on",
@@ -77,7 +75,7 @@ const
       "hv_time",
       "hv-spinlocks=0x1fff",
       "hv-vendor-id=null",
-      "kvm=off",
+      "kvm=on",
       "topoext=on"
     ],
     ","
