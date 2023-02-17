@@ -38,15 +38,10 @@ const
       "xsaveopt=on",
       "pdpe1gb=on",
       "ibpb=on",
-      #"ibrs=on",
       "amd-stibp=on",
       "amd-ssbd=on",
       "skip-l1dfl-vmentry=on",
       "pschange-mc-no=on",
-      "hv-vapic",
-      "hv_time",
-      "hv-spinlocks=0x1fff",
-      "hv-vendor-id=null",
       "kvm=off",
       "topoext=on"
     ],
@@ -68,16 +63,11 @@ const
       "xsaveopt=on",
       "pdpe1gb=on",
       "ibpb=on",
-      #"ibrs=on",
       "amd-stibp=on",
       "amd-ssbd=on",
       "skip-l1dfl-vmentry=on",
       "pschange-mc-no=on",
-      "hv-vapic",
-      "hv_time",
-      "hv-spinlocks=0x1fff",
-      "hv-vendor-id=null",
-      "kvm=off",
+      "kvm=on",
       "topoext=on"
     ],
     ","
@@ -429,8 +419,8 @@ func qemuLaunch*(cfg: Config, uuid: string,
   result.args &= "-net"
   result.args &= "nic" # NOTE: DO NOT USE VIRTIO IT IS BROKE
 
-  result.args &= "-device"
-  result.args &= &"vhost-vsock-pci,guest-cid={cid}"
+  #result.args &= "-device"
+  #result.args &= &"vhost-vsock-pci,guest-cid={cid}"
 
   if isSome(cfg.shareddir) and not install:
     result.args &= "-hdb"
