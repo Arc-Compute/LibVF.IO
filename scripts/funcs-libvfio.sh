@@ -414,9 +414,6 @@ function sandbox_and_old_driver_cleanup() {
   set_sandbox_dir
   cd $current_path
   rm -rf $compile_sandbox
-  if [ -f "./optional/*custom.run" ]; then
-    rm ./optional/*custom.run
-  fi
 
 }
 
@@ -567,11 +564,6 @@ function install_nv() {
     # -- end kernel modules --
     sudo $installer_path/nvidia-installer --no-kernel-module -q --no-x-check --ui=none
   fi
-  # Cleanup
-  echo "Cleaning .run files generated during merge/install if they exist."
-  rm $current_path/optional/*$custom.run
-  echo "Cleaning directories generated during merge/install if they exist."
-  rm -rf $current_path/optional/*patched*/
 }
 
 function install_gvm() {
