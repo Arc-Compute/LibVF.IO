@@ -181,7 +181,11 @@ function add_boot_param() {
       sudo kernelstub --add-options "intel_iommu=on iommu=pt vfio_pci vfio mdev"
     # GRUB
     else
-      sudo sed -i 's/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"intel_iommu=on iommu=pt vfio_pci vfio mdev /g' /etc/default/grub
+      if grep -q 'intel_iommu=on iommu=pt vfio_pci vfio mdev' /etc/default/grub; then
+        echo "Required boot parameters already in /etc/default/grub"
+      else
+        sudo sed -i 's/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"intel_iommu=on iommu=pt vfio_pci vfio mdev /g' /etc/default/grub
+      fi
     fi
   # AMD users
   elif [[ $cpuModel == *"AuthenticAMD"* ]]; then
@@ -190,7 +194,11 @@ function add_boot_param() {
       sudo kernelstub --add-options "amd_iommu=on iommu=pt vfio_pci vfio mdev"
     # GRUB
     else
-      sudo sed -i 's/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"amd_iommu=on iommu=pt vfio_pci vfio mdev /g' /etc/default/grub
+      if grep -q 'amd_iommu=on iommu=pt vfio_pci vfio mdev' /etc/default/grub; then
+        echo "Required boot parameters already in /etc/default/grub"
+      else
+        sudo sed -i 's/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"amd_iommu=on iommu=pt vfio_pci vfio mdev /g' /etc/default/grub
+      fi
     fi
   fi
   # GRUB
