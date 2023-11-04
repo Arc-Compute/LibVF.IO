@@ -372,5 +372,7 @@ proc writeConfigFile*(s: string, cfg: Config) =
   ##
   ## Side effects - Writes a configuration file.
   let fileStream = newFileStream(s, fmWrite)
-  dump(cfg, fileStream)
+  let dumper = canonicalDumper()
+  dumper.presentation.outputVersion = ov1_2
+  dumper.dump(cfg, fileStream)
   close(fileStream)
