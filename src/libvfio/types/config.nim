@@ -372,5 +372,6 @@ proc writeConfigFile*(s: string, cfg: Config) =
   ##
   ## Side effects - Writes a configuration file.
   let fileStream = newFileStream(s, fmWrite)
-  dump(cfg, fileStream)
+  let dumper = canonicalDumper()
+  dumper.dump(cfg, fileStream)
   close(fileStream)
