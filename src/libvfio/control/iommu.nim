@@ -22,7 +22,7 @@ import ../types
 type
   Physical = object         ## Internal structure to help us with sorting
                             ##  the files.
-    numVfs: Positive        ## Number of virtual functions exposed by the PCI.
+    numVfs: Positive = 1       ## Number of virtual functions exposed by the PCI.
     baseDir: string         ## Base directory holding the physical device.
     case kind: VfioTypes
     of vtGPU:
@@ -149,9 +149,10 @@ proc getVfios*(cfg: Config, uuid: string, monad: CommandMonad): seq[Vfio] =
     result = (ret, newList)
 
   func lowCpuLoadSort(a, b: (string, seq[Physical])): int =
-    const
-      # Nim is complaining about this syntax
-      f = (y: seq[Physical]) => sum(map(y, (x: Physical) => x.numVfs))
+
+    proc f(y: seq[Physical]): int =
+      result = sum(map(y, proc (x: Physical): int = x.numVfs))
+
     let
       aSum: int = f(a[1])
       bSum: int = f(b[1])
